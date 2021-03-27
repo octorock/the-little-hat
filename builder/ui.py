@@ -1,6 +1,7 @@
 from PySide6.QtCore import QProcess, QSize, Qt
 from PySide6.QtWidgets import QLabel, QPushButton, QSplitter, QTextEdit, QVBoxLayout, QWidget
 
+
 class BuilderWidget (QWidget):
     def __init__(self, parent):
         super().__init__(parent=parent)
@@ -13,7 +14,6 @@ class BuilderWidget (QWidget):
 
         self.tidyButton = QPushButton('Tidy', self)
         self.verticalLayout.addWidget(self.tidyButton, 0, Qt.AlignHCenter)
-
 
         self.splitter = QSplitter(self)
         self.splitter.setOrientation(Qt.Vertical)
@@ -54,13 +54,12 @@ class BuilderWidget (QWidget):
 
         self.verticalLayout.addWidget(self.splitter)
 
-
         # Logic
 
         # Use QProcess to start a program and get its outputs https://stackoverflow.com/a/22110924
         self.process = QProcess(self)
 
-        self.process.setWorkingDirectory('../github') # TODO make configurable
+        self.process.setWorkingDirectory('../tmc')  # TODO make configurable
 
         self.process.readyReadStandardOutput.connect(self.readStdout)
         self.process.readyReadStandardError.connect(self.readStderr)
@@ -69,13 +68,25 @@ class BuilderWidget (QWidget):
         self.process.errorOccurred.connect(self.errorOccurred)
         self.compileButton.clicked.connect(self.doCompile)
         self.tidyButton.clicked.connect(self.doTidy)
-        
 
     def doCompile(self):
-        self.process.start('make', ['-j', '8']) # TODO run nproc once and store the result?
+        self.cleanupUI()
+#        self.process.start('make', ['-j', '8']) # TODO run nproc once and store the result?
+        self.process.start(
+            'ubuntu2004.exe', [
+                'run', 'cd ~/tmc/tmc && source /etc/profile.d/devkit-env.sh && make -j8'])
 
     def doTidy(self):
-        self.process.start('make', ['tidy'])
+        self.cleanupUI()
+#        self.process.start('make', ['tidy'])
+        self.process.start('ubuntu2004.exe', [
+                           'run', 'cd ~/tmc/tmc && source /etc/profile.d/devkit-env.sh && make tidy'])
+
+    def cleanupUI(self):
+        self.stdoutText.setEnabled(True)
+        self.stderrText.setEnabled(True)
+        self.stdoutText.setPlainText('')
+        self.stderrText.setPlainText('')
 
     def readStdout(self):
         line = self.process.readAllStandardOutput().data().decode()[:-1]
@@ -84,7 +95,7 @@ class BuilderWidget (QWidget):
         elif line == 'tmc.gba: OK':
             line = 'tmc.gba: <b style="color: green">OK</b>'
         self.stdoutText.append(line)
- 
+
     def readStderr(self):
         line = self.process.readAllStandardError().data().decode()[:-1]
         if 'error' in line:
@@ -93,13 +104,8 @@ class BuilderWidget (QWidget):
             line = f'<span style="color:orange">{line}</span>'
 
         self.stderrText.append(line)
-        
 
     def processStarted(self):
-        self.stdoutText.setEnabled(True)
-        self.stderrText.setEnabled(True)
-        self.stdoutText.setPlainText('')
-        self.stderrText.setPlainText('')
         self.compileButton.setEnabled(False)
         self.tidyButton.setEnabled(False)
         print('started')
