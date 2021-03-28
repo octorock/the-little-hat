@@ -1,4 +1,4 @@
-# The Little Hat
+# <img src="resources/icon.png" width=64 /> The Little Hat
 
 ## Setup
 ```bash

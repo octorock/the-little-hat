@@ -1,16 +1,44 @@
 from PySide6.QtCore import QSettings, Qt
-from PySide6.QtGui import QAction, QWindow
-from common.ui.dark_theme import apply_dark_theme
+from PySide6.QtGui import QAction, QIcon, QWindow
+from tlh.common.ui.dark_theme import apply_dark_theme
 import sys
-from PySide6.QtWidgets import QApplication, QDockWidget, QInputDialog, QMainWindow, QMenu, QMenuBar, QMessageBox
-from builder.ui import BuilderWidget
+from PySide6.QtWidgets import QApplication, QDialog, QDockWidget, QInputDialog, QMainWindow, QMenu, QMenuBar, QMessageBox
+from tlh.builder.ui import BuilderWidget
 import signal
+from tlh.ui.ui_settings import Ui_dialogSettings
+from tlh.ui.ui_mainwindow import Ui_MainWindow
 
 
 class MainWindow(QMainWindow):
     def __init__(self, app):
         super().__init__()
-        self.setWindowTitle('The Little Hat')
+        self.setWindowIcon(QIcon(':/icons/icon.png'))
+
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+
+        self.ui.actionQuit.triggered.connect(app.quit)
+        self.ui.actionSettings.triggered.connect(self.show_settings_dialog)
+        self.ui.actionAbout.triggered.connect(self.show_about_dialog)
+
+        self.build_layouts_toolbar()
+
+        widget = BuilderWidget(self)
+        self.setCentralWidget(widget)
+
+        # Temp docks
+        dock1 = QDockWidget(self)
+        dock1.setObjectName('temp1')
+        dock1.setWindowTitle('Temp1')
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock1)
+
+        # Restore layout
+        settings = QSettings('octorock', 'the-little-hat')
+        self.restoreState(settings.value('windowState'))
+        self.restoreGeometry(settings.value('geometry'))
+
+        """         self.setWindowTitle('The Little Hat')
+        self.setWindowIcon(QIcon(':/icons/icon.png'))
 
         menubar = QMenuBar(self)
         self.setMenuBar(menubar)
@@ -26,8 +54,9 @@ class MainWindow(QMainWindow):
         self.menuTools = QMenu('Tools', menubar)
         menubar.addMenu(self.menuTools)
 
-        actionsSettings = QAction('Settings', self.menuTools)
-        self.menuTools.addAction(actionsSettings)
+        actionSettings = QAction('Settings', self.menuTools)
+        actionSettings.triggered.connect(self.show_settings_dialog)
+        self.menuTools.addAction(actionSettings)
 
         self.menuLayouts = QMenu('Layouts', menubar)
         menubar.addMenu(self.menuLayouts)
@@ -47,6 +76,7 @@ class MainWindow(QMainWindow):
         settings = QSettings('octorock', 'the-little-hat')
         self.restoreState(settings.value('windowState'))
         self.restoreGeometry(settings.value('geometry'))
+"""
 
     def closeEvent(self, event):
         settings = QSettings('octorock', 'the-little-hat')
@@ -81,24 +111,56 @@ class MainWindow(QMainWindow):
         self.restoreState(settings.value('layout_'+layout_name))
 
     def build_layouts_toolbar(self):
-        self.menuLayouts.clear()
-        actionSaveLayout = QAction('Save Layout...', self.menuLayouts)
-        self.menuLayouts.addAction(actionSaveLayout)
+        self.ui.menuLayouts.clear()
+        actionSaveLayout = QAction('Save Layout...', self.ui.menuLayouts)
+        self.ui.menuLayouts.addAction(actionSaveLayout)
         actionSaveLayout.triggered.connect(self.save_layout)
-        self.menuLayouts.addSeparator()
+        self.ui.menuLayouts.addSeparator()
+
+        submenus = {}
 
         settings = QSettings('octorock', 'the-little-hat')
         print('-' + settings.fileName())
         layouts = settings.value('layouts', [])
+        layouts.sort()
+
         for layout in layouts:
-            action = QAction(layout, self.menuLayouts)
-            self.menuLayouts.addAction(action)
+            elements = layout.split('/')
+
+            action = QAction(elements[-1], self.ui.menuLayouts)
             action.triggered.connect(
                 lambda *args, layout=layout: self.load_layout(layout))
             # checked is a named parameter? https://forum.learnpyqt.com/t/getting-typeerror-lambda-missing-1-required-positional-argument-checked/586/5
 
+            # Add at correct location
+            parent = self.ui.menuLayouts
+            menus = {'children': submenus}
+            for element in elements[:-1]:
+                if not element in menus['children']:
+                    menus['children'][element] = {
+                        'menu': QMenu(element, parent),
+                        'children': {}
+                    }
+                    parent.addMenu(menus['children'][element]['menu'])
 
-def main():
+                parent = menus['children'][element]['menu']
+                menus = menus['children'][element]
+                print(element)
+
+            parent.addAction(action)
+
+    def show_settings_dialog(self):
+        dialog = QDialog(self)
+        ui = Ui_dialogSettings()
+        ui.setupUi(dialog)
+        dialog.show()
+
+    def show_about_dialog(self):
+        QMessageBox.about(self, 'The Little Hat',
+                          'The Little Hat\nVersion: 0.0')  # TODO
+
+
+def run():
     # Be able to close with Ctrl+C in the terminal once Qt is started https://stackoverflow.com/a/5160720
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -108,8 +170,4 @@ def main():
     window = MainWindow(app)
 
     window.show()
-    sys.exit(app.exec_())
-
-
-if __name__ == '__main__':
-    main()
+    return app.exec_()
