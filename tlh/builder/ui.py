@@ -89,31 +89,32 @@ class BuilderWidget (QWidget):
         self.stderrText.setPlainText('')
 
     def readStdout(self):
-        line = self.process.readAllStandardOutput().data().decode()[:-1]
-        if line == 'tmc.gba: FAILED':
-            line = 'tmc.gba: <b style="color:red">FAILED</b>'
-        elif line == 'tmc.gba: OK':
-            line = 'tmc.gba: <b style="color: green">OK</b>'
-        self.stdoutText.append(line)
-
+        lines = self.process.readAllStandardOutput().data().decode()[:-1].split('\n')
+        for line in lines:
+            if line == 'tmc.gba: FAILED':
+                line = 'tmc.gba: <b style="color:red">FAILED</b>'
+            elif line == 'tmc.gba: OK':
+                line = 'tmc.gba: <b style="color:lime">OK</b>'
+            self.stdoutText.append(line)
+    
     def readStderr(self):
-        line = self.process.readAllStandardError().data().decode()[:-1]
-        if 'error' in line:
-            line = f'<span style="color:red">{line}</span>'
-        elif 'warning' in line:
-            line = f'<span style="color:orange">{line}</span>'
+        lines = self.process.readAllStandardError().data().decode()[:-1].split('\n')
+        for line in lines:
+            if 'error' in line.lower():
+                line = f'<span style="color:red">{line}</span>'
+            elif 'warning' in line.lower():
+                line = f'<span style="color:orange">{line}</span>'
 
-        self.stderrText.append(line)
+            self.stderrText.append(line)
+        
 
     def processStarted(self):
         self.compileButton.setEnabled(False)
         self.tidyButton.setEnabled(False)
-        print('started')
 
     def processFinished(self):
         self.compileButton.setEnabled(True)
         self.tidyButton.setEnabled(True)
-        print('finished')
 
     def errorOccurred(self):
         self.stderrText.insertPlainText(self.process.errorString())
