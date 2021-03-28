@@ -164,7 +164,9 @@ def run():
     # Be able to close with Ctrl+C in the terminal once Qt is started https://stackoverflow.com/a/5160720
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    app = QApplication(sys.argv)
+    arguments = sys.argv
+    arguments.extend(['-style', 'Fusion']) # Remove warning about invalid style override
+    app = QApplication(arguments)
     apply_dark_theme(app)
 
     window = MainWindow(app)

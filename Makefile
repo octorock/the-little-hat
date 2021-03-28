@@ -9,11 +9,14 @@ COMPILED_DIR = tlh/ui
 UI_FILES =  $(notdir $(wildcard $(RESOURCE_DIR)/*.ui))
 #Qt resource files to compile
 RESOURCES = $(notdir $(wildcard $(RESOURCE_DIR)/*.qrc))
- 
-#PYUIC = python venv/bin/pyside6-uic
-#PYRCC = python venv/bin/pyside6-rcc
-PYUIC = python venv/Scripts/pyside6-uic.exe --from-imports
-PYRCC = python venv/Scripts/pyside6-rcc.exe
+
+ifeq ($(OS),Windows_NT)
+	PYUIC = python venv/Scripts/pyside6-uic.exe
+	PYRCC = python venv/Scripts/pyside6-rcc.exe
+else
+	PYUIC = python venv/bin/pyside6-uic
+	PYRCC = python venv/bin/pyside6-rcc
+endif
  
  
 COMPILED_UI = $(UI_FILES:%.ui=$(COMPILED_DIR)/ui_%.py)
@@ -26,7 +29,7 @@ resources: $(COMPILED_RESOURCES)
 ui: $(COMPILED_UI)
  
 $(COMPILED_DIR)/ui_%.py: $(RESOURCE_DIR)/%.ui
-	$(PYUIC) $< -o $@
+	$(PYUIC) --from-imports $< -o $@
  
 $(COMPILED_DIR)/%_rc.py: $(RESOURCE_DIR)/%.qrc
 	$(PYRCC) $< -o $@
@@ -43,8 +46,11 @@ init: venv/touchfile
 
 venv/touchfile: requirements.txt
 	test -d venv || python -m venv venv
-#	test -d venv/bin && . venv/bin/activate
+ifeq ($(OS),Windows_NT)
 	venv/Scripts/activate.bat
+else
+	. venv/bin/activate
+endif
 	pip install -Ur requirements.txt
 	touch venv/touchfile
 
