@@ -2,15 +2,12 @@
 
 ## Setup
 ```bash
-git@github.com:octorock/the-little-hat
+git clone git@github.com:octorock/the-little-hat
 cd the-little-hat
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+make
 ```
 ## Run
 ```
 cd the-little-hat
-source venv/bin/activate
-python tlh.py
+make run
 ```

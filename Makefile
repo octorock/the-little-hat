@@ -1,13 +1,13 @@
 # https://mplicka.cz/en/blog/compiling-ui-and-resource-files-with-pyqt
-#Directory with ui and resource files
+# Directory with ui and resource files
 RESOURCE_DIR = resources
  
-#Directory for compiled resources
+# Directory for compiled resources
 COMPILED_DIR = tlh/ui
  
-#UI files to compile
+# UI files to compile
 UI_FILES =  $(notdir $(wildcard $(RESOURCE_DIR)/*.ui))
-#Qt resource files to compile
+# Qt resource files to compile
 RESOURCES = $(notdir $(wildcard $(RESOURCE_DIR)/*.qrc))
 
 ifeq ($(OS),Windows_NT)
@@ -47,11 +47,16 @@ init: venv/touchfile
 venv/touchfile: requirements.txt
 	test -d venv || python -m venv venv
 ifeq ($(OS),Windows_NT)
-	venv/Scripts/activate.bat
+	venv/Scripts/activate.bat; pip install -Ur requirements.txt
 else
-	. venv/bin/activate
+	. venv/bin/activate; pip install -Ur requirements.txt
 endif
-	pip install -Ur requirements.txt
 	touch venv/touchfile
 
-.PHONY: init clean tidy
+run: all
+ifeq ($(OS),Windows_NT)
+	venv/Scripts/activate.bat; python main.py
+else
+	. venv/bin/activate; python main.py
+endif
+.PHONY: init clean tidy run
