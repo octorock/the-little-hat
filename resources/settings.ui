@@ -33,7 +33,17 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QListWidget" name="listWidget"/>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Rename layouts by pressing F2 or double clicking
+Reorder by drag and drop
+Delete using DEL
+Use / to define submenus</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QListView" name="listLayouts"/>
        </item>
       </layout>
      </widget>
