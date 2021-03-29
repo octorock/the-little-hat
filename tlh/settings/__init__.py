@@ -29,7 +29,29 @@ def set_tidy_command(command):
     settings.setValue('tidy_command', command)
 
 # ROMs
+def get_rom_usa():
+    return settings.value('rom_usa')
 
+def set_rom_usa(rom):
+    settings.setValue('rom_usa', rom)
+
+def get_rom_demo():
+    return settings.value('rom_demo')
+
+def set_rom_demo(rom):
+    settings.setValue('rom_demo', rom)
+
+def get_rom_eu():
+    return settings.value('rom_eu')
+
+def set_rom_eu(rom):
+    settings.setValue('rom_eu', rom)
+
+def get_rom_jp():
+    return settings.value('rom_jp')
+
+def set_rom_jp(rom):
+    settings.setValue('rom_jp', rom)
 
 # Layouts
 def get_window_state():

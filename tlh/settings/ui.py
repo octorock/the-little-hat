@@ -1,4 +1,5 @@
 from sys import flags
+from tlh.const import SHA1_DEMO, SHA1_EU, SHA1_JP, SHA1_USA
 import typing
 
 import PySide6
@@ -6,8 +7,8 @@ from PySide6.QtGui import QKeySequence, QShortcut, QStandardItemModel
 from tlh import settings
 from PySide6.QtCore import QAbstractListModel, QFile, QModelIndex, QStringListModel, Qt
 from tlh.ui.ui_settings import Ui_dialogSettings
-from PySide6.QtWidgets import QDialog, QDialogButtonBox, QFileDialog, QListView
-
+from PySide6.QtWidgets import QDialog, QDialogButtonBox, QFileDialog, QListView, QMessageBox
+import hashlib
 
 class LayoutModel(QAbstractListModel):
     def __init__(self, layouts: list[settings.Layout], parent: typing.Optional[PySide6.QtCore.QObject]) -> None:
@@ -101,12 +102,42 @@ class SettingsDialog(QDialog):
 
     def edit_repo_location(self):
         dir = QFileDialog.getExistingDirectory(self, 'Location of the repository', self.ui.lineEditRepoLocation.text())
-        self.ui.lineEditRepoLocation.setText(dir)
+        if dir is not None:
+            self.ui.lineEditRepoLocation.setText(dir)
         #QFileDialog.getOpenFileName(self, 'Location of the repository', )
 
     def setup_roms_tab(self):
-        pass
+        self.ui.lineEditRomUsa.setText(settings.get_rom_usa())
+        self.ui.toolButtonUsa.clicked.connect(self.edit_rom_usa)
+        self.ui.lineEditRomDemo.setText(settings.get_rom_demo())
+        self.ui.toolButtonDemo.clicked.connect(self.edit_rom_demo)
+        self.ui.lineEditRomEu.setText(settings.get_rom_eu())
+        self.ui.toolButtonEu.clicked.connect(self.edit_rom_eu)
+        self.ui.lineEditRomJp.setText(settings.get_rom_jp())
+        self.ui.toolButtonJp.clicked.connect(self.edit_rom_jp)
 
+    def edit_rom_usa(self):
+        self.edit_rom('USA', self.ui.lineEditRomUsa, SHA1_USA)
+            
+    def edit_rom_demo(self):
+        self.edit_rom('USA (DEMO)', self.ui.lineEditRomDemo, SHA1_DEMO)
+
+    def edit_rom_eu(self):
+        self.edit_rom('EU', self.ui.lineEditRomEu, SHA1_EU)
+
+    def edit_rom_jp(self):
+        self.edit_rom('JP', self.ui.lineEditRomJp, SHA1_JP)
+
+    def edit_rom(self, name, lineEdit, expected_sha1):
+        (rom,_) = QFileDialog.getOpenFileName(self, f'Select location of {name} rom', lineEdit.text(), '*.gba')
+        if rom is not None:
+            sha1 = calculate_sha1(rom)
+            if sha1 == expected_sha1:
+                lineEdit.setText(rom)
+            else:
+                QMessageBox.critical(self, 'Wrong sha1', f'The sha1 of file {rom} does not correspond with the sha1 of the {name} rom.\nExpected: {expected_sha1}\nActual: {sha1}')
+
+        
     def setup_layouts_tab(self):
         layouts = settings.get_layouts()
 
@@ -143,7 +174,25 @@ class SettingsDialog(QDialog):
         settings.set_repo_location(self.ui.lineEditRepoLocation.text())
         settings.set_build_command(self.ui.lineEditBuildCommand.text())
         settings.set_tidy_command(self.ui.lineEditTidyCommand.text())
+
         # ROMs
+        settings.set_rom_usa(self.ui.lineEditRomUsa.text())
+        settings.set_rom_demo(self.ui.lineEditRomDemo.text())
+        settings.set_rom_eu(self.ui.lineEditRomEu.text())
+        settings.set_rom_jp(self.ui.lineEditRomJp.text())
 
         # Layouts
         settings.set_layouts(self.layouts_model.layouts)
+
+
+# Returns sha1 for a file path
+def calculate_sha1(path) -> str:
+    sha1 = hashlib.sha1()
+
+    with open(path, 'rb') as f:
+        while True:
+            data = f.read(65536) # BUF_SIZE
+            if not data:
+                break
+            sha1.update(data)
+    return sha1.hexdigest()
