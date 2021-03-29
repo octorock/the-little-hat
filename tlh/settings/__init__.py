@@ -1,7 +1,37 @@
 from PySide6.QtCore import QSettings, Signal
-
+from getpass import getuser
 settings = QSettings('octorock', 'the-little-hat')
 
+
+# General
+def get_username():
+    return settings.value('username', getuser())
+
+def set_username(username):
+    settings.setValue('username', username)
+
+def get_repo_location():
+    return settings.value('repo_location', '../tmc')
+
+def set_repo_location(repo):
+    settings.setValue('repo_location', repo)
+
+def get_build_command():
+    return settings.value('build_command', 'make -j8')
+
+def set_build_command(command):
+    settings.setValue('build_command', command)
+
+def get_tidy_command():
+    return settings.value('tidy_command', 'make tidy')
+
+def set_tidy_command(command):
+    settings.setValue('tidy_command', command)
+
+# ROMs
+
+
+# Layouts
 def get_window_state():
     return settings.value('windowState')
 

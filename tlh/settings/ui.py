@@ -4,9 +4,9 @@ import typing
 import PySide6
 from PySide6.QtGui import QKeySequence, QShortcut, QStandardItemModel
 from tlh import settings
-from PySide6.QtCore import QAbstractListModel, QModelIndex, QStringListModel, Qt
+from PySide6.QtCore import QAbstractListModel, QFile, QModelIndex, QStringListModel, Qt
 from tlh.ui.ui_settings import Ui_dialogSettings
-from PySide6.QtWidgets import QDialog, QDialogButtonBox, QListView
+from PySide6.QtWidgets import QDialog, QDialogButtonBox, QFileDialog, QListView
 
 
 class LayoutModel(QAbstractListModel):
@@ -87,6 +87,27 @@ class SettingsDialog(QDialog):
         self.ui = Ui_dialogSettings()
         self.ui.setupUi(self)
 
+        self.setup_general_tab()
+        self.setup_roms_tab()
+        self.setup_layouts_tab()
+
+
+    def setup_general_tab(self):
+        self.ui.lineEditUserName.setText(settings.get_username())
+        self.ui.lineEditRepoLocation.setText(settings.get_repo_location())
+        self.ui.toolButtonRepoLocation.clicked.connect(self.edit_repo_location)
+        self.ui.lineEditBuildCommand.setText(settings.get_build_command())
+        self.ui.lineEditTidyCommand.setText(settings.get_tidy_command())
+
+    def edit_repo_location(self):
+        dir = QFileDialog.getExistingDirectory(self, 'Location of the repository', self.ui.lineEditRepoLocation.text())
+        self.ui.lineEditRepoLocation.setText(dir)
+        #QFileDialog.getOpenFileName(self, 'Location of the repository', )
+
+    def setup_roms_tab(self):
+        pass
+
+    def setup_layouts_tab(self):
         layouts = settings.get_layouts()
 
         self.layouts_model = LayoutModel(layouts, self)
@@ -117,4 +138,12 @@ class SettingsDialog(QDialog):
 
 
     def save_settings(self):
+        # General
+        settings.set_username(self.ui.lineEditUserName.text())
+        settings.set_repo_location(self.ui.lineEditRepoLocation.text())
+        settings.set_build_command(self.ui.lineEditBuildCommand.text())
+        settings.set_tidy_command(self.ui.lineEditTidyCommand.text())
+        # ROMs
+
+        # Layouts
         settings.set_layouts(self.layouts_model.layouts)

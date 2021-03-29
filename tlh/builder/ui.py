@@ -1,3 +1,4 @@
+from tlh import settings
 from PySide6.QtCore import QProcess, QSize, Qt
 from PySide6.QtWidgets import QLabel, QPushButton, QSplitter, QTextEdit, QVBoxLayout, QWidget
 
@@ -59,7 +60,7 @@ class BuilderWidget (QWidget):
         # Use QProcess to start a program and get its outputs https://stackoverflow.com/a/22110924
         self.process = QProcess(self)
 
-        self.process.setWorkingDirectory('../tmc')  # TODO make configurable
+        self.process.setWorkingDirectory(settings.get_repo_location())
 
         self.process.readyReadStandardOutput.connect(self.readStdout)
         self.process.readyReadStandardError.connect(self.readStderr)
@@ -71,16 +72,11 @@ class BuilderWidget (QWidget):
 
     def doCompile(self):
         self.cleanupUI()
-#        self.process.start('make', ['-j', '8']) # TODO run nproc once and store the result?
-        self.process.start(
-            'ubuntu2004.exe', [
-                'run', 'cd ~/tmc/tmc && source /etc/profile.d/devkit-env.sh && make -j8'])
+        self.process.startCommand(settings.get_build_command())
 
     def doTidy(self):
         self.cleanupUI()
-#        self.process.start('make', ['tidy'])
-        self.process.start('ubuntu2004.exe', [
-                           'run', 'cd ~/tmc/tmc && source /etc/profile.d/devkit-env.sh && make tidy'])
+        self.process.startCommand(settings.get_tidy_command())
 
     def cleanupUI(self):
         self.stdoutText.setEnabled(True)
