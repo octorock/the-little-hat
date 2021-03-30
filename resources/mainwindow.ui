@@ -37,6 +37,8 @@
     <property name="title">
      <string>Tools</string>
     </property>
+    <addaction name="actionBuilder"/>
+    <addaction name="separator"/>
     <addaction name="actionSettings"/>
    </widget>
    <widget class="QMenu" name="menuLayouts">
@@ -71,6 +73,11 @@
   <action name="actionSettings">
    <property name="text">
     <string>Settings</string>
+   </property>
+  </action>
+  <action name="actionBuilder">
+   <property name="text">
+    <string>Builder</string>
    </property>
   </action>
  </widget>

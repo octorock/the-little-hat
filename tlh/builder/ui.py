@@ -60,8 +60,6 @@ class BuilderWidget (QWidget):
         # Use QProcess to start a program and get its outputs https://stackoverflow.com/a/22110924
         self.process = QProcess(self)
 
-        self.process.setWorkingDirectory(settings.get_repo_location())
-
         self.process.readyReadStandardOutput.connect(self.readStdout)
         self.process.readyReadStandardError.connect(self.readStderr)
         self.process.started.connect(self.processStarted)
@@ -72,10 +70,12 @@ class BuilderWidget (QWidget):
 
     def doCompile(self):
         self.cleanupUI()
+        self.process.setWorkingDirectory(settings.get_repo_location())
         self.process.startCommand(settings.get_build_command())
 
     def doTidy(self):
         self.cleanupUI()
+        self.process.setWorkingDirectory(settings.get_repo_location())
         self.process.startCommand(settings.get_tidy_command())
 
     def cleanupUI(self):

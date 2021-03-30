@@ -1,5 +1,6 @@
 import signal
 import sys
+from tlh.data.rom import Rom
 from tlh.settings.ui import SettingsDialog
 
 from PySide6.QtCore import Qt
@@ -10,6 +11,7 @@ from PySide6.QtWidgets import (QApplication, QDialog, QDockWidget,
 from tlh import settings
 from tlh.builder.ui import BuilderWidget
 from tlh.common.ui.dark_theme import apply_dark_theme
+from tlh.hexeditor.ui import HexEditorWidget
 from tlh.ui.ui_mainwindow import Ui_MainWindow
 from tlh.ui.ui_settings import Ui_dialogSettings
 
@@ -37,13 +39,12 @@ class MainWindow(QMainWindow):
         dock1.setWindowTitle('Temp1')
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock1)
 
-        # Restore layout
-        settings = QSettings('octorock', 'the-little-hat')
-        self.restoreState(settings.value('windowState'))
-        self.restoreGeometry(settings.value('geometry'))
+        dock2 = QDockWidget('Hex Editor', self)
+        dock2.setObjectName('dockHex')
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock2)
 
-        """         self.setWindowTitle('The Little Hat')
-        self.setWindowIcon(QIcon(':/icons/icon.png'))
+        rom = Rom(settings.get_rom_usa())
+        dock2.setWidget(HexEditorWidget(self, rom))
 
         # Restore layout
         self.restoreState(settings.get_window_state())

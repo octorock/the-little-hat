@@ -1,5 +1,6 @@
 from PySide6.QtCore import QSettings, Signal
 from getpass import getuser
+import multiprocessing
 settings = QSettings('octorock', 'the-little-hat')
 
 
@@ -17,7 +18,11 @@ def set_repo_location(repo):
     settings.setValue('repo_location', repo)
 
 def get_build_command():
-    return settings.value('build_command', 'make -j8')
+    command = settings.value('build_command', '__default__')
+    if command == '__default__':
+        # Build command using cpu count
+        command = 'make -j' + str(multiprocessing.cpu_count())
+    return command
 
 def set_build_command(command):
     settings.setValue('build_command', command)
