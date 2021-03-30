@@ -7,3 +7,6 @@ class Rom:
         # TODO apply constraints here?
         return self.bytes[from_index:to_index]
         
+    def length(self) -> int:
+        return len(self.bytes)
+        

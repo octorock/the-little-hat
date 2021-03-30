@@ -5,8 +5,8 @@ from tlh.settings.ui import SettingsDialog
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QIcon
-from PySide6.QtWidgets import (QApplication, QDialog, QDockWidget,
-                               QInputDialog, QMainWindow, QMenu, QMessageBox)
+from PySide6.QtWidgets import (QApplication, QDialog, QDockWidget, QHBoxLayout,
+                               QInputDialog, QMainWindow, QMenu, QMessageBox, QScrollBar, QWidget)
 
 from tlh import settings
 from tlh.builder.ui import BuilderWidget
@@ -44,7 +44,14 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock2)
 
         rom = Rom(settings.get_rom_usa())
-        dock2.setWidget(HexEditorWidget(self, rom))
+        hex_editor = QWidget(self)
+        layout = QHBoxLayout(hex_editor)
+        scrollBar = QScrollBar(hex_editor)
+        widget = HexEditorWidget(hex_editor, rom, scrollBar)
+        layout.addWidget(widget)
+        layout.addWidget(scrollBar)
+        hex_editor.setLayout(layout)
+        dock2.setWidget(hex_editor)
 
         # Restore layout
         self.restoreState(settings.get_window_state())

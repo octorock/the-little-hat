@@ -3,11 +3,11 @@
 
 from tlh.data.rom import Rom
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QBrush, QColor, QFont, QPainter
-from PySide6.QtWidgets import QWidget
+from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QResizeEvent
+from PySide6.QtWidgets import QScrollBar, QWidget
 
 class HexEditorWidget (QWidget):
-    def __init__(self, parent, rom: Rom):
+    def __init__(self, parent, rom: Rom, scroll_bar: QScrollBar):
         super().__init__(parent=parent)
         self.rom = rom
         self._number = 1
@@ -20,6 +20,38 @@ class HexEditorWidget (QWidget):
         self.font = QFont("DejaVu Sans Mono, Courier, Monospace", 12) # TODO make configurable
         self.label_color = QColor(128,128,128)
         self.byte_color = QColor(210,210,210)
+        self.scroll_bar = scroll_bar
+        self.setup_scroll_bar()
+        self.scroll_bar.valueChanged.connect(self.on_scroll_bar_changed)
+
+    def setup_scroll_bar(self):
+        # TODO call this again once the hex view has it's size / changes it's size
+        self.scroll_bar.setMinimum(0)
+        self.scroll_bar.setMaximum(self.number_of_rows() - self.number_of_lines_on_screen()+1)
+        self.scroll_bar.setPageStep(self.number_of_lines_on_screen())
+
+    def on_scroll_bar_changed(self, value):
+        self.start_offset = value * self.bytes_per_line
+        self.update()
+
+    def wheelEvent(self, event):
+        # TODO make scroll speed configurable
+        lines_delta = - int( event.angleDelta().y() / self.line_height) * self.bytes_per_line
+        if lines_delta <= 0:
+            self.update_start_offset(max(self.start_offset + lines_delta, 0))
+        else:
+            self.update_start_offset(min(self.start_offset + lines_delta,
+			                     (self.number_of_rows() - self.number_of_lines_on_screen() + 1)*self.bytes_per_line))
+
+        self.update()
+
+    def update_start_offset(self, offset):
+        self.start_offset = offset
+        self.scroll_bar.setValue(offset//self.bytes_per_line)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        self.setup_scroll_bar()
+        return super().resizeEvent(event)
 
     def paintEvent(self, ev):
         p = QPainter(self)
@@ -49,3 +81,9 @@ class HexEditorWidget (QWidget):
 
     def number_of_lines_on_screen(self):
         return int (self.height() // self.line_height) + 1 # +1 to draw cutof lines as well
+
+    def number_of_rows(self):
+        num_rows = self.rom.length() // self.bytes_per_line
+        if self.rom.length() % self.bytes_per_line > 0:
+            num_rows += 1
+        return num_rows
