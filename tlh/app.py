@@ -44,10 +44,11 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock2)
 
         rom = Rom(settings.get_rom_usa())
+        rom2 = Rom(settings.get_rom_demo())
         hex_editor = QWidget(self)
         layout = QHBoxLayout(hex_editor)
         scrollBar = QScrollBar(hex_editor)
-        widget = HexEditorWidget(hex_editor, rom, scrollBar)
+        widget = HexEditorWidget(hex_editor, rom, rom2, scrollBar)
         layout.addWidget(widget)
         layout.addWidget(scrollBar)
         hex_editor.setLayout(layout)

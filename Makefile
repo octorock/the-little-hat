@@ -59,4 +59,8 @@ ifeq ($(OS),Windows_NT)
 else
 	. venv/bin/activate; python main.py
 endif
-.PHONY: init clean tidy run
+
+test:
+	# for issues see https://docs.pytest.org/en/stable/goodpractices.html#tests-outside-application-code
+	python -m pytest
+.PHONY: init clean tidy run test
