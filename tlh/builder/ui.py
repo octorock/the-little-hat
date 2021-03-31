@@ -85,16 +85,18 @@ class BuilderWidget (QWidget):
         self.stderrText.setPlainText('')
 
     def readStdout(self):
-        lines = self.process.readAllStandardOutput().data().decode()[:-1].split('\n')
+        lines = self.process.readAllStandardOutput().data().decode()[
+            :-1].split('\n')
         for line in lines:
             if line == 'tmc.gba: FAILED':
                 line = 'tmc.gba: <b style="color:red">FAILED</b>'
             elif line == 'tmc.gba: OK':
                 line = 'tmc.gba: <b style="color:lime">OK</b>'
             self.stdoutText.append(line)
-    
+
     def readStderr(self):
-        lines = self.process.readAllStandardError().data().decode()[:-1].split('\n')
+        lines = self.process.readAllStandardError().data().decode()[
+            :-1].split('\n')
         for line in lines:
             if 'error' in line.lower():
                 line = f'<span style="color:red">{line}</span>'
@@ -102,7 +104,6 @@ class BuilderWidget (QWidget):
                 line = f'<span style="color:orange">{line}</span>'
 
             self.stderrText.append(line)
-        
 
     def processStarted(self):
         self.compileButton.setEnabled(False)

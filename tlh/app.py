@@ -68,7 +68,7 @@ class MainWindow(QMainWindow):
         if res:
             layouts = settings.get_layouts()
 
-            if layout_name in layouts: # TODO
+            if layout_name in layouts:  # TODO
                 res = QMessageBox.question(
                     self, 'Save Layout', f'Do you want to overwrite the existing layout {layout_name}?')
 
@@ -95,7 +95,7 @@ class MainWindow(QMainWindow):
         actionSaveLayout.triggered.connect(self.save_layout)
         # TODO how to reset the layout?
         #actionResetLayout = QAction('Reset Layout', self.ui.menuLayouts)
-        #self.ui.menuLayouts.addAction(actionResetLayout)
+        # self.ui.menuLayouts.addAction(actionResetLayout)
         #actionResetLayout.triggered.connect(lambda: self.restoreState(None))
         self.ui.menuLayouts.addSeparator()
 
@@ -133,7 +133,8 @@ class MainWindow(QMainWindow):
         dialog.finished.connect(self.settings_dialog_closed)
 
     def settings_dialog_closed(self, result: int):
-        self.build_layouts_toolbar() # TODO would be nicer with a signal in the settings, but that would require the settings to be a QObject
+        # TODO would be nicer with a signal in the settings, but that would require the settings to be a QObject
+        self.build_layouts_toolbar()
 
     def show_about_dialog(self):
         QMessageBox.about(self, 'The Little Hat',

@@ -13,13 +13,16 @@ import pytest
 # J: RomVariation.JP
 # - between numbers denotes that these two are connected with a constraint
 
+
 def assert_same_address(manager: ConstraintManager, rom: RomVariant, address: int) -> None:
     assert address == manager.to_virtual(rom, address)
     assert address == manager.to_local(rom, address)
 
+
 def assert_differing_address(manager: ConstraintManager, rom: RomVariant, local_address: int, virtual_address: int) -> None:
     assert virtual_address == manager.to_virtual(rom, local_address)
     assert local_address == manager.to_local(rom, virtual_address)
+
 
 def test_no_constaints():
     manager = ConstraintManager({RomVariant.USA, RomVariant.EU})
@@ -37,11 +40,12 @@ def test_no_constaints():
     with pytest.raises(RomVariantNotAddedError):
         assert_same_address(manager, RomVariant.DEMO, 0)
 
+
 def test_first_constraint():
     # v  U D
     # 0  0 0
     # 1  x 1
-    # 2  1-2 
+    # 2  1-2
     # 3  2 3
     # 4  3
     manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO})
@@ -62,6 +66,7 @@ def test_first_constraint():
     assert_differing_address(manager, RomVariant.USA, 0xffffff, 0xffffff+1)
     print('---')
     assert -1 == manager.to_local(RomVariant.USA, 1)
+
 
 def test_longer_constraint():
     # v   E   J
@@ -94,7 +99,7 @@ def add_j_e_constraint(manager: ConstraintManager, jp_address: int, eu_address: 
     constraint.addressB = eu_address
     manager.add_constraint(constraint)
 
-#def test_two_constraints():
+# def test_two_constraints():
     # v J E
     # 0 0 0
     # 1 x 1

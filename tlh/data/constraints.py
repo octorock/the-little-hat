@@ -1,6 +1,7 @@
 from tlh.const import RomVariant
 from dataclasses import dataclass
 
+
 class Constraint:
     """
     A constraint defines that two local addresses of different rom variants should be at the same virtual address
@@ -12,19 +13,22 @@ class Constraint:
     certainty: int = 0
     note: str = None
 
+
 class RomRelation:
     def __init__(self, local_address: int, virtual_address: int):
         self.local_address = local_address
         self.virtual_address = virtual_address
 
+
 class RomRelations:
     """
     A rom relation defines the relation between a local address for this rom variant and the corresponding virtual address
     """
+
     def __init__(self, romVariant: RomVariant) -> None:
         self.romVariant = romVariant
         self.relations: list[RomRelation] = []
-    
+
     def add_relation(self, local_address: int, virtual_address: int):
         # TODO keep relations list sorted
         self.relations.append(RomRelation(local_address, virtual_address))
@@ -46,7 +50,7 @@ class RomRelations:
 
     def get_prev_and_next_relation_for_virtual_address(self, virtual_address: int) -> (RomRelation, RomRelation):
         prev = None
-        
+
         # TODO use binary search
         for relation in self.relations:
             if relation.virtual_address > virtual_address:
@@ -56,11 +60,13 @@ class RomRelations:
         print('last', virtual_address)
         return (prev, None)
 
+
 @dataclass
 class Hint:
     local_address: int
     rom_variant: RomVariant
     rom_address: int
+
 
 class ConstraintManager:
     def __init__(self, variants: set[RomVariant]) -> None:
@@ -72,11 +78,9 @@ class ConstraintManager:
         self.rom_relations: dict[str, RomRelations] = {}
         for variant in variants:
             self.rom_relations[variant] = RomRelations(variant)
-            
-
 
     def add_constraint(self, constraint: Constraint) -> None:
-        self.constraints.append(constraint) # TODO add at the correct place
+        self.constraints.append(constraint)  # TODO add at the correct place
         self.rebuild_relations()
 
     def rebuild_relations(self) -> None:
@@ -91,17 +95,17 @@ class ConstraintManager:
             local_hints[variant] = []
             self.rom_relations[variant].clear()
 
-
         constraints = self.constraints.copy()
 
-        while constraints: # not empty
+        while constraints:  # not empty
 
             # get constraint with the lowest virtual address
             # TODO is there a way to keep the list sorted by these virtual addresses which are constantly changing with each new constraint?
             selected_constraint = constraints[0]
             selected_variant = constraints[0].romA
             selected_local_address = constraints[0].addressA
-            selected_virtual_address = self.to_virtual(selected_variant, selected_local_address)
+            selected_virtual_address = self.to_virtual(
+                selected_variant, selected_local_address)
 
             for constraint in constraints:
                 # handle A
@@ -129,17 +133,22 @@ class ConstraintManager:
             virtual_address_offset = selected_virtual_address - virtual_address
             # Advance all local addresses to this virtual address
             for variant in self.variants:
-                local_address = local_addresses[variant] + virtual_address_offset
+                local_address = local_addresses[variant] + \
+                    virtual_address_offset
                 local_addresses[variant] = local_address
                 # TODO handle hints
 
             # for the lower address of the constraint, add a relation to the current virtual address
-            virtual_address_a = self.to_virtual(selected_variant, selected_constraint.addressA)
-            virtual_address_b = self.to_virtual(selected_variant, selected_constraint.addressB)
+            virtual_address_a = self.to_virtual(
+                selected_variant, selected_constraint.addressA)
+            virtual_address_b = self.to_virtual(
+                selected_variant, selected_constraint.addressB)
             if virtual_address_a < virtual_address_b:
-                self.rom_relations[selected_constraint.romA].add_relation(selected_constraint.addressA, virtual_address_b)
+                self.rom_relations[selected_constraint.romA].add_relation(
+                    selected_constraint.addressA, virtual_address_b)
             else:
-                self.rom_relations[selected_constraint.romB].add_relation(selected_constraint.addressB, virtual_address_a)
+                self.rom_relations[selected_constraint.romB].add_relation(
+                    selected_constraint.addressB, virtual_address_a)
             # TODO addresses are the same -> insert both constraints here
 
         # while constraints exist
@@ -148,7 +157,6 @@ class ConstraintManager:
             # TODO if there are hints left until there, handle them
             # for the lower address of the constraint, add a relation to the current virtual address
             # add a hint for the higher address to be inserted later
-
 
         # for constraint in self.constraints:
         #     # Add relation to rom variant with the lower address
@@ -170,7 +178,8 @@ class ConstraintManager:
         if not rom in self.variants:
             raise RomVariantNotAddedError()
 
-        (prev, next) = self.rom_relations[rom].get_prev_and_next_relation_for_virtual_address(virtual_address)
+        (prev, next) = self.rom_relations[rom].get_prev_and_next_relation_for_virtual_address(
+            virtual_address)
         if prev is None:
             if next is not None:
                 if virtual_address >= next.local_address:
@@ -199,7 +208,8 @@ class ConstraintManager:
         if not rom in self.variants:
             raise RomVariantNotAddedError()
 
-        relation = self.rom_relations[rom].get_previous_relation_for_local_address(local_address)
+        relation = self.rom_relations[rom].get_previous_relation_for_local_address(
+            local_address)
         if relation is None:
             print('passing')
             return local_address
@@ -214,5 +224,7 @@ class RomVariantNotAddedError(Exception):
     pass
 
 # TODO pass the other constraint(s) it is invalid against?
+
+
 class InvalidConstraintError(Exception):
     pass
