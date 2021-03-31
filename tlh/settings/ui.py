@@ -1,9 +1,8 @@
-from sys import flags
 from tlh.const import SHA1_DEMO, SHA1_EU, SHA1_JP, SHA1_USA
 import typing
 
 import PySide6
-from PySide6.QtGui import QKeySequence, QShortcut, QStandardItemModel
+from PySide6.QtGui import QKeySequence, QShortcut
 from tlh import settings
 from PySide6.QtCore import QAbstractListModel, QFile, QModelIndex, QStringListModel, Qt
 from tlh.ui.ui_settings import Ui_dialogSettings
