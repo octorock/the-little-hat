@@ -5,10 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: main.py",
+            "name": "Run The Little Hat",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
-        }
+        },
+        {
+            "name": "Execute tests",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest"
+        },
     ]
 }
