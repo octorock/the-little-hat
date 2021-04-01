@@ -34,6 +34,8 @@ class RomRelations:
         if local_address > virtual_address:
             print(f'{self.romVariant} l{local_address} v{virtual_address}')
             assert False
+
+        print(f'-> Add relation {self.romVariant} l{local_address} v{virtual_address}')
         # TODO keep relations list sorted
         self.relations.append(RomRelation(local_address, virtual_address))
 
@@ -105,6 +107,20 @@ class ConstraintManager:
 
         constraints = self.constraints.copy()
 
+        # Keeps into account the probable virtual positions of the blocker as well
+        def to_virtual_with_blockers(variant: RomVariant, local_address:int)->int:
+            va = self.to_virtual(variant, local_address)
+
+            # increase the va if there is a higher blocker
+            for blocker in local_blockers[variant]:
+                if blocker.local_address <= local_address:
+                    blocker_va = self.to_virtual(blocker.rom_variant, blocker.rom_address)
+                    blocker_va += local_address-blocker.local_address
+                    if blocker_va > va:
+                        va = blocker_va
+            return va
+
+
         while constraints:  # not empty
 
             # get constraint with the lowest virtual address
@@ -112,14 +128,14 @@ class ConstraintManager:
             selected_constraint = constraints[0]
             selected_variant = constraints[0].romA
             selected_local_address = constraints[0].addressA
-            selected_virtual_address = self.to_virtual(
+            selected_virtual_address = to_virtual_with_blockers(
                 selected_variant, selected_local_address)
 
             for constraint in constraints:
                 # handle A
                 variant_a = constraint.romA
                 local_address_a = constraint.addressA
-                virtual_address_a = self.to_virtual(variant_a, local_address_a)
+                virtual_address_a = to_virtual_with_blockers(variant_a, local_address_a)
                 if virtual_address_a < selected_virtual_address:
                     selected_constraint = constraint
                     selected_variant = variant_a
@@ -128,7 +144,7 @@ class ConstraintManager:
                 # handle B
                 variant_b = constraint.romB
                 local_address_b = constraint.addressB
-                virtual_address_b = self.to_virtual(variant_b, local_address_b)
+                virtual_address_b = to_virtual_with_blockers(variant_b, local_address_b)
                 if virtual_address_b < selected_virtual_address:
                     selected_constraint = constraint
                     selected_variant = variant_b
@@ -160,12 +176,18 @@ class ConstraintManager:
                         still_blocking = True
                         break
                     else:
+                        print(f'Resolve {blocker}')
+                        # Insert relation here
+                        blocked_bytes = next_local_addresses[variant] - blocker.local_address
+                        
+                        # TODO calculate which relation is actually needed here? or make a subpass deleting unnecessary relations?
+                        self.rom_relations[variant].add_relation(blocker.local_address, to_virtual_with_blockers(blocker.rom_variant, blocker.rom_address))
+                        # self.rom_relations[blocker.rom_variant].add_relation(blocker.rom_address, to_virtual_with_blockers(variant, blocker.local_address))
+
+                        print(f'blcoked {blocked_bytes}')
+                        next_local_addresses[variant] -= blocked_bytes # TODO what to actually substract here?
                         local_blockers[variant].remove(blocker)
                         local_blockers_count -= 1
-                        # Insert relation here
-                        blocked_bytes = next_local_addresses[variant] - blocker.local_address - 1
-                        self.rom_relations[variant].add_relation(blocker.local_address, self.to_virtual(blocker.rom_variant, blocker.rom_address))
-                        next_local_addresses[variant] -= blocked_bytes # TODO what to actually substract here?
             
                 if still_blocking:
                     # This variant can not advance yet
@@ -180,11 +202,25 @@ class ConstraintManager:
             virtual_address_b = self.to_virtual(
                 selected_variant, selected_constraint.addressB)
             if virtual_address_a < virtual_address_b:
-                local_blockers[selected_constraint.romA].append(Blocker(
-                    selected_constraint.addressA, selected_constraint.romB, selected_constraint.addressB))
+                blocker = Blocker(
+                    selected_constraint.addressA, selected_constraint.romB, selected_constraint.addressB)
+                print(f'add blocker {blocker}')
+                local_blockers[selected_constraint.romA].append(blocker)
+                # TODO Really?
+                blocker = Blocker(
+                    selected_constraint.addressB, selected_constraint.romA, selected_constraint.addressA)
+                print(f'add blocker {blocker}')
+                local_blockers[selected_constraint.romB].append(blocker)
             else:
-                local_blockers[selected_constraint.romB].append(Blocker(
-                    selected_constraint.addressB, selected_constraint.romA, selected_constraint.addressA))
+                blocker = Blocker(
+                    selected_constraint.addressB, selected_constraint.romA, selected_constraint.addressA)
+                print(f'add blocker {blocker}')
+                local_blockers[selected_constraint.romB].append(blocker)
+                # TODO really?
+                blocker = Blocker(
+                    selected_constraint.addressA, selected_constraint.romB, selected_constraint.addressB)
+                print(f'add blocker {blocker}')
+                local_blockers[selected_constraint.romA].append(blocker)
             local_blockers_count += 1
             # TODO addresses are the same -> insert both constraints here
 
@@ -205,7 +241,7 @@ class ConstraintManager:
             for variant in self.variants:
                 for blocker in local_blockers[variant]:
                     # TODO only need to look at first one, if the list stays ordered?
-                    virtual_address_x = self.to_virtual(blocker.rom_variant, blocker.rom_address)
+                    virtual_address_x = to_virtual_with_blockers(blocker.rom_variant, blocker.rom_address)
                     if virtual_address_x < selected_virtual_address:
                         selected_local_blocker = blocker
                         selected_virtual_address = virtual_address_x
@@ -220,7 +256,7 @@ class ConstraintManager:
             virtual_address_offset = selected_local_blocker.rom_address - local_addresses[selected_local_blocker.rom_variant]
 
             virtual_address = virtual_address + virtual_address_offset
-            self.rom_relations[selected_variant].add_relation(selected_local_blocker.local_address, self.to_virtual(selected_local_blocker.rom_variant, selected_local_blocker.rom_address))
+            self.rom_relations[selected_variant].add_relation(selected_local_blocker.local_address, to_virtual_with_blockers(selected_local_blocker.rom_variant, selected_local_blocker.rom_address))
             # advance all local addresses
             next_local_addresses = {}
             for variant in self.variants:
@@ -237,11 +273,15 @@ class ConstraintManager:
                         still_blocking = True
                         break
                     else:
+                        print(f'Resolve {blocker}')
                         local_blockers[variant].remove(blocker)
                         local_blockers_count -= 1
                         # Insert relation here
-                        offset = next_local_addresses[blocker.rom_variant] - blocker.rom_address
-                        self.rom_relations[variant].add_relation(blocker.local_address, selected_virtual_address - offset)
+                        blocked_bytes = next_local_addresses[variant] - blocker.local_address - 1
+                        self.rom_relations[variant].add_relation(blocker.local_address, to_virtual_with_blockers(blocker.rom_variant, blocker.rom_address))
+                        #self.rom_relations[variant].add_relation(blocker.local_address, self.to_virtual(blocker.rom_variant, blocker.rom_address))
+                        
+                        next_local_addresses[variant] -= blocked_bytes # TODO what to actually substract here?
             
                 if still_blocking:
                     # This variant can not advance yet
