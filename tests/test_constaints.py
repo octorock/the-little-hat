@@ -1,7 +1,7 @@
 
 
 from tlh.const import RomVariant
-from tlh.data.constraints import Constraint, ConstraintManager, RomVariantNotAddedError
+from tlh.data.constraints import Constraint, ConstraintManager, RomVariantNotAddedError, InvalidConstraintError
 import pytest
 
 # The tables in this file are showing the configuration of the constraints
@@ -12,7 +12,6 @@ import pytest
 # E: RomVariation.EU
 # J: RomVariation.JP
 # - between numbers denotes that these two are connected with a constraint
-
 
 def assert_same_address(manager: ConstraintManager, rom: RomVariant, address: int) -> None:
     assert address == manager.to_virtual(rom, address)
@@ -93,6 +92,19 @@ def test_longer_constraint():
     assert_differing_address(manager, RomVariant.EU, 1, 100)
     assert_differing_address(manager, RomVariant.EU, 100, 199)
 
+def test_sparse_constraint():
+    # v        E   J
+    # 0        0   0
+    # 1        x   1
+    # ...      ... ...
+    # 0xffffff 1---0xffffff
+    manager = ConstraintManager({RomVariant.EU, RomVariant.JP})
+    add_j_e_constraint(manager, 0xffffff, 1)
+    manager.rebuild_relations()
+    assert_j_e_address(manager, 0,0,0)
+    assert_j_e_address(manager, 1,1,-1)
+    assert_j_e_address(manager, 0xfffffe,0xfffffe, -1)
+    assert_j_e_address(manager, 0xffffff,0xffffff, 1)
 
 def add_j_e_constraint(manager: ConstraintManager, jp_address: int, eu_address: int):
     constraint = Constraint()
@@ -248,8 +260,114 @@ def test_close_constraints():
     assert_j_e_address(manager, 10,-1,7)
     assert_j_e_address(manager, 11,-1,8)
     assert_j_e_address(manager, 12,9,9)
+
+def test_conflicting_constraint():
+    with pytest.raises(InvalidConstraintError):
+        manager = ConstraintManager({RomVariant.JP, RomVariant.EU})
+        add_j_e_constraint(manager, 1, 0)
+        add_j_e_constraint(manager, 1, 3)
+        manager.rebuild_relations()
+        manager.print_relations()
+
+def test_conflicting_constraint_cross():
+    with pytest.raises(InvalidConstraintError):
+        manager = ConstraintManager({RomVariant.JP, RomVariant.EU})
+        add_j_e_constraint(manager, 1, 3)
+        add_j_e_constraint(manager, 3, 1)
+        manager.rebuild_relations()
+        manager.print_relations()
+
+def test_conflicting_constraints_loop():
+    with pytest.raises(InvalidConstraintError):
+        manager = ConstraintManager({RomVariant.JP, RomVariant.EU, RomVariant.USA})
+        add_u_j_constraint(manager, 1, 3)
+        add_j_e_constraint(manager, 4, 6)
+        add_u_e_constraint(manager, 2, 7)
+        manager.rebuild_relations()
+        manager.print_relations()
+
+def add_u_j_constraint(manager: ConstraintManager, usa_address: int, jp_address: int):
+    constraint = Constraint()
+    constraint.romA = RomVariant.USA
+    constraint.addressA = usa_address
+    constraint.romB = RomVariant.JP
+    constraint.addressB = jp_address
+    manager.add_constraint(constraint)
+
+def add_u_e_constraint(manager: ConstraintManager, usa_address: int, eu_address: int):
+    constraint = Constraint()
+    constraint.romA = RomVariant.USA
+    constraint.addressA = usa_address
+    constraint.romB = RomVariant.EU
+    constraint.addressB = eu_address
+    manager.add_constraint(constraint)
+
+
+def assert_u_j_e_address(manager: ConstraintManager, virtual_address:int, usa_address:int, jp_address:int, eu_address:int):
+    assert_differing_address(manager, RomVariant.USA, usa_address, virtual_address)
+    assert_differing_address(manager, RomVariant.JP, jp_address, virtual_address)
+    assert_differing_address(manager, RomVariant.EU, eu_address, virtual_address)
+
+
+def test_three_roms():
+    # v U J E
+    # 0 0 0 0 
+    # 1 1 x 1
+    # 2 2-1 x
+    # 3 3 2-2
+    # 4 4 3 3
+    manager = ConstraintManager({RomVariant.USA, RomVariant.JP, RomVariant.EU})
+    add_u_j_constraint(manager, 2, 1)
+    add_j_e_constraint(manager, 2, 2)
+    manager.rebuild_relations()
+    manager.print_relations()
+
+    assert_u_j_e_address(manager, 0,0,0,0)
+    assert_u_j_e_address(manager, 1, 1, -1, 1)
+    assert_u_j_e_address(manager, 2, 2, 1, -1)
+    assert_u_j_e_address(manager, 3, 3, 2, 2)
+    assert_u_j_e_address(manager, 4, 4, 3, 3)
+
+def test_three_cycle():
+    # v U J E
+    # 0 0 0 0 
+    # 1 x 1 1
+    # 2 1-2-2-
+    # 3 2 3 x
+    # 4 3 4-3
+    # 5 x 5 4
+    # 6 4 6 5-
+    manager = ConstraintManager({RomVariant.USA, RomVariant.JP, RomVariant.EU})
+    add_u_j_constraint(manager, 1, 2)
+    add_j_e_constraint(manager, 2, 2)
+    add_u_e_constraint(manager, 1, 2)
+    add_j_e_constraint(manager, 4, 3)
+    add_u_e_constraint(manager, 4, 5)
+    manager.rebuild_relations()
+    manager.print_relations()
+    assert_u_j_e_address(manager, 0,0,0,0)
+    assert_u_j_e_address(manager, 1,-1,1,1)
+    assert_u_j_e_address(manager, 2,1,2,2)
+    assert_u_j_e_address(manager, 3,2,3,-1)
+    assert_u_j_e_address(manager, 4,3,4,3)
+    assert_u_j_e_address(manager, 5,-1,5,4)
+    assert_u_j_e_address(manager, 6,4,6,5)
+
+
+def test_four_roms():
+    # v U J E D
+    # 0 0 0 0 0
+    # 1 1 x x x
+    # 2 2-1 x x
+    # 3 3 2-1 x
+    # 4 4 3 2-1
+    # 5-5 4 3 2-
+    #
+    pass
+
 # TODO
 # add situation with conflicting constraint
 # add constraints between three files
 # add constraints between four files
 # add cyclic constraints?
+# generate a lot of trivial constraints
