@@ -22,7 +22,7 @@ class RomRelation:
 
 
 def log(*argv):
-    print(*argv)
+    #print(*argv)
     pass
 
 class RomRelations:
@@ -114,7 +114,6 @@ class ConstraintManager:
 
 
         virtual_address = -1
-        va_prev = -1
         for tmp_counter in range(0, 0x0fffffff): # TODO at that point all roms should have been resolved
 
 
@@ -152,7 +151,7 @@ class ConstraintManager:
             can_advance = {}
             for variant in self.variants:
                 next_local_addresses[variant] = local_addresses[variant] + offset
-                print(f'{variant} wants to {local_addresses[variant]} -> {next_local_addresses[variant]}')
+                log(f'{variant} wants to {local_addresses[variant]} -> {next_local_addresses[variant]}')
                 can_advance[variant] = True
 
             for variant in self.variants:
@@ -241,6 +240,7 @@ class ConstraintManager:
             if self.to_virtual(constraint.romA, constraint.addressA) != self.to_virtual(constraint.romB, constraint.addressB):
                 log(f'{constraint} not fulfilled')
                 self.print_relations()
+                # assert False
                 raise InvalidConstraintError()
             # assert self.to_virtual(constraint.romA, constraint.addressA) == self.to_virtual(constraint.romB, constraint.addressB) 
 

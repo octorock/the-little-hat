@@ -92,7 +92,7 @@ def test_longer_constraint():
     assert_differing_address(manager, RomVariant.EU, 1, 100)
     assert_differing_address(manager, RomVariant.EU, 100, 199)
 
-def x_test_sparse_constraint():
+def test_sparse_constraint():
     # v        E   J
     # 0        0   0
     # 1        x   1
@@ -392,11 +392,105 @@ def test_four_roms():
     add_e_d_constraint(manager, 2, 1)
     add_u_d_constraint(manager, 5, 2)
     add_u_j_constraint(manager, 5, 4)
-    
     manager.rebuild_relations()
     manager.print_relations()
-    assert_u_j_e_address(manager, 0,0,0,0)
+    assert_u_j_e_d_address(manager, 0,0,0,0,0)
+    assert_u_j_e_d_address(manager, 1,1,-1,-1,-1)
+    assert_u_j_e_d_address(manager, 2,2,1,-1,-1)
+    assert_u_j_e_d_address(manager, 3,3,2,1,-1)
+    assert_u_j_e_d_address(manager, 4,4,3,2,1)
+    assert_u_j_e_d_address(manager, 5,5,4,3,2)
+    assert_u_j_e_d_address(manager, 6,6,5,4,3)
 
+
+
+def test_bigger_offsets():
+    #   v   U   J   E   D
+    #   0   0   0   0   0
+    #   9   9   9   9   9
+    #  10   x  10  10  10
+    #  19   x  19
+    #  20  10--20
+    #  39      39
+    #  40       x
+    #  50      40--50
+    #  69          69
+    #  90          70--90
+    #  99  89  89  79  99
+    # 100  90  90  80   x
+    #     120         100-
+    manager = ConstraintManager({RomVariant.USA, RomVariant.JP, RomVariant.EU, RomVariant.DEMO})
+    add_u_j_constraint(manager, 10, 20)
+    add_j_e_constraint(manager, 40, 50)
+    add_e_d_constraint(manager, 70,90)
+    add_u_d_constraint(manager, 120, 100)
+    manager.rebuild_relations()
+    manager.print_relations()
+    assert_u_j_e_d_address(manager, 9,9,9,9,9)
+    assert_u_j_e_d_address(manager, 10,-1,10,10,10)
+    assert_u_j_e_d_address(manager, 19,-1,19,19,19)
+    assert_u_j_e_d_address(manager, 20,10,20,20,20)
+    assert_u_j_e_d_address(manager, 39,29,39,39,39)
+    assert_u_j_e_d_address(manager, 40,30,-1,40,40)
+    assert_u_j_e_d_address(manager, 50,40,40,50,50)
+    assert_u_j_e_d_address(manager, 69,59,59,69,69)
+    assert_u_j_e_d_address(manager, 90,80,80,70,90)
+    assert_u_j_e_d_address(manager, 99,89,89,79,99)
+    assert_u_j_e_d_address(manager, 100,90,90,80,-1)
+    assert_u_j_e_d_address(manager, 130,120,120,110,100)
+
+
+def test_many_small_differences():
+    #  v  U  J  E  D
+    #  0  0  0  0  0
+    #  1  1  x
+    #  2  2  x
+    #  3  3--1     3
+    #  4  4  2     x
+    #  5  5  3  5--4-
+    #  6  x  x  6
+    #  7  x  4--7
+    #  8  x  5  8
+    #  9  6--6  x  8
+    # 10  x  7  x  x
+    # 11  7--8--9--9  # constraints from J to all
+    # 12  8  9  x 10
+    # 13  9 10 10-11
+    # 14  x 11-11 x
+    # 15 10-12 12 x
+    # 16 11 13 13-12
+    manager = ConstraintManager({RomVariant.USA, RomVariant.JP, RomVariant.EU, RomVariant.DEMO})
+    add_u_d_constraint(manager, 5, 4)
+    add_u_j_constraint(manager, 10, 12)
+    add_u_j_constraint(manager, 3, 1)
+    manager.add_constraint(Constraint(RomVariant.JP, 8, RomVariant.DEMO, 9))
+    add_j_e_constraint(manager, 4, 7)
+    add_u_j_constraint(manager, 6, 6)
+    add_j_e_constraint(manager, 8, 9)
+    add_j_e_constraint(manager, 11, 11)
+    add_e_d_constraint(manager, 13, 12)
+    add_e_d_constraint(manager, 5, 4)
+    add_u_j_constraint(manager, 7, 8)
+    add_e_d_constraint(manager, 10, 11)
+    manager.rebuild_relations()
+    manager.print_relations()
+    assert_u_j_e_d_address(manager, 0,0,0,0,0)
+    assert_u_j_e_d_address(manager, 1,1,-1,1,1)
+    assert_u_j_e_d_address(manager, 2,2,-1,2,2)
+    assert_u_j_e_d_address(manager, 3,3,1,3,3)
+    assert_u_j_e_d_address(manager, 4,4,2,4,-1)
+    assert_u_j_e_d_address(manager, 5,5,3,5,4)
+    assert_u_j_e_d_address(manager, 6,-1,-1,6,5)
+    assert_u_j_e_d_address(manager, 7,-1,4,7,6)
+    assert_u_j_e_d_address(manager, 8,-1,5,8,7)
+    assert_u_j_e_d_address(manager, 9,6,6,-1,8)
+    assert_u_j_e_d_address(manager, 10, -1,7,-1,-1)
+    assert_u_j_e_d_address(manager, 11, 7,8,9,9)
+    assert_u_j_e_d_address(manager, 12, 8,9,-1,10)
+    assert_u_j_e_d_address(manager, 13,9,10,10,11)
+    assert_u_j_e_d_address(manager, 14,-1,11,11,-1)
+    assert_u_j_e_d_address(manager, 15,10,12,12,-1)
+    assert_u_j_e_d_address(manager, 16, 11,13,13,12)
 
 
 def x_test_many_trivial_constraints():
@@ -408,6 +502,3 @@ def x_test_many_trivial_constraints():
     manager.rebuild_relations()
     for i in range(0, CONSTRAINT_COUNT):
         assert_j_e_address(manager, i,i,i)
-
-# TODO
-# add cyclic constraints?
