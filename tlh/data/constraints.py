@@ -22,7 +22,7 @@ class RomRelation:
 
 
 def log(*argv):
-    pass
+    print(*argv)
 
 class RomRelations:
     """
@@ -111,17 +111,45 @@ class ConstraintManager:
 
         constraints = self.constraints.copy()
 
-        for virtual_address in range(0, 0x0fffffff): # TODO at that point all roms should have been resolved
 
-            log(virtual_address)
+        virtual_address = -1
+        va_prev = -1
+        for tmp_counter in range(0, 0x0fffffff): # TODO at that point all roms should have been resolved
+
+
             # Stop the loop if all constraints and blockers are resolved
             if not constraints and local_blockers_count == 0:
                 break
 
+            # Optimization? Jump to the next interesting virtual address
+            # - next blocker with blocker.rom_variant:blocker.rom_address
+            # - next constraint with romA:addressA or romB:addressB
+            next_virtual_address = 0x0fffffff
+            for variant in self.variants:
+                for blocker in local_blockers[variant]:
+                    va = self.to_virtual(blocker.rom_variant, blocker.rom_address)
+                    if va < next_virtual_address:
+                        next_virtual_address = va
+
+            for constraint in constraints:
+                va = self.to_virtual(constraint.romA, constraint.addressA)
+                if va < next_virtual_address:
+                    next_virtual_address = va
+                va = self.to_virtual(constraint.romB, constraint.addressB)
+                if va < next_virtual_address:
+                    next_virtual_address = va
+
+            offset = next_virtual_address - virtual_address
+            if offset <= 0: # TODO why is this necessary? should the corresponding constraint/blocker not have been removed in the previous iteration?
+                offset = 1
+            virtual_address += offset
+
+            log(f'-- Go to {virtual_address} (+{offset})')
+
             # Advance all local_addresses where there is no blocker
             next_local_addresses = {}
             for variant in self.variants:
-                next_local_addresses[variant] = local_addresses[variant] + 1
+                next_local_addresses[variant] = local_addresses[variant] + offset
 
             can_continue = False
             for variant in self.variants:
@@ -189,6 +217,8 @@ class ConstraintManager:
                     log(f'add blocker {blocker}')
                     local_blockers[constraint.romB].append(blocker)
                     local_blockers_count += 1
+            
+            va_prev = virtual_address
 
         # Check all constraints again
         # TODO remove this once we always find all invalid constraints before
