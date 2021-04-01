@@ -143,7 +143,6 @@ class ConstraintManager:
             offset = next_virtual_address - virtual_address
             if offset <= 0: # TODO why is this necessary? should the corresponding constraint/blocker not have been removed in the previous iteration?
                 offset = 1
-            offset = 1
             virtual_address += offset
 
             log(f'-- Go to {virtual_address} (+{offset})')
@@ -200,6 +199,8 @@ class ConstraintManager:
                     log(f'add blocker {blocker}')
                     local_blockers[constraint.romA].append(blocker)
                     local_blockers_count += 1
+                    # reduce advancement
+                    next_local_addresses[constraint.romA] = constraint.addressA-1
 
                 elif virtual_address_b == virtual_address:
                     constraints.remove(constraint)
@@ -214,17 +215,11 @@ class ConstraintManager:
                     log(f'add blocker {blocker}')
                     local_blockers[constraint.romB].append(blocker)
                     local_blockers_count += 1
+                    # reduce advancement
+                    next_local_addresses[constraint.romB] = constraint.addressB-1
             
             can_continue = False
             for variant in self.variants:
-                for blocker in reversed(local_blockers[variant]): # https://stackoverflow.com/a/10665800
-                   if next_local_addresses[variant] >= blocker.local_address:
-                        if next_local_addresses[blocker.rom_variant] < blocker.rom_address:
-                            log(f'{variant} is still blocked by {blocker}')
-                            can_advance[variant] = False
-                            break
-
-
 
                 if can_advance[variant]:
                     log(f'{variant} advances to {next_local_addresses[variant]}')
