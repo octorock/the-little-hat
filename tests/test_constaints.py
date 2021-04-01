@@ -92,7 +92,7 @@ def test_longer_constraint():
     assert_differing_address(manager, RomVariant.EU, 1, 100)
     assert_differing_address(manager, RomVariant.EU, 100, 199)
 
-def test_sparse_constraint():
+def x_test_sparse_constraint():
     # v        E   J
     # 0        0   0
     # 1        x   1
@@ -282,7 +282,7 @@ def test_conflicting_constraints_loop():
         manager = ConstraintManager({RomVariant.JP, RomVariant.EU, RomVariant.USA})
         add_u_j_constraint(manager, 1, 3)
         add_j_e_constraint(manager, 4, 6)
-        add_u_e_constraint(manager, 2, 7)
+        add_u_e_constraint(manager, 0, 7)
         manager.rebuild_relations()
         manager.print_relations()
 
@@ -354,6 +354,29 @@ def test_three_cycle():
     assert_u_j_e_address(manager, 6,4,6,5)
 
 
+def add_e_d_constraint(manager: ConstraintManager, eu_address: int, demo_address: int):
+    constraint = Constraint()
+    constraint.romA = RomVariant.EU
+    constraint.addressA = eu_address
+    constraint.romB = RomVariant.DEMO
+    constraint.addressB = demo_address
+    manager.add_constraint(constraint)
+
+def add_u_d_constraint(manager: ConstraintManager, usa_address: int, demo_address: int):
+    constraint = Constraint()
+    constraint.romA = RomVariant.USA
+    constraint.addressA = usa_address
+    constraint.romB = RomVariant.DEMO
+    constraint.addressB = demo_address
+    manager.add_constraint(constraint)
+
+
+def assert_u_j_e_d_address(manager: ConstraintManager, virtual_address:int, usa_address:int, jp_address:int, eu_address:int, demo_address: int):
+    assert_differing_address(manager, RomVariant.USA, usa_address, virtual_address)
+    assert_differing_address(manager, RomVariant.JP, jp_address, virtual_address)
+    assert_differing_address(manager, RomVariant.EU, eu_address, virtual_address)
+    assert_differing_address(manager, RomVariant.DEMO, demo_address, virtual_address)
+
 def test_four_roms():
     # v U J E D
     # 0 0 0 0 0
@@ -361,13 +384,30 @@ def test_four_roms():
     # 2 2-1 x x
     # 3 3 2-1 x
     # 4 4 3 2-1
-    # 5-5 4 3 2-
-    #
-    pass
+    # 5 5-4 3 2-
+    # 6 6 5 4 3
+    manager = ConstraintManager({RomVariant.USA, RomVariant.JP, RomVariant.EU, RomVariant.DEMO})
+    add_u_j_constraint(manager, 2, 1)
+    add_j_e_constraint(manager, 2, 1)
+    add_e_d_constraint(manager, 2, 1)
+    add_u_d_constraint(manager, 5, 2)
+    add_u_j_constraint(manager, 5, 4)
+    
+    manager.rebuild_relations()
+    manager.print_relations()
+    assert_u_j_e_address(manager, 0,0,0,0)
+
+
+
+def x_test_many_trivial_constraints():
+    # TODO optimize more, so this number can be higher
+    CONSTRAINT_COUNT = 1000
+    manager = ConstraintManager({RomVariant.EU, RomVariant.JP})
+    for i in range(0, CONSTRAINT_COUNT):
+        add_j_e_constraint(manager, i, i)
+    manager.rebuild_relations()
+    for i in range(0, CONSTRAINT_COUNT):
+        assert_j_e_address(manager, i,i,i)
 
 # TODO
-# add situation with conflicting constraint
-# add constraints between three files
-# add constraints between four files
 # add cyclic constraints?
-# generate a lot of trivial constraints

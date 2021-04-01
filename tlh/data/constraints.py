@@ -23,6 +23,7 @@ class RomRelation:
 
 def log(*argv):
     print(*argv)
+    pass
 
 class RomRelations:
     """
@@ -142,42 +143,38 @@ class ConstraintManager:
             offset = next_virtual_address - virtual_address
             if offset <= 0: # TODO why is this necessary? should the corresponding constraint/blocker not have been removed in the previous iteration?
                 offset = 1
+            offset = 1
             virtual_address += offset
 
             log(f'-- Go to {virtual_address} (+{offset})')
 
             # Advance all local_addresses where there is no blocker
             next_local_addresses = {}
+            can_advance = {}
             for variant in self.variants:
                 next_local_addresses[variant] = local_addresses[variant] + offset
+                print(f'{variant} wants to {local_addresses[variant]} -> {next_local_addresses[variant]}')
+                can_advance[variant] = True
 
-            can_continue = False
             for variant in self.variants:
 
                 still_blocking = False
                 for blocker in reversed(local_blockers[variant]): # https://stackoverflow.com/a/10665800
-                    if next_local_addresses[blocker.rom_variant] < blocker.rom_address:
-                        log(f'{variant} is still blocked by {blocker}')
-                        still_blocking = True
-                        break
-                    elif next_local_addresses[blocker.rom_variant] > blocker.rom_address:
-                        raise InvalidConstraintError()
-                    else:
-                        log(f'Resolve {blocker}')
-                        # Insert corresponding relation
-                        self.rom_relations[variant].add_relation(blocker.local_address, virtual_address)
-                        next_local_addresses[variant] = blocker.local_address
-                        local_blockers[variant].remove(blocker)
-                        local_blockers_count -= 1
+                    if next_local_addresses[variant] >= blocker.local_address:
+                        if next_local_addresses[blocker.rom_variant] < blocker.rom_address:
+                            log(f'{variant} is still blocked by {blocker}')
+                            can_advance[variant] = False
+                        elif next_local_addresses[blocker.rom_variant] > blocker.rom_address:
+                            log(f'{blocker} {variant} creates invalid constraint: {next_local_addresses[blocker.rom_variant]} > {blocker.rom_address}:')
+                            raise InvalidConstraintError()
+                        else:
+                            log(f'Resolve {blocker}')
+                            # Insert corresponding relation
+                            self.rom_relations[variant].add_relation(blocker.local_address, virtual_address)
+                            next_local_addresses[variant] = blocker.local_address
+                            local_blockers[variant].remove(blocker)
+                            local_blockers_count -= 1
 
-                if not still_blocking:
-                    log(f'{variant} advances to {next_local_addresses[variant]}')
-                    local_addresses[variant] = next_local_addresses[variant]
-                    can_continue = True
-
-            if not can_continue:
-                # every variation is blocked, invalid constraints
-                raise InvalidConstraintError()
 
             # Handle all constraints TODO sort them somehow
             for constraint in reversed(constraints): # https://stackoverflow.com/a/10665800
@@ -218,13 +215,37 @@ class ConstraintManager:
                     local_blockers[constraint.romB].append(blocker)
                     local_blockers_count += 1
             
-            va_prev = virtual_address
+            can_continue = False
+            for variant in self.variants:
+                for blocker in reversed(local_blockers[variant]): # https://stackoverflow.com/a/10665800
+                   if next_local_addresses[variant] >= blocker.local_address:
+                        if next_local_addresses[blocker.rom_variant] < blocker.rom_address:
+                            log(f'{variant} is still blocked by {blocker}')
+                            can_advance[variant] = False
+                            break
+
+
+
+                if can_advance[variant]:
+                    log(f'{variant} advances to {next_local_addresses[variant]}')
+                    local_addresses[variant] = next_local_addresses[variant]
+                    can_continue = True
+                else:
+                    # TODO check that this is correct
+                    next_local_addresses[variant] = local_addresses[variant]
+
+
+            if not can_continue:
+                # every variation is blocked, invalid constraints
+                raise InvalidConstraintError()
 
         # Check all constraints again
         # TODO remove this once we always find all invalid constraints before
         # currently not detected: two differing constraints for the same address (test_conflicting_constraint)
         for constraint in self.constraints:
             if self.to_virtual(constraint.romA, constraint.addressA) != self.to_virtual(constraint.romB, constraint.addressB):
+                log(f'{constraint} not fulfilled')
+                self.print_relations()
                 raise InvalidConstraintError()
             # assert self.to_virtual(constraint.romA, constraint.addressA) == self.to_virtual(constraint.romB, constraint.addressB) 
 
