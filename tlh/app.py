@@ -4,7 +4,7 @@ import sys
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (QApplication, QDockWidget, QHBoxLayout,
-                               QInputDialog, QMainWindow, QMenu, QMessageBox,
+                               QInputDialog, QMainWindow, QMdiSubWindow, QMenu, QMessageBox,
                                QScrollBar, QWidget)
 
 from tlh import settings
@@ -31,15 +31,26 @@ class MainWindow(QMainWindow):
         self.build_layouts_toolbar()
 
         widget = BuilderWidget(self)
-        self.setCentralWidget(widget)
+        #self.setCentralWidget(widget)
+
+
+        window1 = QMdiSubWindow(self.ui.mdiArea)
+        window1.setWindowTitle('Hex Editor USA')
+        self.ui.mdiArea.addSubWindow(window1)
+
+        window2 = QMdiSubWindow(self.ui.mdiArea)
+        window2.setWindowTitle('Hex Editor DEMO')
+        self.ui.mdiArea.addSubWindow(window2)
+
 
         # Temp docks
         dock1 = QDockWidget(self)
         dock1.setObjectName('temp1')
         dock1.setWindowTitle('Temp1')
-        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock1)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, dock1)
+        dock1.setWidget(widget)
 
-        dock2 = QDockWidget('Hex Editor', self)
+        dock2 = QDockWidget('Hex Editor USA', self)
         dock2.setObjectName('dockHex')
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock2)
 
@@ -52,7 +63,22 @@ class MainWindow(QMainWindow):
         layout.addWidget(widget)
         layout.addWidget(scrollBar)
         hex_editor.setLayout(layout)
-        dock2.setWidget(hex_editor)
+        window1.setWidget(hex_editor)
+
+        dock3 = QDockWidget('Hex Editor DEMO', self)
+        dock3.setObjectName('dockHex2')
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock3)
+        hex_editor2 = QWidget(self)
+        layout2 = QHBoxLayout(hex_editor2)
+        scrollBar2 = QScrollBar(hex_editor2)
+        widget2 = HexEditorWidget(hex_editor2, rom2, rom, scrollBar2)
+        layout2.addWidget(widget2)
+        layout2.addWidget(scrollBar2)
+        hex_editor2.setLayout(layout2)
+        window2.setWidget(hex_editor2)
+
+        self.ui.mdiArea.tileSubWindows()
+
 
         # Restore layout
         self.restoreState(settings.get_window_state())

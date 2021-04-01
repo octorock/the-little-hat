@@ -34,8 +34,7 @@ $(COMPILED_DIR)/ui_%.py: $(RESOURCE_DIR)/%.ui
 $(COMPILED_DIR)/%_rc.py: $(RESOURCE_DIR)/%.qrc
 	$(PYRCC) $< -o $@
  
-clean:
-	tidy
+clean: tidy
 	rm -rf venv
 
 tidy:
