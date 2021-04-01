@@ -1,19 +1,19 @@
 import signal
 import sys
-from tlh.data.rom import Rom
-from tlh.settings.ui import SettingsDialog
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QIcon
-from PySide6.QtWidgets import (QApplication, QDialog, QDockWidget, QHBoxLayout,
-                               QInputDialog, QMainWindow, QMenu, QMessageBox, QScrollBar, QWidget)
+from PySide6.QtWidgets import (QApplication, QDockWidget, QHBoxLayout,
+                               QInputDialog, QMainWindow, QMenu, QMessageBox,
+                               QScrollBar, QWidget)
 
 from tlh import settings
 from tlh.builder.ui import BuilderWidget
 from tlh.common.ui.dark_theme import apply_dark_theme
+from tlh.data.rom import Rom
 from tlh.hexeditor.ui import HexEditorWidget
+from tlh.settings.ui import SettingsDialog
 from tlh.ui.ui_mainwindow import Ui_MainWindow
-from tlh.ui.ui_settings import Ui_dialogSettings
 
 
 class MainWindow(QMainWindow):
@@ -94,9 +94,9 @@ class MainWindow(QMainWindow):
         self.ui.menuLayouts.addAction(actionSaveLayout)
         actionSaveLayout.triggered.connect(self.save_layout)
         # TODO how to reset the layout?
-        #actionResetLayout = QAction('Reset Layout', self.ui.menuLayouts)
+        # actionResetLayout = QAction('Reset Layout', self.ui.menuLayouts)
         # self.ui.menuLayouts.addAction(actionResetLayout)
-        #actionResetLayout.triggered.connect(lambda: self.restoreState(None))
+        # actionResetLayout.triggered.connect(lambda: self.restoreState(None))
         self.ui.menuLayouts.addSeparator()
 
         submenus = {}
@@ -109,13 +109,14 @@ class MainWindow(QMainWindow):
             action = QAction(elements[-1], self.ui.menuLayouts)
             action.triggered.connect(
                 lambda *args, layout=layout: self.load_layout(layout))
-            # checked is a named parameter? https://forum.learnpyqt.com/t/getting-typeerror-lambda-missing-1-required-positional-argument-checked/586/5
+            # checked is a named parameter?
+            # https://forum.learnpyqt.com/t/getting-typeerror-lambda-missing-1-required-positional-argument-checked/586/5
 
             # Add at correct location
             parent = self.ui.menuLayouts
             menus = {'children': submenus}
             for element in elements[:-1]:
-                if not element in menus['children']:
+                if element not in menus['children']:
                     menus['children'][element] = {
                         'menu': QMenu(element, parent),
                         'children': {}

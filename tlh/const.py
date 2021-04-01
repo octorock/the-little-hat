@@ -12,3 +12,6 @@ class RomVariant(Enum):
     DEMO = 2
     EU = 3
     JP = 4
+
+    def __repr__(self):
+        return str(self.name)

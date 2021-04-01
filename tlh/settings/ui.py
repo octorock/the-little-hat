@@ -1,13 +1,14 @@
-from tlh.const import SHA1_DEMO, SHA1_EU, SHA1_JP, SHA1_USA
+import hashlib
 import typing
 
 import PySide6
+from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt
 from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtWidgets import (QDialog, QDialogButtonBox, QFileDialog,
+                               QListView, QMessageBox)
 from tlh import settings
-from PySide6.QtCore import QAbstractListModel, QFile, QModelIndex, QStringListModel, Qt
+from tlh.const import SHA1_DEMO, SHA1_EU, SHA1_JP, SHA1_USA
 from tlh.ui.ui_settings import Ui_dialogSettings
-from PySide6.QtWidgets import QDialog, QDialogButtonBox, QFileDialog, QListView, QMessageBox
-import hashlib
 
 
 class LayoutModel(QAbstractListModel):
@@ -25,7 +26,7 @@ class LayoutModel(QAbstractListModel):
 
         # if role == Qt.ToolTipRole:
             # return 'HEY :)'
-        #print(f'Missing role {role}')
+        # print(f'Missing role {role}')
         return None
 
     def flags(self, index: PySide6.QtCore.QModelIndex) -> PySide6.QtCore.Qt.ItemFlags:

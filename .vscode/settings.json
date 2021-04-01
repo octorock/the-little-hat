@@ -2,11 +2,8 @@
     "python.pythonPath": "venv/bin/python",
     "files.exclude": {
         "**/.git": true,
-        "**/.svn": true,
-        "**/.hg": true,
-        "**/CVS": true,
-        "**/.DS_Store": true,
         "venv": true,
-        "**/__pycache__": true
+        "**/__pycache__": true,
+        ".pytest_cache": true
     }
 }
