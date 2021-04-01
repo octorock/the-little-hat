@@ -211,6 +211,43 @@ def test_successive_constraints():
     assert_j_e_address(manager, 11,-1,7)
     assert_j_e_address(manager, 12,-1,8)
     assert_j_e_address(manager, 13,9,9)
+
+def test_close_constraints():
+    # v  J E
+    # 0  0 x
+    # 1  1-0
+    # 2  2 x
+    # 3  3-1
+    # 4  4 x
+    # 5  5-2
+    # 6  x 3
+    # 7  6-4
+    # 8  7 5
+    # 9  8 6
+    # 10 x 7
+    # 11 x 8
+    # 12 9-9
+    manager = ConstraintManager({RomVariant.JP, RomVariant.EU})
+    add_j_e_constraint(manager, 1, 0)
+    add_j_e_constraint(manager, 3, 1)
+    add_j_e_constraint(manager, 5, 2)
+    add_j_e_constraint(manager, 6, 4)
+    add_j_e_constraint(manager, 9, 9)
+    manager.rebuild_relations()
+    manager.print_relations()
+    assert_j_e_address(manager, 0,0,-1)
+    assert_j_e_address(manager, 1,1,0)
+    assert_j_e_address(manager, 2,2,-1)
+    assert_j_e_address(manager, 3,3,1)
+    assert_j_e_address(manager, 4,4,-1)
+    assert_j_e_address(manager, 5,5,2)
+    assert_j_e_address(manager, 6,-1,3)
+    assert_j_e_address(manager, 7,6,4)
+    assert_j_e_address(manager, 8,7,5)
+    assert_j_e_address(manager, 9,8,6)
+    assert_j_e_address(manager, 10,-1,7)
+    assert_j_e_address(manager, 11,-1,8)
+    assert_j_e_address(manager, 12,9,9)
 # TODO
 # add situation with conflicting constraint
 # add constraints between three files

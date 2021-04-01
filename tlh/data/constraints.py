@@ -96,201 +96,75 @@ class ConstraintManager:
         """
         Builds relations between local addresses for each variation and the virtual address based on the constraints
         """
-        virtual_address = 0
+
+
         local_addresses: dict[str, int] = {}
         local_blockers: dict[str, list[Blocker]] = {}
         local_blockers_count = 0
         for variant in self.variants:
-            local_addresses[variant] = 0
-            local_blockers[variant] = []
             self.rom_relations[variant].clear()
+            local_addresses[variant] = -1
+            local_blockers[variant] = []
 
         constraints = self.constraints.copy()
 
-        # Keeps into account the probable virtual positions of the blocker as well
-        def to_virtual_with_blockers(variant: RomVariant, local_address:int)->int:
-            va = self.to_virtual(variant, local_address)
+        for virtual_address in range(0, 0x0fffffff): # TODO at that point all roms should have been resolved
 
-            # increase the va if there is a higher blocker
-            for blocker in local_blockers[variant]:
-                if blocker.local_address <= local_address:
-                    blocker_va = self.to_virtual(blocker.rom_variant, blocker.rom_address)
-                    blocker_va += local_address-blocker.local_address
-                    if blocker_va > va:
-                        va = blocker_va
-            return va
+            print(virtual_address)
+            # Stop the loop if all constraints and blockers are resolved
+            if not constraints and local_blockers_count == 0:
+                break
 
+            # Advance all local_addresses where there is no blocker
+            next_local_addresses = {}
+            for variant in self.variants:
+                next_local_addresses[variant] = local_addresses[variant] + 1
 
-        while constraints:  # not empty
+            for variant in self.variants:
 
-            # get constraint with the lowest virtual address
-            # TODO is there a way to keep the list sorted by these virtual addresses which are constantly changing with each new constraint?
-            selected_constraint = constraints[0]
-            selected_variant = constraints[0].romA
-            selected_local_address = constraints[0].addressA
-            selected_virtual_address = to_virtual_with_blockers(
-                selected_variant, selected_local_address)
+                still_blocking = False
+                for blocker in local_blockers[variant]:
+                    if next_local_addresses[blocker.rom_variant] < blocker.rom_address:
+                        print(f'{variant} is still blocked by {blocker}')
+                        still_blocking = True
+                        break
+                    else:
+                        print(f'Resolve {blocker}')
+                        # Insert corresponding relation
+                        self.rom_relations[variant].add_relation(blocker.local_address, virtual_address)
+                        next_local_addresses[variant] = blocker.local_address
+                        local_blockers[variant].remove(blocker)
+                        local_blockers_count -= 1
 
+                if not still_blocking:
+                    print(f'{variant} advances to {next_local_addresses[variant]}')
+                    local_addresses[variant] = next_local_addresses[variant]
+
+            # Handle all constraints TODO sort them somehow
             for constraint in constraints:
-                # handle A
-                variant_a = constraint.romA
-                local_address_a = constraint.addressA
-                virtual_address_a = to_virtual_with_blockers(variant_a, local_address_a)
-                if virtual_address_a < selected_virtual_address:
-                    selected_constraint = constraint
-                    selected_variant = variant_a
-                    selected_local_address = local_address_a
-                    selected_virtual_address = virtual_address_a
-                # handle B
-                variant_b = constraint.romB
-                local_address_b = constraint.addressB
-                virtual_address_b = to_virtual_with_blockers(variant_b, local_address_b)
-                if virtual_address_b < selected_virtual_address:
-                    selected_constraint = constraint
-                    selected_variant = variant_b
-                    selected_local_address = local_address_b
-                    selected_virtual_address = virtual_address_b
+                virtual_address_a = self.to_virtual(constraint.romA, constraint.addressA)
+                virtual_address_b = self.to_virtual(constraint.romB, constraint.addressB)
 
-            print(f'\nNext constraint: {selected_constraint}')
-            # Handle everything before this virtual address
-            selected_virtual_address -= 1
-            print(f'Handle everything up to {selected_virtual_address}')
+                if virtual_address_a == virtual_address_b == virtual_address:
+                    constraints.remove(constraint)
+                    print(f'Handle done {constraint}')
+                    # TODO don't need to insert a relation, because it's already correct?
+                    print(virtual_address_a, virtual_address_b)
+                elif virtual_address_a == virtual_address:
+                    constraints.remove(constraint)
+                    print(f'Handle A {constraint}')
+                    blocker = Blocker(constraint.addressA, constraint.romB, constraint.addressB)
+                    print(f'add blocker {blocker}')
+                    local_blockers[constraint.romA].append(blocker)
+                    local_blockers_count += 1
 
-            # Remove constraint
-            constraints.remove(selected_constraint)
-
-            virtual_address_offset = selected_virtual_address - virtual_address
-
-            # Advance all local addresses to th virtual address before this
-            next_local_addresses = {}
-            for variant in self.variants:
-                next_local_addresses[variant] = local_addresses[variant] + virtual_address_offset
-
-            print(f'v{selected_virtual_address}')
-            for variant in self.variants:
-
-                still_blocking = False
-                for blocker in local_blockers[variant]:
-                    if next_local_addresses[blocker.rom_variant] < blocker.rom_address:
-                        print(f'{variant} is still blocked by {blocker}')
-                        still_blocking = True
-                        break
-                    else:
-                        print(f'Resolve {blocker}')
-                        # Insert relation here
-                        blocked_bytes = next_local_addresses[variant] - blocker.local_address
-                        
-                        # TODO calculate which relation is actually needed here? or make a subpass deleting unnecessary relations?
-                        self.rom_relations[variant].add_relation(blocker.local_address, to_virtual_with_blockers(blocker.rom_variant, blocker.rom_address))
-                        # self.rom_relations[blocker.rom_variant].add_relation(blocker.rom_address, to_virtual_with_blockers(variant, blocker.local_address))
-
-                        print(f'blcoked {blocked_bytes}')
-                        next_local_addresses[variant] -= blocked_bytes # TODO what to actually substract here?
-                        local_blockers[variant].remove(blocker)
-                        local_blockers_count -= 1
-            
-                if still_blocking:
-                    # This variant can not advance yet
-                    continue
-                    
-                local_addresses[variant] = next_local_addresses[variant]
-                print(f'{variant} {next_local_addresses[variant]}')
-
-            # for the lower address of the constraint, add a relation to the current virtual address
-            virtual_address_a = self.to_virtual(
-                selected_variant, selected_constraint.addressA)
-            virtual_address_b = self.to_virtual(
-                selected_variant, selected_constraint.addressB)
-            if virtual_address_a < virtual_address_b:
-                blocker = Blocker(
-                    selected_constraint.addressA, selected_constraint.romB, selected_constraint.addressB)
-                print(f'add blocker {blocker}')
-                local_blockers[selected_constraint.romA].append(blocker)
-                # TODO Really?
-                blocker = Blocker(
-                    selected_constraint.addressB, selected_constraint.romA, selected_constraint.addressA)
-                print(f'add blocker {blocker}')
-                local_blockers[selected_constraint.romB].append(blocker)
-            else:
-                blocker = Blocker(
-                    selected_constraint.addressB, selected_constraint.romA, selected_constraint.addressA)
-                print(f'add blocker {blocker}')
-                local_blockers[selected_constraint.romB].append(blocker)
-                # TODO really?
-                blocker = Blocker(
-                    selected_constraint.addressA, selected_constraint.romB, selected_constraint.addressB)
-                print(f'add blocker {blocker}')
-                local_blockers[selected_constraint.romA].append(blocker)
-            local_blockers_count += 1
-            # TODO addresses are the same -> insert both constraints here
-
-            virtual_address = selected_virtual_address
-
-        print('done with constraints')
-
-
-
-
-
-        while local_blockers_count > 0:
-            # Select nearest local blocker
-            selected_local_blocker = None
-            selected_virtual_address = 0xffffffff
-            selected_variant = None
-
-            for variant in self.variants:
-                for blocker in local_blockers[variant]:
-                    # TODO only need to look at first one, if the list stays ordered?
-                    virtual_address_x = to_virtual_with_blockers(blocker.rom_variant, blocker.rom_address)
-                    if virtual_address_x < selected_virtual_address:
-                        selected_local_blocker = blocker
-                        selected_virtual_address = virtual_address_x
-                        selected_variant = variant
-            assert selected_local_blocker != None
-
-            local_blockers[selected_variant].remove(selected_local_blocker)
-            local_blockers_count -= 1
-
-            print(f'Resolve l {selected_local_blocker}')
-
-            virtual_address_offset = selected_local_blocker.rom_address - local_addresses[selected_local_blocker.rom_variant]
-
-            virtual_address = virtual_address + virtual_address_offset
-            self.rom_relations[selected_variant].add_relation(selected_local_blocker.local_address, to_virtual_with_blockers(selected_local_blocker.rom_variant, selected_local_blocker.rom_address))
-            # advance all local addresses
-            next_local_addresses = {}
-            for variant in self.variants:
-                next_local_addresses[variant] = local_addresses[variant] + virtual_address_offset
-
-
-            print(f'v{selected_virtual_address}')
-            for variant in self.variants:
-
-                still_blocking = False
-                for blocker in local_blockers[variant]:
-                    if next_local_addresses[blocker.rom_variant] < blocker.rom_address:
-                        print(f'{variant} is still blocked by {blocker}')
-                        still_blocking = True
-                        break
-                    else:
-                        print(f'Resolve {blocker}')
-                        local_blockers[variant].remove(blocker)
-                        local_blockers_count -= 1
-                        # Insert relation here
-                        blocked_bytes = next_local_addresses[variant] - blocker.local_address - 1
-                        self.rom_relations[variant].add_relation(blocker.local_address, to_virtual_with_blockers(blocker.rom_variant, blocker.rom_address))
-                        #self.rom_relations[variant].add_relation(blocker.local_address, self.to_virtual(blocker.rom_variant, blocker.rom_address))
-                        
-                        next_local_addresses[variant] -= blocked_bytes # TODO what to actually substract here?
-            
-                if still_blocking:
-                    # This variant can not advance yet
-                    continue
-
-                local_addresses[variant] = next_local_addresses[variant]
-                print(f'{variant} {next_local_addresses[variant]}')
-
-            # TODO handle blockers
+                elif virtual_address_b == virtual_address:
+                    constraints.remove(constraint)
+                    print(f'Handle B {constraint}')
+                    blocker = Blocker(constraint.addressB, constraint.romA, constraint.addressA)
+                    print(f'add blocker {blocker}')
+                    local_blockers[constraint.romB].append(blocker)
+                    local_blockers_count += 1
 
         # while constraints exist
             # get constraints that has the lowest virtual address
