@@ -3,7 +3,7 @@ from tlh.data.database import read_constraints, write_constraints
 from tlh.data.constraints import Constraint, ConstraintManager
 from tlh.data.rom import Rom, get_rom
 from tlh.const import ROM_OFFSET, RomVariant
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QObject, Signal
 from dataclasses import dataclass
 
 
@@ -26,6 +26,10 @@ class HexEditorInstance(QObject):
     Object that is passed to a single hex editor
     uses the constraint manager to translate from virtual to local addresses and vice versa
     """
+
+    cursor_moved = Signal(int)
+    cursor_moved_externally = Signal(int)
+
     def __init__(self, parent, rom_variant: RomVariant, rom: Rom, constraint_manager: ConstraintManager) -> None:
         super().__init__(parent=parent)
         self.manager = parent
@@ -44,6 +48,8 @@ class HexEditorInstance(QObject):
         local_address = self.constraint_manager.to_local(self.rom_variant, index)
         if local_address == -1:
             return DisplayByte('  ', ByteStatus.NONE)
+
+        # TODO make sure local address is < length of rom
         
         return DisplayByte('%02X' % self.rom.get_byte(local_address), 
         ByteStatus.DIFFERING if self.manager.is_diffing(index) else ByteStatus.NONE
@@ -57,7 +63,12 @@ class HexEditorInstance(QObject):
         ))
 
     def length(self) -> int:
+        # TODO calculate length of virtual rom
         return self.rom.length()
+
+    def jump_to_local_address(self, local_address: int) -> None:
+        virtual_address = self.constraint_manager.to_virtual(self.rom_variant, local_address)
+        self.cursor_moved.emit(virtual_address)
 
 
 
@@ -72,6 +83,9 @@ class HexEditorManager(QObject):
         self.roms: dict[RomVariant, Rom] = {}
         for variant in self.variants:
             self.roms[variant] = get_rom(variant)
+        self.instances = []
+
+
         self.constraint_manager = ConstraintManager(self.variants) # TODO make configurable
         constraints = read_constraints()
         self.constraint_manager.add_all_constraints(constraints)        
@@ -80,8 +94,16 @@ class HexEditorManager(QObject):
 
 
     def get_hex_editor_instance(self, rom_variant: RomVariant)-> HexEditorInstance:
-        return HexEditorInstance(self, rom_variant, self.roms[rom_variant], self.constraint_manager)
+        instance = HexEditorInstance(self, rom_variant, self.roms[rom_variant], self.constraint_manager)
+        instance.cursor_moved.connect(self.move_all_cursors)
+        self.instances.append(instance)
+        return instance
 
+    def move_all_cursors(self, virtual_address: int) -> None:
+        for instance in self.instances:
+            instance.cursor_moved_externally.emit(virtual_address)
+
+    
 
     def is_diffing(self, virtual_address: int) -> bool:
         # TODO cache this, optimize accesses of rom data

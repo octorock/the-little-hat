@@ -1,12 +1,13 @@
 # Inspired by https://github.com/PetterS/sexton
 # Paint custom widget https://blog.rburchell.com/2010/02/pyside-tutorial-custom-widget-painting.html
 
+import PySide6
 from tlh.hexeditor.manager import ByteStatus, HexEditorInstance
 from tlh.const import ROM_OFFSET
 from tlh.data.rom import Rom
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QResizeEvent
-from PySide6.QtWidgets import QScrollBar, QWidget
+from PySide6.QtGui import QBrush, QColor, QFont, QKeySequence, QPainter, QResizeEvent, QShortcut
+from PySide6.QtWidgets import QInputDialog, QMenu, QMessageBox, QScrollBar, QWidget
 
 
 class HexEditorWidget (QWidget):
@@ -27,6 +28,11 @@ class HexEditorWidget (QWidget):
         self.scroll_bar = scroll_bar
         self.setup_scroll_bar()
         self.scroll_bar.valueChanged.connect(self.on_scroll_bar_changed)
+        instance.cursor_moved_externally.connect(self.update_start_offset_from_external)
+        # Make this widget focussable on click, so that we can reduce the context of the shortcut, so that multiple shortcuts are possible in the same window
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_G), parent, self.show_goto_dialog, context=Qt.WidgetWithChildrenShortcut)
+
 
     def setup_scroll_bar(self):
         # TODO call this again once the hex view has it's size / changes it's size
@@ -37,6 +43,7 @@ class HexEditorWidget (QWidget):
 
     def on_scroll_bar_changed(self, value):
         self.start_offset = value * self.bytes_per_line
+        self.instance.cursor_moved.emit(self.start_offset)
         self.update()
 
     def wheelEvent(self, event):
@@ -51,9 +58,14 @@ class HexEditorWidget (QWidget):
 
         self.update()
 
+    def update_start_offset_from_external(self, virtual_address):
+        self.start_offset = virtual_address
+        self.scroll_bar.setValue(virtual_address//self.bytes_per_line)
+
     def update_start_offset(self, offset):
-        self.start_offset = offset
-        self.scroll_bar.setValue(offset//self.bytes_per_line)
+        self.instance.cursor_moved.emit(offset)
+        #self.start_offset = offset
+        #self.scroll_bar.setValue(offset//self.bytes_per_line)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.setup_scroll_bar()
@@ -117,3 +129,22 @@ class HexEditorWidget (QWidget):
         if self.instance.length() % self.bytes_per_line > 0:
             num_rows += 1
         return num_rows
+
+    def show_goto_dialog(self):
+        (local_address, res) = QInputDialog.getText(
+        self, 'Goto', 'Enter local address to jump to')
+        if res:
+            # Parse as hex (TODO maybe as decimal, if no 0x and no)
+            # TODO handle errors
+            local_address = int(local_address, 16)
+
+            if local_address > ROM_OFFSET:
+                local_address -= ROM_OFFSET
+            # TODO error for everything that is not in [0x00000000, 0x00FFFFFF] or [0x08000000, 0x08FFFFFF]
+
+            self.instance.jump_to_local_address(local_address)
+
+    def contextMenuEvent(self, event: PySide6.QtGui.QContextMenuEvent) -> None:
+        menu = QMenu(self)
+        menu.addAction('Goto', self.show_goto_dialog)
+        menu.exec_(event.globalPos())

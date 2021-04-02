@@ -510,3 +510,11 @@ def test_bug():
     manager.rebuild_relations()
     # USA,512657,DEMO,511637,5,Pointer
     # USA,513133,DEMO,512129,5,Pointer
+
+def test_bug_2():
+    manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO})
+    add_u_d_constraint(manager, 14581156, 14622668)
+    add_u_d_constraint(manager, 14581158, 14622670)
+    manager.rebuild_relations()
+    # USA,14581156,DEMO,14622668
+    # USA,14581158,DEMO,14622670
