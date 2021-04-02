@@ -492,7 +492,6 @@ def test_many_small_differences():
     assert_u_j_e_d_address(manager, 15,10,12,12,-1)
     assert_u_j_e_d_address(manager, 16, 11,13,13,12)
 
-
 def x_test_many_trivial_constraints():
     # TODO optimize more, so this number can be higher
     CONSTRAINT_COUNT = 1000
@@ -502,3 +501,12 @@ def x_test_many_trivial_constraints():
     manager.rebuild_relations()
     for i in range(0, CONSTRAINT_COUNT):
         assert_j_e_address(manager, i,i,i)
+
+
+def test_bug():
+    manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO})
+    add_u_d_constraint(manager, 512657, 511637)
+    add_u_d_constraint(manager, 513133, 512129)
+    manager.rebuild_relations()
+    # USA,512657,DEMO,511637,5,Pointer
+    # USA,513133,DEMO,512129,5,Pointer

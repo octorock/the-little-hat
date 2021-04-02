@@ -22,7 +22,7 @@ class RomRelation:
 
 
 def log(*argv):
-    #print(*argv)
+    print(*argv)
     pass
 
 class RomRelations:
@@ -95,6 +95,11 @@ class ConstraintManager:
     def add_constraint(self, constraint: Constraint) -> None:
         self.constraints.append(constraint)  # TODO add at the correct place
         #TODO add #self.rebuild_relations()
+
+    def add_all_constraints(self, constraints: list[Constraint]) -> None:
+        for constraint in constraints:
+            self.add_constraint(constraint)
+        self.rebuild_relations()
 
     def rebuild_relations(self) -> None:
         """
@@ -265,14 +270,14 @@ class ConstraintManager:
         #         self.rom_relations[constraint.romB].add_relation(constraint.addressB, virtual_address)
         #     # TODO continue until we are at the other constraint
 
-    def to_local(self, rom: RomVariant, virtual_address: int) -> int:
+    def to_local(self, variant: RomVariant, virtual_address: int) -> int:
         """
         Convert from a virtual address to a local address for a certain rom variant
         """
-        if not rom in self.variants:
+        if not variant in self.variants:
             raise RomVariantNotAddedError()
 
-        (prev, next) = self.rom_relations[rom].get_prev_and_next_relation_for_virtual_address(
+        (prev, next) = self.rom_relations[variant].get_prev_and_next_relation_for_virtual_address(
             virtual_address)
         if prev is None:
             if next is not None:
@@ -290,14 +295,14 @@ class ConstraintManager:
                     return -1
             return local_address
 
-    def to_virtual(self, rom: RomVariant, local_address: int) -> int:
+    def to_virtual(self, variant: RomVariant, local_address: int) -> int:
         """
         Convert from a local address for a certain rom variant to a virtual address
         """
-        if not rom in self.variants:
+        if not variant in self.variants:
             raise RomVariantNotAddedError()
 
-        relation = self.rom_relations[rom].get_previous_relation_for_local_address(
+        relation = self.rom_relations[variant].get_previous_relation_for_local_address(
             local_address)
         if relation is None:
             virtual_address = local_address

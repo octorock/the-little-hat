@@ -18,11 +18,7 @@
     <normaloff>:/icons/icon.png</normaloff>:/icons/icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
-    <item>
-     <widget class="QMdiArea" name="mdiArea"/>
-    </item>
-   </layout>
+   <layout class="QHBoxLayout" name="horizontalLayout"/>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -63,6 +59,15 @@
    <addaction name="menuLayouts"/>
    <addaction name="menuHelp"/>
   </widget>
+  <widget class="QDockWidget" name="dockBuilder">
+   <property name="windowTitle">
+    <string>Builder</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="BuilderWidget" name="widgetBuilder"/>
+  </widget>
   <action name="actionQuit">
    <property name="text">
     <string>Quit</string>
@@ -87,6 +92,14 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>BuilderWidget</class>
+   <extends>QWidget</extends>
+   <header>tlh.builder.ui</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="icons.qrc"/>
  </resources>

@@ -1,3 +1,4 @@
+from tlh.const import RomVariant
 from PySide6.QtCore import QSettings, Signal
 from getpass import getuser
 import multiprocessing
@@ -41,7 +42,17 @@ def set_tidy_command(command):
     settings.setValue('tidy_command', command)
 
 # ROMs
-
+def get_rom(variant: RomVariant) -> str:
+    if variant == RomVariant.USA:
+        return get_rom_usa()
+    elif variant == RomVariant.DEMO:
+        return get_rom_demo()
+    elif variant == RomVariant.EU:
+            return get_rom_eu()
+    elif variant == RomVariant.JP:
+            return get_rom_jp()
+    else:
+        raise RuntimeError(f'Unknown rom variant {variant}')
 
 def get_rom_usa():
     return settings.value('rom_usa')

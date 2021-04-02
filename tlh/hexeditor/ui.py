@@ -1,6 +1,7 @@
 # Inspired by https://github.com/PetterS/sexton
 # Paint custom widget https://blog.rburchell.com/2010/02/pyside-tutorial-custom-widget-painting.html
 
+from tlh.hexeditor.manager import ByteStatus, HexEditorInstance
 from tlh.const import ROM_OFFSET
 from tlh.data.rom import Rom
 from PySide6.QtCore import QPoint, Qt
@@ -9,10 +10,9 @@ from PySide6.QtWidgets import QScrollBar, QWidget
 
 
 class HexEditorWidget (QWidget):
-    def __init__(self, parent, rom: Rom, rom2: Rom, scroll_bar: QScrollBar):
+    def __init__(self, parent, instance: HexEditorInstance, scroll_bar: QScrollBar):
         super().__init__(parent=parent)
-        self.rom = rom
-        self.rom2 = rom2
+        self.instance = instance
         self._number = 1
         self.line_height = 18
         self.byte_width = 25
@@ -66,10 +66,10 @@ class HexEditorWidget (QWidget):
 
         num_rows = self.number_of_lines_on_screen()
 
-        data = self.rom.get_bytes(
+        data = self.instance.get_bytes(
             self.start_offset, self.start_offset + num_rows * self.bytes_per_line)
-        data2 = self.rom2.get_bytes(
-            self.start_offset, self.start_offset + num_rows * self.bytes_per_line)
+        # data2 = self.rom2.get_bytes(
+        #     self.start_offset, self.start_offset + num_rows * self.bytes_per_line)
         length = len(data)
 
         # Reduce to the number of lines that are available in the data
@@ -80,26 +80,32 @@ class HexEditorWidget (QWidget):
         for l in range(num_rows):
             p.setPen(self.label_color)
             # Draw address label
-            position_string = '%08X' % (
-                self.start_offset + l * self.bytes_per_line + ROM_OFFSET)
+            position_string = self.instance.get_local_label(self.start_offset + l * self.bytes_per_line)
             p.drawText(QPoint(self.label_offset_x, (l + 1)
                        * self.line_height), position_string)
 
             p.setPen(self.byte_color)
             for i in range(0, min(self.bytes_per_line, length - self.bytes_per_line * l)):
 
-                byte1 = data[i + l*self.bytes_per_line]
-                byte2 = data2[i + l*self.bytes_per_line]
+                # byte1 = data[i + l*self.bytes_per_line]
+                # byte2 = data2[i + l*self.bytes_per_line]
 
-                if byte1 != byte2:
-                    # p.setPen(QColor(255,0,0))
+                current_byte = data[i + l*self.bytes_per_line]
+                if current_byte.status == ByteStatus.DIFFERING:
                     p.setBackground(QColor(128, 40, 40))
-                    p.setBackgroundMode(Qt.OpaqueMode)
-                # else:
-                    # p.setPen(self.byte_color)
+                    p.setBackgroundMode(Qt.OpaqueMode)    
+
+                # if byte1 != byte2:
+                #     # p.setPen(QColor(255,0,0))
+                #     p.setBackground(QColor(128, 40, 40))
+                #     p.setBackgroundMode(Qt.OpaqueMode)
+                # # else:
+                #     # p.setPen(self.byte_color)
+
+                
 
                 p.drawText(QPoint(self.label_length + i * self.byte_width, (l+1)
-                           * self.line_height), '%02X' % data[i + l*self.bytes_per_line])
+                           * self.line_height), current_byte.text)
                 p.setBackgroundMode(Qt.TransparentMode)
 
     def number_of_lines_on_screen(self):
@@ -107,7 +113,7 @@ class HexEditorWidget (QWidget):
         return int(self.height() // self.line_height) + 1
 
     def number_of_rows(self):
-        num_rows = self.rom.length() // self.bytes_per_line
-        if self.rom.length() % self.bytes_per_line > 0:
+        num_rows = self.instance.length() // self.bytes_per_line
+        if self.instance.length() % self.bytes_per_line > 0:
             num_rows += 1
         return num_rows

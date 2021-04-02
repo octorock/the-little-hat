@@ -1,5 +1,7 @@
 import signal
 import sys
+from tlh.const import RomVariant
+from tlh.hexeditor.manager import HexEditorManager
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QIcon
@@ -8,7 +10,6 @@ from PySide6.QtWidgets import (QApplication, QDockWidget, QHBoxLayout,
                                QScrollBar, QWidget)
 
 from tlh import settings
-from tlh.builder.ui import BuilderWidget
 from tlh.common.ui.dark_theme import apply_dark_theme
 from tlh.data.rom import Rom
 from tlh.hexeditor.ui import HexEditorWidget
@@ -30,54 +31,47 @@ class MainWindow(QMainWindow):
 
         self.build_layouts_toolbar()
 
-        widget = BuilderWidget(self)
         #self.setCentralWidget(widget)
+        #self.ui.centralwidget.hide()
+
+        # Build all docks and then hide them, so they exist for layouts?
+        self.ui.dockBuilder.hide()
 
 
-        window1 = QMdiSubWindow(self.ui.mdiArea)
-        window1.setWindowTitle('Hex Editor USA')
-        self.ui.mdiArea.addSubWindow(window1)
-
-        window2 = QMdiSubWindow(self.ui.mdiArea)
-        window2.setWindowTitle('Hex Editor DEMO')
-        self.ui.mdiArea.addSubWindow(window2)
 
 
-        # Temp docks
-        dock1 = QDockWidget(self)
-        dock1.setObjectName('temp1')
-        dock1.setWindowTitle('Temp1')
-        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, dock1)
-        dock1.setWidget(widget)
-
+        # TODO make dynamic via menus?
         dock2 = QDockWidget('Hex Editor USA', self)
         dock2.setObjectName('dockHex')
-        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock2)
+        self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock2)
+
+
+        hex_editor_manager = HexEditorManager(self)
+
+        
 
         rom = Rom(settings.get_rom_usa())
         rom2 = Rom(settings.get_rom_demo())
         hex_editor = QWidget(self)
         layout = QHBoxLayout(hex_editor)
         scrollBar = QScrollBar(hex_editor)
-        widget = HexEditorWidget(hex_editor, rom, rom2, scrollBar)
+        widget = HexEditorWidget(hex_editor, hex_editor_manager.get_hex_editor_instance(RomVariant.USA), scrollBar)
         layout.addWidget(widget)
         layout.addWidget(scrollBar)
         hex_editor.setLayout(layout)
-        window1.setWidget(hex_editor)
+        dock2.setWidget(hex_editor)
 
         dock3 = QDockWidget('Hex Editor DEMO', self)
         dock3.setObjectName('dockHex2')
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock3)
+        self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock3)
         hex_editor2 = QWidget(self)
         layout2 = QHBoxLayout(hex_editor2)
         scrollBar2 = QScrollBar(hex_editor2)
-        widget2 = HexEditorWidget(hex_editor2, rom2, rom, scrollBar2)
+        widget2 = HexEditorWidget(hex_editor2, hex_editor_manager.get_hex_editor_instance(RomVariant.DEMO), scrollBar2)
         layout2.addWidget(widget2)
         layout2.addWidget(scrollBar2)
         hex_editor2.setLayout(layout2)
-        window2.setWidget(hex_editor2)
-
-        self.ui.mdiArea.tileSubWindows()
+        dock3.setWidget(hex_editor2)
 
 
         # Restore layout

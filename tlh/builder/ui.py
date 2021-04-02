@@ -1,11 +1,13 @@
+import typing
+import PySide6
 from tlh import settings
 from PySide6.QtCore import QProcess, QSize, Qt
 from PySide6.QtWidgets import QLabel, QPushButton, QSplitter, QTextEdit, QVBoxLayout, QWidget
 
 
 class BuilderWidget (QWidget):
-    def __init__(self, parent):
-        super().__init__(parent=parent)
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
 
         self.verticalLayout = QVBoxLayout(self)
 
