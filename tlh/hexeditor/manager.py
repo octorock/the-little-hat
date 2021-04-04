@@ -31,6 +31,8 @@ class HexEditorInstance(QObject):
     start_offset_moved_externally = Signal(int)
     cursor_moved = Signal(int)
     cursor_moved_externally = Signal(int)
+    selection_updated = Signal(int)
+    selection_updated_externally = Signal(int)
 
     def __init__(self, parent, rom_variant: RomVariant, rom: Rom, constraint_manager: ConstraintManager) -> None:
         super().__init__(parent=parent)
@@ -110,6 +112,7 @@ class HexEditorManager(QObject):
         instance = HexEditorInstance(self, rom_variant, self.roms[rom_variant], self.constraint_manager)
         instance.start_offset_moved.connect(self.move_all_start_offsets)
         instance.cursor_moved.connect(self.move_all_cursors)
+        instance.selection_updated.connect(self.update_all_selections)
         self.instances.append(instance)
         return instance
 
@@ -121,6 +124,9 @@ class HexEditorManager(QObject):
         for instance in self.instances:
             instance.cursor_moved_externally.emit(virtual_address)
 
+    def update_all_selections(self, selected_bytes: int) ->None:
+        for instance in self.instances:
+            instance.selection_updated_externally.emit(selected_bytes)
 
     def is_diffing(self, virtual_address: int) -> bool:
         # TODO cache this, optimize accesses of rom data

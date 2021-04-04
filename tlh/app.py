@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (QApplication, QDockWidget, QHBoxLayout,
 from tlh import settings
 from tlh.common.ui.dark_theme import apply_dark_theme
 from tlh.data.rom import Rom
-from tlh.hexeditor.ui import HexEditorWidget
+from tlh.hexeditor.ui import HexEditorDock, HexEditorWidget
 from tlh.settings.ui import SettingsDialog
 from tlh.ui.ui_mainwindow import Ui_MainWindow
 
@@ -45,38 +45,17 @@ class MainWindow(QMainWindow):
         dock2 = QDockWidget('Hex Editor USA', self)
         dock2.setObjectName('dockHex')
         self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock2)
-        hex_editor = QWidget(self)
-        layout = QHBoxLayout(hex_editor)
-        scrollBar = QScrollBar(hex_editor)
-        widget = HexEditorWidget(hex_editor, hex_editor_manager.get_hex_editor_instance(RomVariant.USA), scrollBar)
-        layout.addWidget(widget)
-        layout.addWidget(scrollBar)
-        hex_editor.setLayout(layout)
-        dock2.setWidget(hex_editor)
+        dock2.setWidget(HexEditorDock(self, hex_editor_manager.get_hex_editor_instance(RomVariant.USA)))
 
         dock3 = QDockWidget('Hex Editor DEMO', self)
         dock3.setObjectName('dockHex2')
         self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock3)
-        hex_editor2 = QWidget(self)
-        layout2 = QHBoxLayout(hex_editor2)
-        scrollBar2 = QScrollBar(hex_editor2)
-        widget2 = HexEditorWidget(hex_editor2, hex_editor_manager.get_hex_editor_instance(RomVariant.DEMO), scrollBar2)
-        layout2.addWidget(widget2)
-        layout2.addWidget(scrollBar2)
-        hex_editor2.setLayout(layout2)
-        dock3.setWidget(hex_editor2)
+        dock3.setWidget(HexEditorDock(self, hex_editor_manager.get_hex_editor_instance(RomVariant.DEMO)))
 
         dock4 = QDockWidget('Hex Editor JP', self)
         dock4.setObjectName('dockHex3')
         self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock4)
-        hex_editor3 = QWidget(self)
-        layout3 = QHBoxLayout(hex_editor3)
-        scrollBar3 = QScrollBar(hex_editor3)
-        widget3 = HexEditorWidget(hex_editor3, hex_editor_manager.get_hex_editor_instance(RomVariant.JP), scrollBar3)
-        layout3.addWidget(widget3)
-        layout3.addWidget(scrollBar3)
-        hex_editor3.setLayout(layout3)
-        dock4.setWidget(hex_editor3)
+        dock4.setWidget(HexEditorDock(self, hex_editor_manager.get_hex_editor_instance(RomVariant.JP)))
 
 
         # Restore layout

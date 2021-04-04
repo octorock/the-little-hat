@@ -4,14 +4,23 @@
 import PySide6
 from tlh.hexeditor.manager import ByteStatus, HexEditorInstance
 from tlh.const import ROM_OFFSET
-from tlh.data.rom import Rom
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QBrush, QClipboard, QColor, QFont, QKeySequence, QPainter, QPen, QResizeEvent, QShortcut
-from PySide6.QtWidgets import QApplication, QInputDialog, QMenu, QMessageBox, QScrollBar, QWidget
+from PySide6.QtGui import QColor, QFont, QKeySequence, QPainter, QPen, QResizeEvent, QShortcut
+from PySide6.QtWidgets import QApplication, QInputDialog, QLabel, QMenu, QMessageBox, QScrollBar, QWidget
+from tlh.ui.ui_hexeditor import Ui_HexEditor
 
+
+class HexEditorDock (QWidget):
+    def __init__(self, parent, instance: HexEditorInstance) -> None:
+        super().__init__(parent)
+        self.ui = Ui_HexEditor()
+        self.ui.setupUi(self)
+        self.widget = HexEditorWidget(self, instance, self.ui.scrollBar, self.ui.labelStatusBar)
+        self.ui.horizontalLayout_2.insertWidget(0, self.widget)
+        
 
 class HexEditorWidget (QWidget):
-    def __init__(self, parent, instance: HexEditorInstance, scroll_bar: QScrollBar):
+    def __init__(self, parent, instance: HexEditorInstance, scroll_bar: QScrollBar, statusBar: QLabel):
         super().__init__(parent=parent)
         self.instance = instance
         self._number = 1
@@ -23,6 +32,7 @@ class HexEditorWidget (QWidget):
         self.label_length = 100
         self.cursor = 100
         self.selected_bytes = 0
+        self.is_dragging_to_select = False
 
         # TODO make configurable
         self.font = QFont("DejaVu Sans Mono, Courier, Monospace", 12)
@@ -34,12 +44,14 @@ class HexEditorWidget (QWidget):
         self.scroll_bar = scroll_bar
         self.setup_scroll_bar()
         self.scroll_bar.valueChanged.connect(self.on_scroll_bar_changed)
+        self.statusBar = statusBar
         instance.start_offset_moved_externally.connect(self.update_start_offset_from_external)
         instance.cursor_moved_externally.connect(self.update_cursor_from_external)
+        instance.selection_updated_externally.connect(self.update_selection_from_external)
         # Make this widget focussable on click, so that we can reduce the context of the shortcut, so that multiple shortcuts are possible in the same window
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_G), parent, self.show_goto_dialog, context=Qt.WidgetWithChildrenShortcut)
-
+        self.update_status_bar()
 
     def setup_scroll_bar(self):
         # TODO call this again once the hex view has it's size / changes it's size
@@ -121,7 +133,7 @@ class HexEditorWidget (QWidget):
                            * self.line_height), current_byte.text)
                 p.setBackgroundMode(Qt.TransparentMode)
 
-                if virtual_address == self.cursor:
+                if self.is_selected(virtual_address):
                     p.setPen(self.selection_color)
                     p.drawRect(
                         self.label_length + i * self.byte_width - 3, # TODO make these offsets configurable/dependent on font?
@@ -163,6 +175,9 @@ class HexEditorWidget (QWidget):
         else:
             menu.addAction('Copy selected bytes', self.copy_selected_bytes)
         
+        if self.selected_bytes == 4:
+            # TODO mark pointer
+            pass
 
         menu.exec_(event.globalPos())
 
@@ -184,6 +199,22 @@ class HexEditorWidget (QWidget):
             cursor = self.xy_to_cursor(event.x(), event.y())
             if cursor is not None:
                 self.update_cursor(cursor)
+                self.is_dragging_to_select = True
+
+    def mouseMoveEvent(self, event: PySide6.QtGui.QMouseEvent) -> None:
+        if self.is_dragging_to_select:
+            cursor = self.xy_to_cursor(event.x(), event.y())
+            if cursor is not None:
+                selection = cursor-self.cursor
+                if selection < 0:
+                    selection -= 1
+                else:
+                    selection += 1
+                self.instance.selection_updated.emit(selection)
+
+    def mouseReleaseEvent(self, event: PySide6.QtGui.QMouseEvent) -> None:
+        self.is_dragging_to_select = False
+    
 
     def xy_to_cursor(self, x, y):
         line = y // self.line_height
@@ -191,7 +222,6 @@ class HexEditorWidget (QWidget):
         if x < start or x > start + self.bytes_per_line * self.byte_width:
             return None
         col = (x - start) // (self.byte_width)
-        print(f'{x, y} -> {line, col}')
         return line * self.bytes_per_line + col + self.start_offset
         
     def keyPressEvent(self, event: PySide6.QtGui.QKeyEvent) -> None:
@@ -241,10 +271,25 @@ class HexEditorWidget (QWidget):
         self.cursor = cursor
         self.scroll_to_cursor()
         self.instance.cursor_moved.emit(cursor)
+        self.instance.selection_updated.emit(1)
 
     def update_cursor_from_external(self, cursor):
         self.cursor = cursor
+        self.update_status_bar()
         self.update()
+
+    def update_selection_from_external(self, selected_bytes):
+        self.selected_bytes = selected_bytes
+        self.update_status_bar()
+        self.update()
+
+    def update_status_bar(self):
+        text = f'Cursor: {self.instance.get_local_address_str(self.cursor)}'
+
+        if (self.selected_bytes != 0):
+            text += f' Bytes selected: {self.selected_bytes}'
+        self.statusBar.setText(text)
+
 
 
     def scroll_to_cursor(self):
@@ -258,3 +303,10 @@ class HexEditorWidget (QWidget):
         elif (self.cursor - self.start_offset) // self.bytes_per_line < 0:
             # Move to the cursor.
             self.update_start_offset((self.cursor//self.bytes_per_line)*self.bytes_per_line)
+
+
+    def is_selected(self, virtual_address: int) -> bool:
+        if self.selected_bytes < 0:
+            return virtual_address > self.cursor + self.selected_bytes and virtual_address <= self.cursor
+        else:
+            return virtual_address >= self.cursor and virtual_address < self.cursor + self.selected_bytes
