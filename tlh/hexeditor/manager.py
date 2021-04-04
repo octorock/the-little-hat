@@ -27,6 +27,8 @@ class HexEditorInstance(QObject):
     uses the constraint manager to translate from virtual to local addresses and vice versa
     """
 
+    start_offset_moved = Signal(int)
+    start_offset_moved_externally = Signal(int)
     cursor_moved = Signal(int)
     cursor_moved_externally = Signal(int)
 
@@ -73,10 +75,11 @@ class HexEditorInstance(QObject):
         # TODO calculate length of virtual rom
         return self.rom.length()
 
-    def jump_to_local_address(self, local_address: int) -> None:
-        virtual_address = self.constraint_manager.to_virtual(self.rom_variant, local_address)
-        self.cursor_moved.emit(virtual_address)
-
+    def to_virtual(self, local_address: int) -> int:
+        return self.constraint_manager.to_virtual(self.rom_variant, local_address)
+    # def jump_to_local_address(self, local_address: int) -> None:
+    #     virtual_address = self.constraint_manager.to_virtual(self.rom_variant, local_address)
+    #     self.cursor_moved.emit(virtual_address)
 
 
 
@@ -102,15 +105,19 @@ class HexEditorManager(QObject):
 
     def get_hex_editor_instance(self, rom_variant: RomVariant)-> HexEditorInstance:
         instance = HexEditorInstance(self, rom_variant, self.roms[rom_variant], self.constraint_manager)
+        instance.start_offset_moved.connect(self.move_all_start_offsets)
         instance.cursor_moved.connect(self.move_all_cursors)
         self.instances.append(instance)
         return instance
 
-    def move_all_cursors(self, virtual_address: int) -> None:
+    def move_all_start_offsets(self, virtual_address: int) -> None:
+        for instance in self.instances:
+            instance.start_offset_moved_externally.emit(virtual_address)
+
+    def move_all_cursors(self, virtual_address: int) ->None:
         for instance in self.instances:
             instance.cursor_moved_externally.emit(virtual_address)
 
-    
 
     def is_diffing(self, virtual_address: int) -> bool:
         # TODO cache this, optimize accesses of rom data

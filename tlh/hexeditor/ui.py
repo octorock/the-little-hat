@@ -34,7 +34,8 @@ class HexEditorWidget (QWidget):
         self.scroll_bar = scroll_bar
         self.setup_scroll_bar()
         self.scroll_bar.valueChanged.connect(self.on_scroll_bar_changed)
-        instance.cursor_moved_externally.connect(self.update_start_offset_from_external)
+        instance.start_offset_moved_externally.connect(self.update_start_offset_from_external)
+        instance.cursor_moved_externally.connect(self.update_cursor_from_external)
         # Make this widget focussable on click, so that we can reduce the context of the shortcut, so that multiple shortcuts are possible in the same window
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_G), parent, self.show_goto_dialog, context=Qt.WidgetWithChildrenShortcut)
@@ -49,7 +50,7 @@ class HexEditorWidget (QWidget):
 
     def on_scroll_bar_changed(self, value):
         self.start_offset = value * self.bytes_per_line
-        self.instance.cursor_moved.emit(self.start_offset)
+        self.instance.start_offset_moved.emit(self.start_offset)
         self.update()
 
     def wheelEvent(self, event):
@@ -69,7 +70,7 @@ class HexEditorWidget (QWidget):
         self.scroll_bar.setValue(virtual_address//self.bytes_per_line)
 
     def update_start_offset(self, offset):
-        self.instance.cursor_moved.emit(offset)
+        self.instance.start_offset_moved.emit(offset)
         #self.start_offset = offset
         #self.scroll_bar.setValue(offset//self.bytes_per_line)
 
@@ -151,8 +152,7 @@ class HexEditorWidget (QWidget):
             if local_address > ROM_OFFSET:
                 local_address -= ROM_OFFSET
             # TODO error for everything that is not in [0x00000000, 0x00FFFFFF] or [0x08000000, 0x08FFFFFF]
-
-            self.instance.jump_to_local_address(local_address)
+            self.update_cursor(self.instance.to_virtual(local_address))
 
     def contextMenuEvent(self, event: PySide6.QtGui.QContextMenuEvent) -> None:
         menu = QMenu(self)
@@ -164,8 +164,7 @@ class HexEditorWidget (QWidget):
             # TODO handle click on label, etc
             cursor = self.xy_to_cursor(event.x(), event.y())
             if cursor is not None:
-                self.cursor = cursor
-                self.update()
+                self.update_cursor(cursor)
 
     def xy_to_cursor(self, x, y):
         line = y // self.line_height
@@ -176,3 +175,67 @@ class HexEditorWidget (QWidget):
         print(f'{x, y} -> {line, col}')
         return line * self.bytes_per_line + col + self.start_offset
         
+    def keyPressEvent(self, event: PySide6.QtGui.QKeyEvent) -> None:
+        key = event.key()
+        if key == Qt.Key_Up:
+            self.move_cursor_up()
+        elif key == Qt.Key_Down:
+            self.move_cursor_down()
+        elif key == Qt.Key_Left:
+            self.move_cursor_left()
+        elif key == Qt.Key_Right:
+            self.move_cursor_right()
+        elif key == Qt.Key_PageUp:
+            self.move_cursor_page_up()
+        elif key == Qt.Key_PageDown:
+            self.move_cursor_page_down()
+
+    def move_cursor_up(self):
+        if self.cursor >= self.bytes_per_line:
+            self.update_cursor(self.cursor - self.bytes_per_line)
+
+    def move_cursor_down(self):
+        # TODO check bounds
+        self.update_cursor(self.cursor + self.bytes_per_line)
+
+    def move_cursor_left(self):
+        self.update_cursor(max(0, self.cursor - 1))
+
+    def move_cursor_right(self):
+        # TODO check bounds
+        self.update_cursor(self.cursor + 1)
+
+    def move_cursor_page_up(self):
+        page_bytes = (self.number_of_lines_on_screen()-1) * self.bytes_per_line
+        if self.cursor >= page_bytes:
+            self.update_cursor(self.cursor - page_bytes)
+        elif self.cursor >= self.bytes_per_line:
+            self.update_cursor(self.cursor % self.bytes_per_line)
+
+    def move_cursor_page_down(self):
+        # TODO check bounds
+        page_bytes = (self.number_of_lines_on_screen()-1) * self.bytes_per_line
+        self.update_cursor(self.cursor + page_bytes)
+
+
+    def update_cursor(self, cursor):
+        self.cursor = cursor
+        self.scroll_to_cursor()
+        self.instance.cursor_moved.emit(cursor)
+
+    def update_cursor_from_external(self, cursor):
+        self.cursor = cursor
+        self.update()
+
+
+    def scroll_to_cursor(self):
+        full_lines = self.number_of_lines_on_screen()-2
+        # Is the cursor too far down?
+        if (self.cursor - self.start_offset) // self.bytes_per_line >= full_lines:
+            # Move to the cursor.
+            self.update_start_offset((self.cursor//self.bytes_per_line - full_lines)*self.bytes_per_line)#(self.cursor // self.bytes_per_line - self.number_of_lines_on_screen() -3) * self.bytes_per_line)
+
+        # Is the cursor too far up?
+        elif (self.cursor - self.start_offset) // self.bytes_per_line < 0:
+            # Move to the cursor.
+            self.update_start_offset((self.cursor//self.bytes_per_line)*self.bytes_per_line)
