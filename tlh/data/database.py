@@ -1,8 +1,9 @@
-from dataclass_csv import DataclassReader, DataclassWriter
-from dataclasses import dataclass
-from tlh import settings
+from csv import DictReader, DictWriter
 from os import path
+
+from tlh.const import RomVariant
 from tlh.data.constraints import Constraint
+
 
 def get_file_in_database(filename: str) -> str:
     # TODO settings.get_database_location()
@@ -13,15 +14,36 @@ def read_constraints() -> list[Constraint]:
     constraints = []
     try:
         with open(get_file_in_database('constraints.csv'), 'r') as file:
-            reader = DataclassReader(file, Constraint)
-            for constraint in reader:
-                constraints.append(constraint)
+            reader = DictReader(file)
+            for row in reader:
+                constraints.append(
+                    Constraint(
+                        RomVariant(row['romA']),
+                        int(row['addressA'], 16),
+                        RomVariant(row['romB']),
+                        int(row['addressB'], 16),
+                        row['certainty'],
+                        row['note']
+                    )
+                )
     except OSError:
         # file cannot be read, just supply no constraints
         pass
     return constraints
 
+
 def write_constraints(constraints: list[Constraint]):
     with open(get_file_in_database('constraints.csv'), 'w') as file:
-        writer = DataclassWriter(file, constraints, Constraint)
-        writer.write()
+        writer = DictWriter(
+            file, fieldnames=['romA', 'addressA', 'romB', 'addressB', 'certainty', 'note'])
+        writer.writeheader()
+        for constraint in constraints:
+            writer.writerow(
+                {
+                    'romA': constraint.romA,
+                    'addressA': hex(constraint.addressA),
+                    'romB': constraint.romB,
+                    'addressB': hex(constraint.addressB),
+                    'certainty': constraint.certainty,
+                    'note': constraint.note
+                })
