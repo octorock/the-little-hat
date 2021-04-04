@@ -106,14 +106,6 @@ class HexEditorWidget (QWidget):
 
                 virtual_address = self.start_offset + l*self.bytes_per_line + i
 
-                if virtual_address == self.cursor:
-                    p.setPen(self.selection_color)
-                    p.drawRect(
-                        self.label_length + i * self.byte_width - 3, # TODO make these offsets configurable/dependent on font?
-                        (l)* self.line_height + 3,
-                        self.byte_width,
-                        self.line_height
-                        )
 
                 p.setPen(self.byte_color)
 
@@ -123,18 +115,20 @@ class HexEditorWidget (QWidget):
                     p.setBackground(self.diff_color)
                     p.setBackgroundMode(Qt.OpaqueMode)    
 
-                # if byte1 != byte2:
-                #     # p.setPen(QColor(255,0,0))
-                #     p.setBackground(QColor(128, 40, 40))
-                #     p.setBackgroundMode(Qt.OpaqueMode)
-                # # else:
-                #     # p.setPen(self.byte_color)
-
-                
 
                 p.drawText(QPoint(self.label_length + i * self.byte_width, (l+1)
                            * self.line_height), current_byte.text)
                 p.setBackgroundMode(Qt.TransparentMode)
+
+                if virtual_address == self.cursor:
+                    p.setPen(self.selection_color)
+                    p.drawRect(
+                        self.label_length + i * self.byte_width - 3, # TODO make these offsets configurable/dependent on font?
+                        (l)* self.line_height + 3,
+                        self.byte_width,
+                        self.line_height
+                        )
+
 
     def number_of_lines_on_screen(self):
         # +1 to draw cutof lines as well
@@ -164,3 +158,21 @@ class HexEditorWidget (QWidget):
         menu = QMenu(self)
         menu.addAction('Goto', self.show_goto_dialog)
         menu.exec_(event.globalPos())
+
+    def mousePressEvent(self, event: PySide6.QtGui.QMouseEvent) -> None:
+        if event.button() == Qt.LeftButton:
+            # TODO handle click on label, etc
+            cursor = self.xy_to_cursor(event.x(), event.y())
+            if cursor is not None:
+                self.cursor = cursor
+                self.update()
+
+    def xy_to_cursor(self, x, y):
+        line = y // self.line_height
+        start = self.label_offset_x + self.label_length
+        if x < start or x > start + self.bytes_per_line * self.byte_width:
+            return None
+        col = (x - start) // (self.byte_width)
+        print(f'{x, y} -> {line, col}')
+        return line * self.bytes_per_line + col + self.start_offset
+        
