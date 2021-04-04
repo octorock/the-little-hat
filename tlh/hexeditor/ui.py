@@ -51,6 +51,7 @@ class HexEditorWidget (QWidget):
         # Make this widget focussable on click, so that we can reduce the context of the shortcut, so that multiple shortcuts are possible in the same window
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_G), parent, self.show_goto_dialog, context=Qt.WidgetWithChildrenShortcut)
+        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), parent, self.copy_selected_bytes, context = Qt.WidgetWithChildrenShortcut)
         self.update_status_bar()
 
     def setup_scroll_bar(self):
@@ -168,30 +169,30 @@ class HexEditorWidget (QWidget):
 
     def contextMenuEvent(self, event: PySide6.QtGui.QContextMenuEvent) -> None:
         menu = QMenu(self)
-        menu.addAction('Goto', self.show_goto_dialog)
         menu.addAction('Copy cursor address', self.copy_cursor_address)
-        if self.selected_bytes == 0:
-            menu.addAction('Copy cursor byte', self.copy_cursor_byte)
-        else:
-            menu.addAction('Copy selected bytes', self.copy_selected_bytes)
+        menu.addAction('Copy selected bytes', self.copy_selected_bytes)
         
-        if self.selected_bytes == 4:
-            # TODO mark pointer
-            pass
+        if abs(self.selected_bytes) == 4:
+            menu.addAction('Mark as pointer')
+            menu.addAction('Mark as pointer in all and add constraint')
 
+        # General actions
+        menu.addSeparator()
+        menu.addAction('Goto', self.show_goto_dialog)
         menu.exec_(event.globalPos())
 
 
     def copy_cursor_address(self):
         QApplication.clipboard().setText(self.instance.get_local_address_str(self.cursor).upper().replace('0X', '0x'))
 
-    def copy_cursor_byte():
-        # TODO
-        pass
+    def copy_selected_bytes(self):
+        QApplication.clipboard().setText(self.instance.get_bytes_str(self.get_selected_range()))
 
-    def copy_selected_bytes():
-        # TODO
-        pass
+    def get_selected_range(self) -> range:
+        if self.selected_bytes < 0:
+            return range(self.cursor + self.selected_bytes + 1, self.cursor + 1)
+        else:
+            return range(self.cursor, self.cursor + self.selected_bytes)
 
     def mousePressEvent(self, event: PySide6.QtGui.QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:

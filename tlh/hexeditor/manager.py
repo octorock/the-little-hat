@@ -84,7 +84,17 @@ class HexEditorInstance(QObject):
     #     self.cursor_moved.emit(virtual_address)
 
     def get_local_address_str(self, virtual_address: int) -> str:
-        return hex(self.constraint_manager.to_local(self.rom_variant, virtual_address) + ROM_OFFSET)
+        return hex(self.get_local_address(virtual_address) + ROM_OFFSET)
+
+    def get_local_address(self, virtual_address: int) -> int:
+        return self.constraint_manager.to_local(self.rom_variant, virtual_address)
+
+    def get_bytes_str(self, range: range) -> str:
+        results = []
+        for local_address in map(self.get_local_address, range):
+            if local_address != -1:
+                results.append('%02X' % self.rom.get_byte(local_address))
+        return ' '.join(results)
 
 
 
