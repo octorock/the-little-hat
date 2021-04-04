@@ -6,8 +6,8 @@ from tlh.hexeditor.manager import ByteStatus, HexEditorInstance
 from tlh.const import ROM_OFFSET
 from tlh.data.rom import Rom
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QBrush, QColor, QFont, QKeySequence, QPainter, QPen, QResizeEvent, QShortcut
-from PySide6.QtWidgets import QInputDialog, QMenu, QMessageBox, QScrollBar, QWidget
+from PySide6.QtGui import QBrush, QClipboard, QColor, QFont, QKeySequence, QPainter, QPen, QResizeEvent, QShortcut
+from PySide6.QtWidgets import QApplication, QInputDialog, QMenu, QMessageBox, QScrollBar, QWidget
 
 
 class HexEditorWidget (QWidget):
@@ -157,7 +157,26 @@ class HexEditorWidget (QWidget):
     def contextMenuEvent(self, event: PySide6.QtGui.QContextMenuEvent) -> None:
         menu = QMenu(self)
         menu.addAction('Goto', self.show_goto_dialog)
+        menu.addAction('Copy cursor address', self.copy_cursor_address)
+        if self.selected_bytes == 0:
+            menu.addAction('Copy cursor byte', self.copy_cursor_byte)
+        else:
+            menu.addAction('Copy selected bytes', self.copy_selected_bytes)
+        
+
         menu.exec_(event.globalPos())
+
+
+    def copy_cursor_address(self):
+        QApplication.clipboard().setText(self.instance.get_local_address_str(self.cursor).upper().replace('0X', '0x'))
+
+    def copy_cursor_byte():
+        # TODO
+        pass
+
+    def copy_selected_bytes():
+        # TODO
+        pass
 
     def mousePressEvent(self, event: PySide6.QtGui.QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:

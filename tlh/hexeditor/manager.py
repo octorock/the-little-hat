@@ -81,6 +81,9 @@ class HexEditorInstance(QObject):
     #     virtual_address = self.constraint_manager.to_virtual(self.rom_variant, local_address)
     #     self.cursor_moved.emit(virtual_address)
 
+    def get_local_address_str(self, virtual_address: int) -> str:
+        return hex(self.constraint_manager.to_local(self.rom_variant, virtual_address) + ROM_OFFSET)
+
 
 
 class HexEditorManager(QObject):
