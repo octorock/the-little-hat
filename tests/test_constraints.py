@@ -503,10 +503,10 @@ def x_test_many_trivial_constraints():
         assert_j_e_address(manager, i,i,i)
 
 
-def test_bug():
+def test_bug_1():
     manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO})
-    add_u_d_constraint(manager, 512657, 511637)
-    add_u_d_constraint(manager, 513133, 512129)
+    add_u_d_constraint(manager, 2657, 1637)
+    add_u_d_constraint(manager, 3133, 2129)
     manager.rebuild_relations()
     # USA,512657,DEMO,511637,5,Pointer
     # USA,513133,DEMO,512129,5,Pointer

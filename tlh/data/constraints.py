@@ -130,22 +130,34 @@ class ConstraintManager:
             # - next blocker with blocker.rom_variant:blocker.rom_address
             # - next constraint with romA:addressA or romB:addressB
             next_virtual_address = 0x0fffffff
+            # Store the blocker/constraint that was responsible for this va to be selected TODO only for debugging, remove later
+            responsible_object = None
+
+
             for variant in self.variants:
                 for blocker in local_blockers[variant]:
                     va = self.to_virtual(blocker.rom_variant, blocker.rom_address)
                     if va < next_virtual_address:
                         next_virtual_address = va
+                        responsible_object = blocker
+                    # Also test the address that we are blocking
 
             for constraint in constraints:
                 va = self.to_virtual(constraint.romA, constraint.addressA)
                 if va < next_virtual_address:
                     next_virtual_address = va
+                    responsible_object = constraint
                 va = self.to_virtual(constraint.romB, constraint.addressB)
                 if va < next_virtual_address:
                     next_virtual_address = va
+                    responsible_object = constraint
 
             offset = next_virtual_address - virtual_address
             if offset <= 0: # TODO why is this necessary? should the corresponding constraint/blocker not have been removed in the previous iteration?
+                print(f'Negative offset: {next_virtual_address} - {virtual_address}')
+                print(responsible_object)
+                # TODO this is still triggered in test_four_roms due to the va calculation for EU not being aware that it is blocked
+                #assert False
                 offset = 1
             virtual_address += offset
 
@@ -159,10 +171,16 @@ class ConstraintManager:
                 log(f'{variant} wants to {local_addresses[variant]} -> {next_local_addresses[variant]}')
                 can_advance[variant] = True
 
+            # TODO do a semi-shallow copy?
+            local_blockers_copy = {}
+            for variant in self.variants:
+                local_blockers_copy[variant] = local_blockers[variant].copy()
+
             for variant in self.variants:
 
                 still_blocking = False
-                for blocker in reversed(local_blockers[variant]): # https://stackoverflow.com/a/10665800
+                for blocker in local_blockers[variant]: # https://stackoverflow.com/a/10665800
+                    print(f'Blocker {blocker}')
                     if next_local_addresses[variant] >= blocker.local_address:
                         if next_local_addresses[blocker.rom_variant] < blocker.rom_address:
                             log(f'{variant} is still blocked by {blocker}')
@@ -175,10 +193,22 @@ class ConstraintManager:
                             # Insert corresponding relation
                             self.rom_relations[variant].add_relation(blocker.local_address, virtual_address)
                             next_local_addresses[variant] = blocker.local_address
-                            local_blockers[variant].remove(blocker)
+                            local_blockers_copy[variant].remove(blocker)
                             local_blockers_count -= 1
+                    else:
+                        # Cannot be blocked, but reverse another blocker that would be resolved here
+                        if next_local_addresses[blocker.rom_variant] > blocker.rom_address:
+                            # TODO does this ever happen?
+                            assert False
+                        elif next_local_addresses[blocker.rom_variant] == blocker.rom_address:
+                            local_blockers_copy[variant].remove(blocker)
+                            new_blocker = Blocker(blocker.rom_address, variant, blocker.local_address)
+                            local_blockers_copy[blocker.rom_variant].append(new_blocker)
 
+                            next_local_addresses[blocker.rom_variant] = blocker.rom_address - 1 # TODO does this not create one virtual address that is unused?
+                            log(f'Would resolve {blocker}, but local not advanced enough, add opposing blocker {new_blocker}')
 
+            local_blockers = local_blockers_copy
             # Handle all constraints TODO sort them somehow
             for constraint in reversed(constraints): # https://stackoverflow.com/a/10665800
                 virtual_address_a = self.to_virtual(constraint.romA, constraint.addressA)
@@ -230,6 +260,7 @@ class ConstraintManager:
                     local_addresses[variant] = next_local_addresses[variant]
                     can_continue = True
                 else:
+                    log(f'{variant} stays at {local_addresses[variant]}')
                     # TODO check that this is correct
                     next_local_addresses[variant] = local_addresses[variant]
 

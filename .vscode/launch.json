@@ -16,7 +16,7 @@
             "request": "launch",
             "module": "pytest",
             // to select a certain test to run, see https://stackoverflow.com/a/36539692
-            "args": ["-k", "test_three_constraints"]
+            "args": ["-k", "test_three_cycle"]
         },
     ]
 }
