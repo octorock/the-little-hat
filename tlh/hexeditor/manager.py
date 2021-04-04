@@ -37,6 +37,8 @@ class HexEditorInstance(QObject):
         self.rom = rom
         self.constraint_manager = constraint_manager
 
+        self.display_byte_cache = {} # TODO invalidate this cache if a constraint is added
+
 
     def get_local_label(self, index: int) -> str:
         local_address = self.constraint_manager.to_local(self.rom_variant, index)
@@ -45,15 +47,20 @@ class HexEditorInstance(QObject):
         return '%08X' % (local_address + ROM_OFFSET)
 
     def get_display_byte_for_index(self, index: int) -> DisplayByte:
+        if index in self.display_byte_cache: # TODO test if the cache actually improves performance or is just a memory waste
+            return self.display_byte_cache[index]
+
         local_address = self.constraint_manager.to_local(self.rom_variant, index)
         if local_address == -1:
             return DisplayByte('  ', ByteStatus.NONE)
 
         # TODO make sure local address is < length of rom
         
-        return DisplayByte('%02X' % self.rom.get_byte(local_address), 
+        display_byte = DisplayByte('%02X' % self.rom.get_byte(local_address), 
         ByteStatus.DIFFERING if self.manager.is_diffing(index) else ByteStatus.NONE
         )
+        self.display_byte_cache[index] = display_byte
+        return display_byte
 
 
     def get_bytes(self, from_index: int, to_index: int) -> list[DisplayByte]:
@@ -79,7 +86,7 @@ class HexEditorManager(QObject):
     """
     def __init__(self, parent) -> None:
         super().__init__(parent=parent)
-        self.variants = {RomVariant.USA, RomVariant.DEMO}
+        self.variants = {RomVariant.USA, RomVariant.DEMO, RomVariant.JP}
         self.roms: dict[RomVariant, Rom] = {}
         for variant in self.variants:
             self.roms[variant] = get_rom(variant)

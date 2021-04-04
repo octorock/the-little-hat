@@ -12,6 +12,7 @@ class Constraint:
     romB: RomVariant = None
     addressB: int = 0
     certainty: int = 0
+    author: str = None
     note: str = None
 
 
@@ -22,7 +23,7 @@ class RomRelation:
 
 
 def log(*argv):
-    print(*argv)
+    #print(*argv)
     pass
 
 class RomRelations:
@@ -154,8 +155,8 @@ class ConstraintManager:
 
             offset = next_virtual_address - virtual_address
             if offset <= 0: # TODO why is this necessary? should the corresponding constraint/blocker not have been removed in the previous iteration?
-                print(f'Negative offset: {next_virtual_address} - {virtual_address}')
-                print(responsible_object)
+                log(f'Negative offset: {next_virtual_address} - {virtual_address}')
+                log(responsible_object)
                 # TODO this is still triggered in test_four_roms due to the va calculation for EU not being aware that it is blocked
                 #assert False
                 offset = 1
@@ -180,7 +181,7 @@ class ConstraintManager:
 
                 still_blocking = False
                 for blocker in local_blockers[variant]: # https://stackoverflow.com/a/10665800
-                    print(f'Blocker {blocker}')
+                    log(f'Blocker {blocker}')
                     if next_local_addresses[variant] >= blocker.local_address:
                         if next_local_addresses[blocker.rom_variant] < blocker.rom_address:
                             log(f'{variant} is still blocked by {blocker}')

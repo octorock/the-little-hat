@@ -6,7 +6,7 @@ from tlh.hexeditor.manager import ByteStatus, HexEditorInstance
 from tlh.const import ROM_OFFSET
 from tlh.data.rom import Rom
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QBrush, QColor, QFont, QKeySequence, QPainter, QResizeEvent, QShortcut
+from PySide6.QtGui import QBrush, QColor, QFont, QKeySequence, QPainter, QPen, QResizeEvent, QShortcut
 from PySide6.QtWidgets import QInputDialog, QMenu, QMessageBox, QScrollBar, QWidget
 
 
@@ -21,10 +21,16 @@ class HexEditorWidget (QWidget):
         self.start_offset = 0
         self.label_offset_x = 5
         self.label_length = 100
+        self.cursor = 100
+        self.selected_bytes = 0
+
         # TODO make configurable
         self.font = QFont("DejaVu Sans Mono, Courier, Monospace", 12)
         self.label_color = QColor(128, 128, 128)
         self.byte_color = QColor(210, 210, 210)
+        self.diff_color = QColor(158, 80, 88)#QColor(244, 108, 117)
+        self.selection_color = QPen(QColor(97, 175, 239))
+        self.selection_color.setWidth(2)
         self.scroll_bar = scroll_bar
         self.setup_scroll_bar()
         self.scroll_bar.valueChanged.connect(self.on_scroll_bar_changed)
@@ -96,15 +102,25 @@ class HexEditorWidget (QWidget):
             p.drawText(QPoint(self.label_offset_x, (l + 1)
                        * self.line_height), position_string)
 
-            p.setPen(self.byte_color)
             for i in range(0, min(self.bytes_per_line, length - self.bytes_per_line * l)):
 
-                # byte1 = data[i + l*self.bytes_per_line]
-                # byte2 = data2[i + l*self.bytes_per_line]
+                virtual_address = self.start_offset + l*self.bytes_per_line + i
+
+                if virtual_address == self.cursor:
+                    p.setPen(self.selection_color)
+                    p.drawRect(
+                        self.label_length + i * self.byte_width - 3, # TODO make these offsets configurable/dependent on font?
+                        (l)* self.line_height + 3,
+                        self.byte_width,
+                        self.line_height
+                        )
+
+                p.setPen(self.byte_color)
+
 
                 current_byte = data[i + l*self.bytes_per_line]
                 if current_byte.status == ByteStatus.DIFFERING:
-                    p.setBackground(QColor(128, 40, 40))
+                    p.setBackground(self.diff_color)
                     p.setBackgroundMode(Qt.OpaqueMode)    
 
                 # if byte1 != byte2:

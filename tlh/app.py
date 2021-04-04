@@ -40,18 +40,11 @@ class MainWindow(QMainWindow):
 
 
 
+        hex_editor_manager = HexEditorManager(self)
         # TODO make dynamic via menus?
         dock2 = QDockWidget('Hex Editor USA', self)
         dock2.setObjectName('dockHex')
         self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock2)
-
-
-        hex_editor_manager = HexEditorManager(self)
-
-        
-
-        rom = Rom(settings.get_rom_usa())
-        rom2 = Rom(settings.get_rom_demo())
         hex_editor = QWidget(self)
         layout = QHBoxLayout(hex_editor)
         scrollBar = QScrollBar(hex_editor)
@@ -72,6 +65,18 @@ class MainWindow(QMainWindow):
         layout2.addWidget(scrollBar2)
         hex_editor2.setLayout(layout2)
         dock3.setWidget(hex_editor2)
+
+        dock4 = QDockWidget('Hex Editor JP', self)
+        dock4.setObjectName('dockHex3')
+        self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock4)
+        hex_editor3 = QWidget(self)
+        layout3 = QHBoxLayout(hex_editor3)
+        scrollBar3 = QScrollBar(hex_editor3)
+        widget3 = HexEditorWidget(hex_editor3, hex_editor_manager.get_hex_editor_instance(RomVariant.JP), scrollBar3)
+        layout3.addWidget(widget3)
+        layout3.addWidget(scrollBar3)
+        hex_editor3.setLayout(layout3)
+        dock4.setWidget(hex_editor3)
 
 
         # Restore layout

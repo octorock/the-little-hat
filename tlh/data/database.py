@@ -23,6 +23,7 @@ def read_constraints() -> list[Constraint]:
                         RomVariant(row['romB']),
                         int(row['addressB'], 16),
                         row['certainty'],
+                        row['author'],
                         row['note']
                     )
                 )
@@ -35,7 +36,7 @@ def read_constraints() -> list[Constraint]:
 def write_constraints(constraints: list[Constraint]):
     with open(get_file_in_database('constraints.csv'), 'w') as file:
         writer = DictWriter(
-            file, fieldnames=['romA', 'addressA', 'romB', 'addressB', 'certainty', 'note'])
+            file, fieldnames=['romA', 'addressA', 'romB', 'addressB', 'certainty', 'author', 'note'])
         writer.writeheader()
         for constraint in constraints:
             writer.writerow(
@@ -45,5 +46,6 @@ def write_constraints(constraints: list[Constraint]):
                     'romB': constraint.romB,
                     'addressB': hex(constraint.addressB),
                     'certainty': constraint.certainty,
+                    'author': constraint.author,
                     'note': constraint.note
                 })
