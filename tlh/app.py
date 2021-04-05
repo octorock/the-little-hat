@@ -1,19 +1,18 @@
 import signal
 import sys
-from tlh.data.database import get_constraint_database, initialize_databases
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QIcon
-from PySide6.QtWidgets import (
-    QApplication, QDockWidget, QHBoxLayout, QInputDialog, QMainWindow,
-    QMdiSubWindow, QMenu, QMessageBox, QScrollBar, QWidget)
+from PySide6.QtWidgets import (QApplication, QDockWidget, QInputDialog,
+                               QMainWindow, QMenu, QMessageBox)
 
 from tlh import settings
 from tlh.common.ui.dark_theme import apply_dark_theme
 from tlh.const import RomVariant
-from tlh.data.rom import Rom
+from tlh.data.database import get_constraint_database, initialize_databases
 from tlh.hexeditor.manager import HexEditorManager
 from tlh.hexeditor.ui import HexEditorDock, HexEditorWidget
+from tlh.plugin.loader import load_plugins
 from tlh.settings.ui import SettingsDialog
 from tlh.ui.ui_mainwindow import Ui_MainWindow
 
@@ -29,41 +28,46 @@ class MainWindow(QMainWindow):
         self.ui.actionQuit.triggered.connect(app.quit)
         self.ui.actionSettings.triggered.connect(self.show_settings_dialog)
         self.ui.actionAbout.triggered.connect(self.show_about_dialog)
-        self.ui.actionDisableRedundantConstraints.triggered.connect(self.disable_redundant_constraints)
+        self.ui.actionDisableRedundantConstraints.triggered.connect(
+            self.disable_redundant_constraints)
 
         self.build_layouts_toolbar()
 
-        #self.setCentralWidget(widget)
-        #self.ui.centralwidget.hide()
+        # self.setCentralWidget(widget)
+        # self.ui.centralwidget.hide()
 
         # Build all docks and then hide them, so they exist for layouts?
         self.ui.dockBuilder.hide()
 
-
         initialize_databases(self)
-
 
         hex_editor_manager = HexEditorManager(self)
         # TODO make dynamic via menus?
         dock1 = QDockWidget('Hex Editor USA', self)
         dock1.setObjectName('dockHex')
         self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock1)
-        dock1.setWidget(HexEditorDock(self, hex_editor_manager.get_hex_editor_instance(RomVariant.USA)))
+        dock1.setWidget(HexEditorDock(
+            self, hex_editor_manager.get_hex_editor_instance(RomVariant.USA)))
 
         dock2 = QDockWidget('Hex Editor DEMO', self)
         dock2.setObjectName('dockHex2')
         self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock2)
-        dock2.setWidget(HexEditorDock(self, hex_editor_manager.get_hex_editor_instance(RomVariant.DEMO)))
+        dock2.setWidget(HexEditorDock(
+            self, hex_editor_manager.get_hex_editor_instance(RomVariant.DEMO)))
 
         dock3 = QDockWidget('Hex Editor JP', self)
         dock3.setObjectName('dockHex3')
         self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock3)
-        dock3.setWidget(HexEditorDock(self, hex_editor_manager.get_hex_editor_instance(RomVariant.JP)))
+        dock3.setWidget(HexEditorDock(
+            self, hex_editor_manager.get_hex_editor_instance(RomVariant.JP)))
 
         # dock4 = QDockWidget('Hex Editor EU', self)
         # dock4.setObjectName('dockHex4')
         # self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock4)
         # dock4.setWidget(HexEditorDock(self, hex_editor_manager.get_hex_editor_instance(RomVariant.EU)))
+
+        # Load plugins
+        load_plugins(self)
 
         # Restore layout
         self.restoreState(settings.get_window_state())
