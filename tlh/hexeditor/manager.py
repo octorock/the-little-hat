@@ -1,7 +1,7 @@
 from enum import Enum
 
 from PySide6.QtGui import QColor
-from tlh.data.database import get_pointer_database, read_constraints, write_constraints
+from tlh.data.database import get_pointer_database, get_constraint_database
 from tlh.data.constraints import Constraint, ConstraintManager
 from tlh.data.rom import Rom, get_rom
 from tlh.const import ROM_OFFSET, RomVariant
@@ -64,6 +64,9 @@ class HexEditorInstance(QObject):
             if pointer.rom_variant == self.rom_variant:
                 self.pointers.append(pointer)
         # TODO sort pointer list?
+        self.request_repaint()
+
+    def request_repaint(self):
         self.display_byte_cache = {} # Invalidate TODO only at the added pointers?
         self.repaint_requested.emit()
 
@@ -146,15 +149,20 @@ class HexEditorManager(QObject):
         self.roms: dict[RomVariant, Rom] = {}
         for variant in self.variants:
             self.roms[variant] = get_rom(variant)
-        self.instances = []
-
+        self.instances: list[HexEditorInstance] = []
 
         self.constraint_manager = ConstraintManager(self.variants) # TODO make configurable
-        constraints = read_constraints()
-        self.constraint_manager.add_all_constraints(constraints)        
-        #constraints.append(Constraint(RomVariant.USA, 0x07d46d,RomVariant.DEMO, 0x07d081, 5, 'Pointer'))
-        write_constraints(constraints)
+        self.update_constraints()
+        get_constraint_database().constraints_changed.connect(self.update_constraints)
 
+        
+
+    def update_constraints(self):
+        print('update constraints')
+        self.constraint_manager.reset()
+        self.constraint_manager.add_all_constraints(get_constraint_database().get_constraints())        
+        for instance in self.instances:
+            instance.request_repaint()
 
     def get_hex_editor_instance(self, rom_variant: RomVariant)-> HexEditorInstance:
         instance = HexEditorInstance(self, rom_variant, self.roms[rom_variant], self.constraint_manager)
@@ -196,9 +204,9 @@ class HexEditorManager(QObject):
         
     def add_pointers_and_constraints(self, pointer: Pointer) -> None:
         # Found a pointer that is the same for all variants
-        constraints = read_constraints()
 
         new_pointers = [pointer]
+        new_constraints = []
         virtual_address = self.constraint_manager.to_virtual(pointer.rom_variant, pointer.address)
 
         for variant in self.variants:
@@ -216,9 +224,10 @@ class HexEditorManager(QObject):
                     note += '\n' + pointer.note
                 
                 # TODO test that adding the added constraints are not invalid
-                constraints.append(Constraint(pointer.rom_variant, pointer.points_to-ROM_OFFSET, variant, points_to-ROM_OFFSET, pointer.certainty, pointer.author, note))
+                new_constraints.append(Constraint(pointer.rom_variant, pointer.points_to-ROM_OFFSET, variant, points_to-ROM_OFFSET, pointer.certainty, pointer.author, note))
 
 
         pointer_database = get_pointer_database()
         pointer_database.add_pointers(new_pointers)
-        write_constraints(constraints)
+        constraint_database = get_constraint_database()
+        constraint_database.add_constraints(new_constraints)

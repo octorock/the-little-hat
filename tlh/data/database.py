@@ -17,50 +17,78 @@ def initialize_databases(parent) -> None:
     '''
     Initialize all database singletons
     '''
-    global pointer_database_instance
+    global pointer_database_instance, constraint_database_instance
     pointer_database_instance = PointerDatabase(parent)
+    constraint_database_instance = ConstraintDatabase(parent)
 
 ### Constraints ###
+constraint_database_instance = None
+class ConstraintDatabase(QObject):
 
+    constraints_changed = Signal()
 
-def read_constraints() -> list[Constraint]:
-    constraints = []
-    try:
-        with open(get_file_in_database('constraints.csv'), 'r') as file:
-            reader = DictReader(file)
-            for row in reader:
-                constraints.append(
-                    Constraint(
-                        RomVariant(row['romA']),
-                        int(row['addressA'], 16),
-                        RomVariant(row['romB']),
-                        int(row['addressB'], 16),
-                        row['certainty'],
-                        row['author'],
-                        row['note']
+    def __init__(self, parent) -> None:
+        if constraint_database_instance is not None:
+            raise RuntimeError('Already initialized')
+        super().__init__(parent=parent)
+        self.constraints = self._read_constraints()
+
+    def get_constraints(self) -> list[Constraint]:
+        return self.constraints
+
+    def add_constraint(self, constraint: Constraint) -> None:
+        self.constraints.append(constraint)
+        # TODO don't save every time?
+        self._write_constraints()
+        self.constraints_changed.emit()
+
+    def add_constraints(self, constraints: list[Constraint]) -> None:
+        self.constraints += constraints
+        # TODO don't save every time?
+        self._write_constraints()
+        self.constraints_changed.emit()
+
+    def _read_constraints(self) -> list[Constraint]:
+        constraints = []
+        try:
+            with open(get_file_in_database('constraints.csv'), 'r') as file:
+                reader = DictReader(file)
+                for row in reader:
+                    constraints.append(
+                        Constraint(
+                            RomVariant(row['romA']),
+                            int(row['addressA'], 16),
+                            RomVariant(row['romB']),
+                            int(row['addressB'], 16),
+                            row['certainty'],
+                            row['author'],
+                            row['note']
+                        )
                     )
-                )
-    except OSError:
-        # file cannot be read, just supply no constraints
-        pass
-    return constraints
+        except OSError:
+            # file cannot be read, just supply no constraints
+            pass
+        return constraints
 
 
-def write_constraints(constraints: list[Constraint]):
-    with open(get_file_in_database('constraints.csv'), 'w') as file:
-        writer = DictWriter(
-            file, fieldnames=['romA', 'addressA', 'romB', 'addressB', 'certainty', 'author', 'note'])
-        writer.writeheader()
-        for constraint in constraints:
-            writer.writerow({
-                'romA': constraint.romA,
-                'addressA': hex(constraint.addressA),
-                'romB': constraint.romB,
-                'addressB': hex(constraint.addressB),
-                'certainty': constraint.certainty,
-                'author': constraint.author,
-                'note': constraint.note
-            })
+    def _write_constraints(self):
+        with open(get_file_in_database('constraints.csv'), 'w') as file:
+            writer = DictWriter(
+                file, fieldnames=['romA', 'addressA', 'romB', 'addressB', 'certainty', 'author', 'note'])
+            writer.writeheader()
+            for constraint in self.constraints:
+                writer.writerow({
+                    'romA': constraint.romA,
+                    'addressA': hex(constraint.addressA),
+                    'romB': constraint.romB,
+                    'addressB': hex(constraint.addressB),
+                    'certainty': constraint.certainty,
+                    'author': constraint.author,
+                    'note': constraint.note
+                })
+
+def get_constraint_database():
+    return constraint_database_instance
 
 ### Pointers ###
 pointer_database_instance = None

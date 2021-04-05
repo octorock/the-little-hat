@@ -23,7 +23,7 @@ class RomRelation:
 
 
 def log(*argv):
-    print(*argv)
+    #print(*argv)
     pass
 
 class RomRelations:
@@ -92,6 +92,12 @@ class ConstraintManager:
         self.rom_relations: dict[RomVariant, RomRelations] = {}
         for variant in variants:
             self.rom_relations[variant] = RomRelations(variant)
+
+    def reset(self):
+        self.constraints = []
+        for variant in self.variants:
+            self.rom_relations[variant].clear()
+
 
     def add_constraint(self, constraint: Constraint) -> None:
         self.constraints.append(constraint)  # TODO add at the correct place
