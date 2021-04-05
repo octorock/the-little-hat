@@ -1,11 +1,11 @@
 from PySide6.QtWidgets import QMessageBox
 from tlh.plugin.api import PluginApi
 
-parent = None
-def main(api: PluginApi) -> None:
-    global parent
-    parent = api.main_window
-    api.register_menu_entry('Test', show_test)
 
-def show_test():
-    QMessageBox.information(parent, 'Test', 'test plugin loaded successfully')
+class TestPlugin:
+    def __init__(self, api: PluginApi) -> None:
+        self.api = api
+        api.register_menu_entry('Test', self.show_test)    
+        
+    def show_test(self):
+        QMessageBox.information(self.api.main_window, 'Test', 'test plugin loaded successfully')
