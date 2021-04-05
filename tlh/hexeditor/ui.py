@@ -1,6 +1,9 @@
 # Inspired by https://github.com/PetterS/sexton
 # Paint custom widget https://blog.rburchell.com/2010/02/pyside-tutorial-custom-widget-painting.html
 
+from tlh import settings
+from tlh.data.pointer import Pointer
+from tlh.hexeditor.edit_pointer_dialog import EditPointerDialog
 import PySide6
 from tlh.hexeditor.manager import ByteStatus, HexEditorInstance
 from tlh.const import ROM_OFFSET
@@ -8,7 +11,7 @@ from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QColor, QFont, QKeySequence, QPainter, QPen, QResizeEvent, QShortcut
 from PySide6.QtWidgets import QApplication, QInputDialog, QLabel, QMenu, QMessageBox, QScrollBar, QWidget
 from tlh.ui.ui_hexeditor import Ui_HexEditor
-
+from tlh.data.database import read_pointers, write_pointers
 
 class HexEditorDock (QWidget):
     def __init__(self, parent, instance: HexEditorInstance) -> None:
@@ -173,8 +176,8 @@ class HexEditorWidget (QWidget):
         menu.addAction('Copy selected bytes', self.copy_selected_bytes)
         
         if abs(self.selected_bytes) == 4:
-            menu.addAction('Mark as pointer')
-            menu.addAction('Mark as pointer in all and add constraint')
+            menu.addAction('Mark as pointer', self.mark_as_pointer)
+            menu.addAction('Mark as pointer in all and add constraint', self.mark_as_all_pointer)
 
         # General actions
         menu.addSeparator()
@@ -193,6 +196,34 @@ class HexEditorWidget (QWidget):
             return range(self.cursor + self.selected_bytes + 1, self.cursor + 1)
         else:
             return range(self.cursor, self.cursor + self.selected_bytes)
+
+    def get_new_pointer_dialog(self):
+        address = self.cursor
+        if self.selected_bytes == -4:
+            address -= 3           
+        points_to = self.instance.get_as_pointer(address)
+
+        pointer = Pointer(self.instance.rom_variant, address, points_to, 5, settings.get_username())
+
+        return EditPointerDialog(self, pointer)
+        
+
+    def mark_as_pointer(self):
+        dialog = self.get_new_pointer_dialog()
+        dialog.pointer_changed.connect(self.add_new_pointer)
+        dialog.show()
+
+    def add_new_pointer(self, pointer: Pointer) -> None:
+        # TODO move to database class?
+        pointers = read_pointers()
+        pointers.append(pointer)
+        write_pointers(pointers)
+
+    def mark_as_all_pointer(self):
+        dialog = self.get_new_pointer_dialog()
+        dialog.pointer_changed.connect(self.add_new_pointer_and_constraints)
+        dialog.show()
+
 
     def mousePressEvent(self, event: PySide6.QtGui.QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:

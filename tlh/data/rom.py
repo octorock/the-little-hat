@@ -17,6 +17,9 @@ class Rom:
     def length(self) -> int:
         return len(self.bytes)
 
+    def get_pointer(self, index: int) -> int:
+        return int.from_bytes(self.bytes[index:index+4], 'little')
+
 # Rom data is read only, so we only need to read it once
 roms: dict[RomVariant, Rom] = {}
 

@@ -96,6 +96,9 @@ class HexEditorInstance(QObject):
                 results.append('%02X' % self.rom.get_byte(local_address))
         return ' '.join(results)
 
+    def get_as_pointer(self, virtual_address: int) -> int:
+        return self.rom.get_pointer(self.get_local_address(virtual_address))
+
 
 
 class HexEditorManager(QObject):
