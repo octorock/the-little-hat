@@ -110,6 +110,7 @@ class ConstraintDatabase(QObject):
                 print(f'Keep {constraint}')
                 manager.add_constraint(constraint)
                 manager.rebuild_relations()
+        self._write_constraints()
 
 
 def get_constraint_database():
