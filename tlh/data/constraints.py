@@ -14,6 +14,7 @@ class Constraint:
     certainty: int = 0
     author: str = None
     note: str = None
+    enabled: bool = True
 
 
 @dataclass
@@ -100,13 +101,18 @@ class ConstraintManager:
 
 
     def add_constraint(self, constraint: Constraint) -> None:
-        self.constraints.append(constraint)  # TODO add at the correct place
+        if constraint.enabled:
+            self.constraints.append(constraint)  # TODO add at the correct place
         #TODO add #self.rebuild_relations()
 
     def add_all_constraints(self, constraints: list[Constraint]) -> None:
         for constraint in constraints:
             self.add_constraint(constraint)
         self.rebuild_relations()
+
+        # print('Num of relations')
+        # for variant in self.variants:
+        #     print(variant, len(self.rom_relations[variant].relations))
 
     def rebuild_relations(self) -> None:
         """

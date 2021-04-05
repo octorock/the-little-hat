@@ -1,6 +1,6 @@
 import signal
 import sys
-from tlh.data.database import initialize_databases
+from tlh.data.database import get_constraint_database, initialize_databases
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QIcon
@@ -29,6 +29,7 @@ class MainWindow(QMainWindow):
         self.ui.actionQuit.triggered.connect(app.quit)
         self.ui.actionSettings.triggered.connect(self.show_settings_dialog)
         self.ui.actionAbout.triggered.connect(self.show_about_dialog)
+        self.ui.actionDisableRedundantConstraints.triggered.connect(self.disable_redundant_constraints)
 
         self.build_layouts_toolbar()
 
@@ -150,6 +151,9 @@ class MainWindow(QMainWindow):
     def show_about_dialog(self):
         QMessageBox.about(self, 'The Little Hat',
                           'The Little Hat\nVersion: 0.0')  # TODO
+
+    def disable_redundant_constraints(self):
+        get_constraint_database().disable_redundant_constraints()
 
 
 def run():

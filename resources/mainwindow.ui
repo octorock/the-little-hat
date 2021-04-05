@@ -40,6 +40,7 @@
      <string>Tools</string>
     </property>
     <addaction name="actionBuilder"/>
+    <addaction name="actionDisableRedundantConstraints"/>
     <addaction name="separator"/>
     <addaction name="actionSettings"/>
    </widget>
@@ -89,6 +90,11 @@
   <action name="actionBuilder">
    <property name="text">
     <string>Builder</string>
+   </property>
+  </action>
+  <action name="actionDisableRedundantConstraints">
+   <property name="text">
+    <string>Disable redundant constraints</string>
    </property>
   </action>
  </widget>

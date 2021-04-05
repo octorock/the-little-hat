@@ -9,7 +9,7 @@ import PySide6
 from tlh.hexeditor.manager import HexEditorInstance
 from tlh.const import ROM_OFFSET
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QColor, QFont, QKeySequence, QPainter, QPen, QResizeEvent, QShortcut
+from PySide6.QtGui import QColor, QFont, QKeyEvent, QKeySequence, QPainter, QPen, QResizeEvent, QShortcut
 from PySide6.QtWidgets import QApplication, QInputDialog, QLabel, QMenu, QMessageBox, QScrollBar, QWidget
 from tlh.ui.ui_hexeditor import Ui_HexEditor
 
@@ -55,7 +55,7 @@ class HexEditorWidget (QWidget):
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_G), parent, self.show_goto_dialog, context=Qt.WidgetWithChildrenShortcut)
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), parent, self.copy_selected_bytes, context = Qt.WidgetWithChildrenShortcut)
-        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_P), parent, self.mark_as_all_pointer, context = Qt.WidgetWithChildrenShortcut)
+        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_A), parent, self.mark_as_all_pointer, context = Qt.WidgetWithChildrenShortcut)
         self.update_status_bar()
 
     def setup_scroll_bar(self):
@@ -269,20 +269,39 @@ class HexEditorWidget (QWidget):
         col = (x - start) // (self.byte_width)
         return line * self.bytes_per_line + col + self.start_offset
         
-    def keyPressEvent(self, event: PySide6.QtGui.QKeyEvent) -> None:
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        shift = event.modifiers() & Qt.ShiftModifier == Qt.ShiftModifier
         key = event.key()
         if key == Qt.Key_Up:
-            self.move_cursor_up()
+            if shift:
+                self.move_selection_up()
+            else:
+                self.move_cursor_up()
         elif key == Qt.Key_Down:
-            self.move_cursor_down()
+            if shift:
+                self.move_selection_down()
+            else:
+                self.move_cursor_down()
         elif key == Qt.Key_Left:
-            self.move_cursor_left()
+            if shift:
+                self.move_selection_left()
+            else:
+                self.move_cursor_left()
         elif key == Qt.Key_Right:
-            self.move_cursor_right()
+            if shift:
+                self.move_selection_right()
+            else:
+                self.move_cursor_right()
         elif key == Qt.Key_PageUp:
-            self.move_cursor_page_up()
+            if shift:
+                pass # TODO
+            else:
+                self.move_cursor_page_up()
         elif key == Qt.Key_PageDown:
-            self.move_cursor_page_down()
+            if shift:
+                pass # TODO
+            else:
+                self.move_cursor_page_down()
 
     def move_cursor_up(self):
         if self.cursor >= self.bytes_per_line:
@@ -310,6 +329,27 @@ class HexEditorWidget (QWidget):
         # TODO check bounds
         page_bytes = (self.number_of_lines_on_screen()-1) * self.bytes_per_line
         self.update_cursor(self.cursor + page_bytes)
+
+
+    def move_selection_up(self):
+        pass
+
+    def move_selection_down(self):
+        pass
+
+    def move_selection_left(self):
+        selection = self.selected_bytes-1
+        if selection == 0:
+            selection = -2
+        # TODO file bounds
+        self.instance.selection_updated.emit(selection)
+
+    def move_selection_right(self):
+        selection = self.selected_bytes+1
+        if selection == -1:
+            selection = 1
+        # TODO file bounds
+        self.instance.selection_updated.emit(selection)
 
 
     def update_cursor(self, cursor):

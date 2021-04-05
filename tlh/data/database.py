@@ -5,7 +5,7 @@ from PySide6.QtCore import QObject, Signal
 from tlh.data.pointer import Pointer
 
 from tlh.const import RomVariant
-from tlh.data.constraints import Constraint
+from tlh.data.constraints import Constraint, ConstraintManager
 
 
 def get_file_in_database(filename: str) -> str:
@@ -62,7 +62,8 @@ class ConstraintDatabase(QObject):
                             int(row['addressB'], 16),
                             row['certainty'],
                             row['author'],
-                            row['note']
+                            row['note'],
+                            row['enabled'] == 'True'
                         )
                     )
         except OSError:
@@ -74,7 +75,7 @@ class ConstraintDatabase(QObject):
     def _write_constraints(self):
         with open(get_file_in_database('constraints.csv'), 'w') as file:
             writer = DictWriter(
-                file, fieldnames=['romA', 'addressA', 'romB', 'addressB', 'certainty', 'author', 'note'])
+                file, fieldnames=['romA', 'addressA', 'romB', 'addressB', 'certainty', 'author', 'note', 'enabled'])
             writer.writeheader()
             for constraint in self.constraints:
                 writer.writerow({
@@ -84,8 +85,32 @@ class ConstraintDatabase(QObject):
                     'addressB': hex(constraint.addressB),
                     'certainty': constraint.certainty,
                     'author': constraint.author,
-                    'note': constraint.note
+                    'note': constraint.note,
+                    'enabled': constraint.enabled
                 })
+
+    def disable_redundant_constraints(self):
+        '''
+        Disables all constraints that only contain redundant information and don't create more relations
+        '''
+
+        # Test using a constraint manager with all variations
+        manager = ConstraintManager({RomVariant.USA, RomVariant.JP, RomVariant.EU, RomVariant.DEMO})
+        for constraint in self.constraints:
+            if not constraint.enabled:
+                continue
+
+            # test if constraint is redundant
+            va_a = manager.to_virtual(constraint.romA, constraint.addressA)
+            va_b = manager.to_virtual(constraint.romB, constraint.addressB)
+            if va_a == va_b:
+                print(f'Disable {constraint}')
+                constraint.enabled = False
+            else:
+                print(f'Keep {constraint}')
+                manager.add_constraint(constraint)
+                manager.rebuild_relations()
+
 
 def get_constraint_database():
     return constraint_database_instance
