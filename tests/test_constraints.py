@@ -594,8 +594,40 @@ def test_bug_4():
     # DEMO,0x7d081,USA,0x7d46d,5,octorock,Pointer at DEMO 0x140
 
 
+def test_bug_4_simplified():
+    # v U J D
+    # 0 0 0 0
+    # 1 1 x 1
+    # 2 2 x x
+    # 3 3-1-2
+    # 4 4 2 3
+    # 5 5 3 x
+    # 6 x 4 x
+    # 7 6-5-4
+    manager = ConstraintManager({RomVariant.DEMO, RomVariant.USA, RomVariant.JP})
+    add_u_d_constraint(manager, 3, 2)
+    add_j_d_constraint(manager, 1, 2)
+    add_u_d_constraint(manager, 6, 4)
+    add_j_d_constraint(manager, 5, 4)
+    manager.rebuild_relations()
 
-
+def test_bug_4_simplified2():
+    # v U J D
+    # 0 0 0 0
+    # 1 1 x 1
+    # 2 2 x x
+    # 3 3-1-2
+    # 4 4 2 3
+    # 5 5 3 4
+    # 6 6 x x
+    # 7 7 x x
+    # 8 8-4-5
+    manager = ConstraintManager({RomVariant.DEMO, RomVariant.USA, RomVariant.JP})
+    add_u_d_constraint(manager, 3, 2)
+    add_j_d_constraint(manager, 1, 2)
+    add_u_d_constraint(manager, 8, 5)
+    add_j_d_constraint(manager, 4, 5)
+    manager.rebuild_relations()
 
 
 # endregion

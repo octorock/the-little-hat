@@ -122,6 +122,7 @@ class ConstraintManager:
         virtual_address = -1
         for tmp_counter in range(0, 0x0fffffff): # TODO at that point all roms should have been resolved
 
+            log('')
 
             # Stop the loop if all constraints and blockers are resolved
             if not constraints and local_blockers_count == 0:
@@ -134,36 +135,48 @@ class ConstraintManager:
             # Store the blocker/constraint that was responsible for this va to be selected TODO only for debugging, remove later
             responsible_object = None
 
+            def to_virtual_based_on_current_local(variant, address):
+                #if len(local_blockers[variant]) > 0:
+                    #return 0xfffffff
+                return virtual_address + address - local_addresses[variant]
+
 
             for variant in self.variants:
                 for blocker in local_blockers[variant]:
-                    va = self.to_virtual(blocker.rom_variant, blocker.rom_address)
+                    va = to_virtual_based_on_current_local(blocker.rom_variant, blocker.rom_address)
                     if va < next_virtual_address:
                         next_virtual_address = va
                         responsible_object = blocker
                     # Also test the address that we are blocking
 
             for constraint in constraints:
-                va = self.to_virtual(constraint.romA, constraint.addressA)
-                if va < next_virtual_address:
-                    next_virtual_address = va
-                    responsible_object = constraint
-                va = self.to_virtual(constraint.romB, constraint.addressB)
+                va_a = to_virtual_based_on_current_local(constraint.romA, constraint.addressA)
+                va_b = to_virtual_based_on_current_local(constraint.romB, constraint.addressB)
+
+                va = min(va_a, va_b) # as both have the same virtual addresses after this constraint, we need to take the maximum
                 if va < next_virtual_address:
                     next_virtual_address = va
                     responsible_object = constraint
 
             offset = next_virtual_address - virtual_address
-            if offset <= 0: # TODO why is this necessary? should the corresponding constraint/blocker not have been removed in the previous iteration?
+
+            if offset == 0:
+                # This is okay now and will happen if a possibly_done_constraint is blocked after adding the other constraints
+                # Might still lead to endless loops in the future D:
+                pass
+            elif offset < 0: # TODO why is this necessary? should the corresponding constraint/blocker not have been removed in the previous iteration?
                 log(f'Negative offset: {next_virtual_address} - {virtual_address}')
                 log(responsible_object)
+                log(local_addresses)
+                log(local_blockers)
+
                 # TODO this is still triggered in test_four_roms due to the va calculation for EU not being aware that it is blocked
                 # TODO now also happending in test_bug_2, making it very slow
-                #assert False
-                offset = 1
+                assert False
+                #offset = 1
             virtual_address += offset
 
-            log(f'\n-- Go to {virtual_address} (+{offset})')
+            log(f'-- Go to {virtual_address} (+{offset})')
 
             # Advance all local_addresses where there is no blocker
             next_local_addresses = {}
@@ -192,6 +205,9 @@ class ConstraintManager:
                         if next_local_addresses[blocker.rom_variant] < blocker.rom_address:
                             log(f'{variant} is still blocked by {blocker}')
                             can_advance[variant] = False
+                            
+                            # Needed to add the following line for test_bug_4_simplified
+                            next_local_addresses[variant] = local_addresses[variant] 
                         elif next_local_addresses[blocker.rom_variant] > blocker.rom_address:
                             log(f'{blocker} {variant} creates invalid constraint: {next_local_addresses[blocker.rom_variant]} > {blocker.rom_address}:')
                             raise InvalidConstraintError()
@@ -217,20 +233,16 @@ class ConstraintManager:
             local_blockers = local_blockers_copy
 
 
+
+            possibly_done_constraints = []
             # Handle all constraints TODO sort them somehow
             for constraint in reversed(constraints): # https://stackoverflow.com/a/10665800
                 virtual_address_a = virtual_address + constraint.addressA - next_local_addresses[constraint.romA]#self.to_virtual(constraint.romA, constraint.addressA)
                 virtual_address_b = virtual_address + constraint.addressB - next_local_addresses[constraint.romB]##self.to_virtual(constraint.romB, constraint.addressB)
 
                 if virtual_address_a == virtual_address_b == virtual_address:
-
-                    if next_local_addresses[constraint.romA] < constraint.addressA or next_local_addresses[constraint.romB] < constraint.addressB:
-                        log(f'Do not yet handle {constraint}')
-                        continue
-                    constraints.remove(constraint)
-                    log(f'Handle done {constraint}')
-                    # TODO don't need to insert a relation, because it's already correct?
-                    log(virtual_address_a, virtual_address_b)
+                    possibly_done_constraints.append(constraint)
+                    log(f'Possibly already done {constraint}')
                 elif virtual_address_a == virtual_address:
                     constraints.remove(constraint)
                     log(f'Handle A {constraint}')
@@ -263,8 +275,17 @@ class ConstraintManager:
                     local_blockers_count += 1
                     # reduce advancement
                     next_local_addresses[constraint.romB] = constraint.addressB-1
-            
 
+            for constraint in possibly_done_constraints:
+                if next_local_addresses[constraint.romA] < constraint.addressA or next_local_addresses[constraint.romB] < constraint.addressB:
+                    log(f'Do not yet handle {constraint}')
+                    continue
+                constraints.remove(constraint)
+                log(f'Handle done {constraint}')
+                continue
+                # TODO don't need to insert a relation, because it's already correct?
+                log(virtual_address_a, virtual_address_b)
+            
 
             # Resolve possibly resolved blockers
             for variant in self.variants:
@@ -314,6 +335,7 @@ class ConstraintManager:
         for constraint in self.constraints:
             if self.to_virtual(constraint.romA, constraint.addressA) != self.to_virtual(constraint.romB, constraint.addressB):
                 log(f'{constraint} not fulfilled')
+                log(f'{self.to_virtual(constraint.romA, constraint.addressA)} != {self.to_virtual(constraint.romB, constraint.addressB)}')
                 self.print_relations()
                 # assert False
                 raise InvalidConstraintError()
