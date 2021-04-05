@@ -13,6 +13,7 @@ import pytest
 # J: RomVariation.JP
 # - between numbers denotes that these two are connected with a constraint
 
+# region Util functions
 def assert_same_address(manager: ConstraintManager, rom: RomVariant, address: int) -> None:
     assert address == manager.to_virtual(rom, address)
     assert address == manager.to_local(rom, address)
@@ -24,6 +25,78 @@ def assert_differing_address(manager: ConstraintManager, rom: RomVariant, local_
     assert local_address == manager.to_local(rom, virtual_address)
 
 
+def add_j_e_constraint(manager: ConstraintManager, jp_address: int, eu_address: int):
+    constraint = Constraint()
+    constraint.romA = RomVariant.JP
+    constraint.addressA = jp_address
+    constraint.romB = RomVariant.EU
+    constraint.addressB = eu_address
+    manager.add_constraint(constraint)
+
+def add_u_j_constraint(manager: ConstraintManager, usa_address: int, jp_address: int):
+    constraint = Constraint()
+    constraint.romA = RomVariant.USA
+    constraint.addressA = usa_address
+    constraint.romB = RomVariant.JP
+    constraint.addressB = jp_address
+    manager.add_constraint(constraint)
+
+def add_u_e_constraint(manager: ConstraintManager, usa_address: int, eu_address: int):
+    constraint = Constraint()
+    constraint.romA = RomVariant.USA
+    constraint.addressA = usa_address
+    constraint.romB = RomVariant.EU
+    constraint.addressB = eu_address
+    manager.add_constraint(constraint)
+
+def assert_j_e_address(manager: ConstraintManager, virtual_address:int, jp_address:int, eu_address:int):
+    assert_differing_address(manager, RomVariant.JP, jp_address, virtual_address)
+    assert_differing_address(manager, RomVariant.EU, eu_address, virtual_address)
+
+def assert_u_j_e_address(manager: ConstraintManager, virtual_address:int, usa_address:int, jp_address:int, eu_address:int):
+    assert_differing_address(manager, RomVariant.USA, usa_address, virtual_address)
+    assert_differing_address(manager, RomVariant.JP, jp_address, virtual_address)
+    assert_differing_address(manager, RomVariant.EU, eu_address, virtual_address)
+
+def assert_u_j_d_address(manager: ConstraintManager, virtual_address:int, usa_address:int, jp_address:int, demo_address:int):
+    assert_differing_address(manager, RomVariant.USA, usa_address, virtual_address)
+    assert_differing_address(manager, RomVariant.JP, jp_address, virtual_address)
+    assert_differing_address(manager, RomVariant.DEMO, demo_address, virtual_address)
+
+
+def add_e_d_constraint(manager: ConstraintManager, eu_address: int, demo_address: int):
+    constraint = Constraint()
+    constraint.romA = RomVariant.EU
+    constraint.addressA = eu_address
+    constraint.romB = RomVariant.DEMO
+    constraint.addressB = demo_address
+    manager.add_constraint(constraint)
+
+def add_u_d_constraint(manager: ConstraintManager, usa_address: int, demo_address: int):
+    constraint = Constraint()
+    constraint.romA = RomVariant.USA
+    constraint.addressA = usa_address
+    constraint.romB = RomVariant.DEMO
+    constraint.addressB = demo_address
+    manager.add_constraint(constraint)
+
+def add_j_d_constraint(manager: ConstraintManager, jp_address: int, demo_address: int):
+    constraint = Constraint()
+    constraint.romA = RomVariant.JP
+    constraint.addressA = jp_address
+    constraint.romB = RomVariant.DEMO
+    constraint.addressB = demo_address
+    manager.add_constraint(constraint)
+
+def assert_u_j_e_d_address(manager: ConstraintManager, virtual_address:int, usa_address:int, jp_address:int, eu_address:int, demo_address: int):
+    assert_differing_address(manager, RomVariant.USA, usa_address, virtual_address)
+    assert_differing_address(manager, RomVariant.JP, jp_address, virtual_address)
+    assert_differing_address(manager, RomVariant.EU, eu_address, virtual_address)
+    assert_differing_address(manager, RomVariant.DEMO, demo_address, virtual_address)
+# endregion
+
+
+# region Tests
 def test_no_constaints():
     manager = ConstraintManager({RomVariant.USA, RomVariant.EU})
     assert_same_address(manager, RomVariant.USA, 0)
@@ -106,14 +179,6 @@ def test_sparse_constraint():
     assert_j_e_address(manager, 0xfffffe,0xfffffe, -1)
     assert_j_e_address(manager, 0xffffff,0xffffff, 1)
 
-def add_j_e_constraint(manager: ConstraintManager, jp_address: int, eu_address: int):
-    constraint = Constraint()
-    constraint.romA = RomVariant.JP
-    constraint.addressA = jp_address
-    constraint.romB = RomVariant.EU
-    constraint.addressB = eu_address
-    manager.add_constraint(constraint)
-
 def test_two_constraints():
     # v J E
     # 0 0 0
@@ -154,9 +219,6 @@ def test_two_constraints_wrong_order():
     assert_differing_address(manager, RomVariant.EU, 4, 5)
 
 
-def assert_j_e_address(manager: ConstraintManager, virtual_address:int, jp_address:int, eu_address:int):
-    assert_differing_address(manager, RomVariant.JP, jp_address, virtual_address)
-    assert_differing_address(manager, RomVariant.EU, eu_address, virtual_address)
 
 def test_three_constraints():
     # v J E
@@ -261,7 +323,7 @@ def test_close_constraints():
     assert_j_e_address(manager, 11,-1,8)
     assert_j_e_address(manager, 12,9,9)
 
-def test_conflicting_constraint():
+def test_conflicting_constraint_simple():
     with pytest.raises(InvalidConstraintError):
         manager = ConstraintManager({RomVariant.JP, RomVariant.EU})
         add_j_e_constraint(manager, 1, 0)
@@ -285,28 +347,6 @@ def test_conflicting_constraints_loop():
         add_u_e_constraint(manager, 0, 7)
         manager.rebuild_relations()
         manager.print_relations()
-
-def add_u_j_constraint(manager: ConstraintManager, usa_address: int, jp_address: int):
-    constraint = Constraint()
-    constraint.romA = RomVariant.USA
-    constraint.addressA = usa_address
-    constraint.romB = RomVariant.JP
-    constraint.addressB = jp_address
-    manager.add_constraint(constraint)
-
-def add_u_e_constraint(manager: ConstraintManager, usa_address: int, eu_address: int):
-    constraint = Constraint()
-    constraint.romA = RomVariant.USA
-    constraint.addressA = usa_address
-    constraint.romB = RomVariant.EU
-    constraint.addressB = eu_address
-    manager.add_constraint(constraint)
-
-
-def assert_u_j_e_address(manager: ConstraintManager, virtual_address:int, usa_address:int, jp_address:int, eu_address:int):
-    assert_differing_address(manager, RomVariant.USA, usa_address, virtual_address)
-    assert_differing_address(manager, RomVariant.JP, jp_address, virtual_address)
-    assert_differing_address(manager, RomVariant.EU, eu_address, virtual_address)
 
 
 def test_three_roms():
@@ -353,36 +393,6 @@ def test_three_cycle():
     assert_u_j_e_address(manager, 5,-1,5,4)
     assert_u_j_e_address(manager, 6,4,6,5)
 
-
-def add_e_d_constraint(manager: ConstraintManager, eu_address: int, demo_address: int):
-    constraint = Constraint()
-    constraint.romA = RomVariant.EU
-    constraint.addressA = eu_address
-    constraint.romB = RomVariant.DEMO
-    constraint.addressB = demo_address
-    manager.add_constraint(constraint)
-
-def add_u_d_constraint(manager: ConstraintManager, usa_address: int, demo_address: int):
-    constraint = Constraint()
-    constraint.romA = RomVariant.USA
-    constraint.addressA = usa_address
-    constraint.romB = RomVariant.DEMO
-    constraint.addressB = demo_address
-    manager.add_constraint(constraint)
-
-def add_j_d_constraint(manager: ConstraintManager, jp_address: int, demo_address: int):
-    constraint = Constraint()
-    constraint.romA = RomVariant.JP
-    constraint.addressA = jp_address
-    constraint.romB = RomVariant.DEMO
-    constraint.addressB = demo_address
-    manager.add_constraint(constraint)
-
-def assert_u_j_e_d_address(manager: ConstraintManager, virtual_address:int, usa_address:int, jp_address:int, eu_address:int, demo_address: int):
-    assert_differing_address(manager, RomVariant.USA, usa_address, virtual_address)
-    assert_differing_address(manager, RomVariant.JP, jp_address, virtual_address)
-    assert_differing_address(manager, RomVariant.EU, eu_address, virtual_address)
-    assert_differing_address(manager, RomVariant.DEMO, demo_address, virtual_address)
 
 def test_four_roms():
     # v U J E D
@@ -512,11 +522,17 @@ def x_test_many_trivial_constraints():
 
 def test_bug_1():
     manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO})
-    add_u_d_constraint(manager, 2657, 1637)
-    add_u_d_constraint(manager, 3133, 2129)
+    add_u_d_constraint(manager, 512657, 511637)
+    add_u_d_constraint(manager, 513133, 512129)
     manager.rebuild_relations()
     # USA,512657,DEMO,511637,5,Pointer
     # USA,513133,DEMO,512129,5,Pointer
+
+def test_bug_1_simplified():
+    manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO})
+    add_u_d_constraint(manager, 2657, 1637)
+    add_u_d_constraint(manager, 3133, 2129)
+    manager.rebuild_relations()
 
 def test_bug_2():
     manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO})
@@ -528,8 +544,58 @@ def test_bug_2():
 
 def test_bug_3():
     manager = ConstraintManager({RomVariant.DEMO, RomVariant.USA, RomVariant.JP})
-    add_u_d_constraint(manager, 0x55e6d, 0x55dc5)
-    add_j_d_constraint(manager, 0x55cf1, 0x55dc5)
+    add_u_d_constraint(manager, 351853, 351685)
+    add_j_d_constraint(manager, 351473, 351685)
     manager.rebuild_relations()
     # DEMO,0x55dc5,JP,0x55cf1,5,octorock,Pointer at DEMO 0x104
     # DEMO,0x55dc5,USA,0x55e6d,5,octorock,Pointer at DEMO 0x104
+
+def test_bug_3_simplified():
+    # v U J D
+    # 0 0 0 0
+    # 1 1 x 1
+    # 2 2 x x
+    # 3 3-1-2
+    manager = ConstraintManager({RomVariant.DEMO, RomVariant.USA, RomVariant.JP})
+    add_u_d_constraint(manager, 0x3, 0x2)
+    add_j_d_constraint(manager, 0x1, 0x2)
+    manager.rebuild_relations()
+    assert_u_j_d_address(manager, 0,0,0,0)
+    assert_u_j_d_address(manager, 1,1,-1,1)
+    assert_u_j_d_address(manager, 2,2,-1,-1)
+    assert_u_j_d_address(manager, 3,3,1,2)
+    assert_u_j_d_address(manager, 4,4,2,3)
+
+def test_bug_3_expanded():
+    # v U J E D
+    # 0 0 0 0 0
+    # 1 1 1 1 x
+    # 2 2 2 x x
+    # 3 3 x x x
+    # 4 4-3-2-1
+    # 5 5 4 3 2
+    manager = ConstraintManager({RomVariant.DEMO, RomVariant.USA, RomVariant.JP, RomVariant.EU})
+    add_u_j_constraint(manager, 4, 3)
+    add_j_e_constraint(manager, 3, 2)
+    add_e_d_constraint(manager, 2, 1)
+    manager.rebuild_relations()
+
+
+def test_bug_4():
+    manager = ConstraintManager({RomVariant.DEMO, RomVariant.USA, RomVariant.JP})
+    add_u_d_constraint(manager, 351853, 351685)
+    add_j_d_constraint(manager, 351473, 351685)
+    add_u_d_constraint(manager, 513133, 512129)
+    add_j_d_constraint(manager, 512681, 512129)
+    manager.rebuild_relations()
+    # DEMO,0x55dc5,JP,0x55cf1,5,octorock,Pointer at DEMO 0x104
+    # DEMO,0x55dc5,USA,0x55e6d,5,octorock,Pointer at DEMO 0x104
+    # DEMO,0x7d081,JP,0x7d2a9,5,octorock,Pointer at DEMO 0x140
+    # DEMO,0x7d081,USA,0x7d46d,5,octorock,Pointer at DEMO 0x140
+
+
+
+
+
+
+# endregion

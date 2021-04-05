@@ -21,6 +21,9 @@
        <property name="text">
         <string>Address</string>
        </property>
+       <property name="buddy">
+        <cstring>lineEditAddress</cstring>
+       </property>
       </widget>
      </item>
      <item row="0" column="1">
@@ -37,6 +40,9 @@
       <widget class="QLabel" name="label_2">
        <property name="text">
         <string>Points to</string>
+       </property>
+       <property name="buddy">
+        <cstring>lineEditPointsTo</cstring>
        </property>
       </widget>
      </item>
@@ -58,12 +64,18 @@
        <property name="text">
         <string>Certainty</string>
        </property>
+       <property name="buddy">
+        <cstring>spinBoxCertainty</cstring>
+       </property>
       </widget>
      </item>
      <item row="3" column="0">
       <widget class="QLabel" name="label_4">
        <property name="text">
         <string>Author</string>
+       </property>
+       <property name="buddy">
+        <cstring>lineEditAuthor</cstring>
        </property>
       </widget>
      </item>
@@ -81,6 +93,9 @@
       <widget class="QLabel" name="label_5">
        <property name="text">
         <string>Note</string>
+       </property>
+       <property name="buddy">
+        <cstring>plainTextEditNote</cstring>
        </property>
       </widget>
      </item>
@@ -127,8 +142,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>224</x>
+     <y>290</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -143,8 +158,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>292</x>
+     <y>296</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>

@@ -158,11 +158,12 @@ class ConstraintManager:
                 log(f'Negative offset: {next_virtual_address} - {virtual_address}')
                 log(responsible_object)
                 # TODO this is still triggered in test_four_roms due to the va calculation for EU not being aware that it is blocked
+                # TODO now also happending in test_bug_2, making it very slow
                 #assert False
                 offset = 1
             virtual_address += offset
 
-            log(f'-- Go to {virtual_address} (+{offset})')
+            log(f'\n-- Go to {virtual_address} (+{offset})')
 
             # Advance all local_addresses where there is no blocker
             next_local_addresses = {}
@@ -177,6 +178,11 @@ class ConstraintManager:
             for variant in self.variants:
                 local_blockers_copy[variant] = local_blockers[variant].copy()
 
+            # We cannot fully be sure that a blocker is resolved as a constraint might be added afterwards that stops the resolution of this blocker
+            possibly_resolved_blockers: dict[RomVariant, list[Blocker]] = {}
+            for variant in self.variants:
+                possibly_resolved_blockers[variant] = []
+
             for variant in self.variants:
 
                 still_blocking = False
@@ -190,12 +196,11 @@ class ConstraintManager:
                             log(f'{blocker} {variant} creates invalid constraint: {next_local_addresses[blocker.rom_variant]} > {blocker.rom_address}:')
                             raise InvalidConstraintError()
                         else:
-                            log(f'Resolve {blocker}')
-                            # Insert corresponding relation
-                            self.rom_relations[variant].add_relation(blocker.local_address, virtual_address)
+                            log(f'Possibly resolve {blocker}')
                             next_local_addresses[variant] = blocker.local_address
-                            local_blockers_copy[variant].remove(blocker)
-                            local_blockers_count -= 1
+                            possibly_resolved_blockers[variant].append(blocker)
+                            #local_blockers_copy[variant].remove(blocker)
+                            #local_blockers_count -= 1
                     else:
                         # Cannot be blocked, but reverse another blocker that would be resolved here
                         if next_local_addresses[blocker.rom_variant] > blocker.rom_address:
@@ -210,12 +215,18 @@ class ConstraintManager:
                             log(f'Would resolve {blocker}, but local not advanced enough, add opposing blocker {new_blocker}')
 
             local_blockers = local_blockers_copy
+
+
             # Handle all constraints TODO sort them somehow
             for constraint in reversed(constraints): # https://stackoverflow.com/a/10665800
-                virtual_address_a = self.to_virtual(constraint.romA, constraint.addressA)
-                virtual_address_b = self.to_virtual(constraint.romB, constraint.addressB)
+                virtual_address_a = virtual_address + constraint.addressA - next_local_addresses[constraint.romA]#self.to_virtual(constraint.romA, constraint.addressA)
+                virtual_address_b = virtual_address + constraint.addressB - next_local_addresses[constraint.romB]##self.to_virtual(constraint.romB, constraint.addressB)
 
                 if virtual_address_a == virtual_address_b == virtual_address:
+
+                    if next_local_addresses[constraint.romA] < constraint.addressA or next_local_addresses[constraint.romB] < constraint.addressB:
+                        log(f'Do not yet handle {constraint}')
+                        continue
                     constraints.remove(constraint)
                     log(f'Handle done {constraint}')
                     # TODO don't need to insert a relation, because it's already correct?
@@ -253,6 +264,31 @@ class ConstraintManager:
                     # reduce advancement
                     next_local_addresses[constraint.romB] = constraint.addressB-1
             
+
+
+            # Resolve possibly resolved blockers
+            for variant in self.variants:
+                for blocker in possibly_resolved_blockers[variant]:
+                    if next_local_addresses[variant] < blocker.local_address or not can_advance[variant] or next_local_addresses[blocker.rom_variant] < blocker.rom_address or not can_advance[blocker.rom_variant]:
+                        # An added constraint prevents us from advancing
+                        log(f'Don\'t resolve {blocker}')
+                        can_advance[variant] = False
+
+            # We need to do this in two loops as the previous setting of can_advance to false might be a new blocker
+            for variant in self.variants:
+                for blocker in possibly_resolved_blockers[variant]:
+                    if next_local_addresses[variant] < blocker.local_address or not can_advance[variant] or next_local_addresses[blocker.rom_variant] < blocker.rom_address or not can_advance[blocker.rom_variant]:
+                        pass
+                    else:
+                        log(f'Resolve {blocker}')
+                        # Insert corresponding relation
+                        self.rom_relations[variant].add_relation(blocker.local_address, virtual_address)
+                        local_blockers[variant].remove(blocker)
+                        local_blockers_count -= 1
+                        # reduce advancement
+                        next_local_addresses[variant] = blocker.local_address
+
+
             can_continue = False
             for variant in self.variants:
 
@@ -269,6 +305,8 @@ class ConstraintManager:
             if not can_continue:
                 # every variation is blocked, invalid constraints
                 raise InvalidConstraintError()
+
+        log('Algorithm finished\n')
 
         # Check all constraints again
         # TODO remove this once we always find all invalid constraints before
@@ -360,3 +398,19 @@ class RomVariantNotAddedError(Exception):
 class InvalidConstraintError(Exception):
     # TODO pass the other constraint(s) it is invalid against?
     pass
+
+
+
+"""
+New idea:
+
+insert constraints one at a time as they come in and only move all existing relations accordingly
+
+- calculate the current virtual addresses for both sides of the constraint
+- take the lesser one and at a relation to place it at the higher one
+TODO what other relations need to be affected?
+ - later virtual addresses for the lesser side
+ - everything that references the virtual addresses from the lesser side
+  -> too complicated to detect all without keeping all constraints around?
+
+"""

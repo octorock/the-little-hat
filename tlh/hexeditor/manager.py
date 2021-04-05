@@ -182,7 +182,8 @@ class HexEditorManager(QObject):
                 note = f'Pointer at {pointer.rom_variant} {hex(pointer.address)}'
                 if pointer.note.strip() != '':
                     note += '\n' + pointer.note
-
+                
+                # TODO test that adding the added constraints are not invalid
                 constraints.append(Constraint(pointer.rom_variant, pointer.points_to-ROM_OFFSET, variant, points_to-ROM_OFFSET, pointer.certainty, pointer.author, note))
 
         # TODO send signal to invalidate constraints and annotations
