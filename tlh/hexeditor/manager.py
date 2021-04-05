@@ -1,10 +1,11 @@
 from enum import Enum
-from tlh.data.database import read_constraints, write_constraints
+from tlh.data.database import read_constraints, read_pointers, write_constraints, write_pointers
 from tlh.data.constraints import Constraint, ConstraintManager
 from tlh.data.rom import Rom, get_rom
 from tlh.const import ROM_OFFSET, RomVariant
 from PySide6.QtCore import QObject, Signal
 from dataclasses import dataclass
+from tlh.data.pointer import Pointer
 
 
 class ByteStatus(Enum):
@@ -33,6 +34,7 @@ class HexEditorInstance(QObject):
     cursor_moved_externally = Signal(int)
     selection_updated = Signal(int)
     selection_updated_externally = Signal(int)
+    pointer_discovered = Signal(Pointer)
 
     def __init__(self, parent, rom_variant: RomVariant, rom: Rom, constraint_manager: ConstraintManager) -> None:
         super().__init__(parent=parent)
@@ -126,6 +128,7 @@ class HexEditorManager(QObject):
         instance.start_offset_moved.connect(self.move_all_start_offsets)
         instance.cursor_moved.connect(self.move_all_cursors)
         instance.selection_updated.connect(self.update_all_selections)
+        instance.pointer_discovered.connect(self.add_pointers_and_constraints)
         self.instances.append(instance)
         return instance
 
@@ -158,3 +161,30 @@ class HexEditorManager(QObject):
                 return True
         return False
         
+    def add_pointers_and_constraints(self, pointer: Pointer) -> None:
+        # Found a pointer that is the same for all variants
+        pointers = read_pointers()
+        constraints = read_constraints()
+
+        pointers.append(pointer)
+        virtual_address = self.constraint_manager.to_virtual(pointer.rom_variant, pointer.address)
+
+        for variant in self.variants:
+            if variant != pointer.rom_variant:
+                address = self.constraint_manager.to_local(variant, virtual_address)
+                points_to = self.roms[variant].get_pointer(address)
+                # Add a corresponding pointer for this variant
+                pointers.append(Pointer(variant, address, points_to, pointer.certainty, pointer.author, pointer.note))
+                
+                # Add a constraint for the places that these two pointers are pointing to, as the pointers should be the same
+                # TODO check that it's actually a pointer into rom
+
+                note = f'Pointer at {pointer.rom_variant} {hex(pointer.address)}'
+                if pointer.note.strip() != '':
+                    note += '\n' + pointer.note
+
+                constraints.append(Constraint(pointer.rom_variant, pointer.points_to-ROM_OFFSET, variant, points_to-ROM_OFFSET, pointer.certainty, pointer.author, note))
+
+        # TODO send signal to invalidate constraints and annotations
+        write_pointers(pointers)
+        write_constraints(constraints)

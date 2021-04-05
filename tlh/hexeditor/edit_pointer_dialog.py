@@ -31,7 +31,7 @@ class EditPointerDialog(QDialog):
             int(self.ui.lineEditPointsTo.text(), 16),
             self.ui.spinBoxCertainty.value(),
             self.ui.lineEditAuthor.text(),
-            self.ui.plainTextEditNote.toPlainText()
+            self.ui.plainTextEditNote.toPlainText().strip()
         )
         
     def on_accept(self) -> None:

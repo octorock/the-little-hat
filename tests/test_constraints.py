@@ -370,6 +370,13 @@ def add_u_d_constraint(manager: ConstraintManager, usa_address: int, demo_addres
     constraint.addressB = demo_address
     manager.add_constraint(constraint)
 
+def add_j_d_constraint(manager: ConstraintManager, jp_address: int, demo_address: int):
+    constraint = Constraint()
+    constraint.romA = RomVariant.JP
+    constraint.addressA = jp_address
+    constraint.romB = RomVariant.DEMO
+    constraint.addressB = demo_address
+    manager.add_constraint(constraint)
 
 def assert_u_j_e_d_address(manager: ConstraintManager, virtual_address:int, usa_address:int, jp_address:int, eu_address:int, demo_address: int):
     assert_differing_address(manager, RomVariant.USA, usa_address, virtual_address)
@@ -518,3 +525,11 @@ def test_bug_2():
     manager.rebuild_relations()
     # USA,14581156,DEMO,14622668
     # USA,14581158,DEMO,14622670
+
+def test_bug_3():
+    manager = ConstraintManager({RomVariant.DEMO, RomVariant.USA, RomVariant.JP})
+    add_u_d_constraint(manager, 0x55e6d, 0x55dc5)
+    add_j_d_constraint(manager, 0x55cf1, 0x55dc5)
+    manager.rebuild_relations()
+    # DEMO,0x55dc5,JP,0x55cf1,5,octorock,Pointer at DEMO 0x104
+    # DEMO,0x55dc5,USA,0x55e6d,5,octorock,Pointer at DEMO 0x104

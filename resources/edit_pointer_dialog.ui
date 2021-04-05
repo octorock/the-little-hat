@@ -111,6 +111,13 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>spinBoxCertainty</tabstop>
+  <tabstop>plainTextEditNote</tabstop>
+  <tabstop>lineEditAuthor</tabstop>
+  <tabstop>lineEditPointsTo</tabstop>
+  <tabstop>lineEditAddress</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

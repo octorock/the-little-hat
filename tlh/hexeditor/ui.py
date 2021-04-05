@@ -176,8 +176,9 @@ class HexEditorWidget (QWidget):
         menu.addAction('Copy selected bytes', self.copy_selected_bytes)
         
         if abs(self.selected_bytes) == 4:
-            menu.addAction('Mark as pointer', self.mark_as_pointer)
-            menu.addAction('Mark as pointer in all and add constraint', self.mark_as_all_pointer)
+            menu.addSeparator()
+            menu.addAction('Only mark as pointer', self.mark_as_pointer)
+            menu.addAction('Mark as pointer in all linked editors and add constraint', self.mark_as_all_pointer)
 
         # General actions
         menu.addSeparator()
@@ -224,6 +225,8 @@ class HexEditorWidget (QWidget):
         dialog.pointer_changed.connect(self.add_new_pointer_and_constraints)
         dialog.show()
 
+    def add_new_pointer_and_constraints(self, pointer: Pointer) -> None:
+        self.instance.pointer_discovered.emit(pointer)
 
     def mousePressEvent(self, event: PySide6.QtGui.QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
