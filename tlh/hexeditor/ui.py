@@ -1,17 +1,17 @@
 # Inspired by https://github.com/PetterS/sexton
 # Paint custom widget https://blog.rburchell.com/2010/02/pyside-tutorial-custom-widget-painting.html
 
+from tlh.data.database import get_pointer_database
 from tlh import settings
 from tlh.data.pointer import Pointer
 from tlh.hexeditor.edit_pointer_dialog import EditPointerDialog
 import PySide6
-from tlh.hexeditor.manager import ByteStatus, HexEditorInstance
+from tlh.hexeditor.manager import HexEditorInstance
 from tlh.const import ROM_OFFSET
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QColor, QFont, QKeySequence, QPainter, QPen, QResizeEvent, QShortcut
 from PySide6.QtWidgets import QApplication, QInputDialog, QLabel, QMenu, QMessageBox, QScrollBar, QWidget
 from tlh.ui.ui_hexeditor import Ui_HexEditor
-from tlh.data.database import read_pointers, write_pointers
 
 class HexEditorDock (QWidget):
     def __init__(self, parent, instance: HexEditorInstance) -> None:
@@ -38,10 +38,9 @@ class HexEditorWidget (QWidget):
         self.is_dragging_to_select = False
 
         # TODO make configurable
-        self.font = QFont("DejaVu Sans Mono, Courier, Monospace", 12)
+        self.font = QFont('DejaVu Sans Mono, Courier, Monospace', 12)
         self.label_color = QColor(128, 128, 128)
         self.byte_color = QColor(210, 210, 210)
-        self.diff_color = QColor(158, 80, 88)#QColor(244, 108, 117)
         self.selection_color = QPen(QColor(97, 175, 239))
         self.selection_color.setWidth(2)
         self.scroll_bar = scroll_bar
@@ -51,10 +50,12 @@ class HexEditorWidget (QWidget):
         instance.start_offset_moved_externally.connect(self.update_start_offset_from_external)
         instance.cursor_moved_externally.connect(self.update_cursor_from_external)
         instance.selection_updated_externally.connect(self.update_selection_from_external)
+        instance.repaint_requested.connect(self.update)
         # Make this widget focussable on click, so that we can reduce the context of the shortcut, so that multiple shortcuts are possible in the same window
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_G), parent, self.show_goto_dialog, context=Qt.WidgetWithChildrenShortcut)
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), parent, self.copy_selected_bytes, context = Qt.WidgetWithChildrenShortcut)
+        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_P), parent, self.mark_as_all_pointer, context = Qt.WidgetWithChildrenShortcut)
         self.update_status_bar()
 
     def setup_scroll_bar(self):
@@ -128,8 +129,8 @@ class HexEditorWidget (QWidget):
 
 
                 current_byte = data[i + l*self.bytes_per_line]
-                if current_byte.status == ByteStatus.DIFFERING:
-                    p.setBackground(self.diff_color)
+                if current_byte.background is not None:
+                    p.setBackground(current_byte.background)
                     p.setBackgroundMode(Qt.OpaqueMode)    
 
 
@@ -176,6 +177,7 @@ class HexEditorWidget (QWidget):
         menu.addAction('Copy selected bytes', self.copy_selected_bytes)
         
         if abs(self.selected_bytes) == 4:
+            menu.addAction('Copy selected as pointer address', self.copy_selected_pointer_address)
             menu.addSeparator()
             menu.addAction('Only mark as pointer', self.mark_as_pointer)
             menu.addAction('Mark as pointer in all linked editors and add constraint', self.mark_as_all_pointer)
@@ -191,6 +193,13 @@ class HexEditorWidget (QWidget):
 
     def copy_selected_bytes(self):
         QApplication.clipboard().setText(self.instance.get_bytes_str(self.get_selected_range()))
+
+    def copy_selected_pointer_address(self):
+        address = self.cursor
+        if self.selected_bytes == -4:
+            address -= 3           
+        points_to = self.instance.get_as_pointer(address)
+        QApplication.clipboard().setText(hex(points_to))
 
     def get_selected_range(self) -> range:
         if self.selected_bytes < 0:
@@ -210,17 +219,18 @@ class HexEditorWidget (QWidget):
         
 
     def mark_as_pointer(self):
+        if abs(self.selected_bytes) != 4:
+            return
         dialog = self.get_new_pointer_dialog()
         dialog.pointer_changed.connect(self.add_new_pointer)
         dialog.show()
 
     def add_new_pointer(self, pointer: Pointer) -> None:
-        # TODO move to database class?
-        pointers = read_pointers()
-        pointers.append(pointer)
-        write_pointers(pointers)
+        get_pointer_database().add_pointer(pointer)
 
     def mark_as_all_pointer(self):
+        if abs(self.selected_bytes) != 4:
+            return
         dialog = self.get_new_pointer_dialog()
         dialog.pointer_changed.connect(self.add_new_pointer_and_constraints)
         dialog.show()

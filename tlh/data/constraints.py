@@ -23,7 +23,7 @@ class RomRelation:
 
 
 def log(*argv):
-    #print(*argv)
+    print(*argv)
     pass
 
 class RomRelations:
@@ -131,7 +131,7 @@ class ConstraintManager:
             # Optimization? Jump to the next interesting virtual address
             # - next blocker with blocker.rom_variant:blocker.rom_address
             # - next constraint with romA:addressA or romB:addressB
-            next_virtual_address = 0x0fffffff
+            next_virtual_address = 0xffffffff
             # Store the blocker/constraint that was responsible for this va to be selected TODO only for debugging, remove later
             responsible_object = None
 

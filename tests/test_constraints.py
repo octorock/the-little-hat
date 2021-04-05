@@ -630,4 +630,11 @@ def test_bug_4_simplified2():
     manager.rebuild_relations()
 
 
+def test_bug_5():
+    manager = ConstraintManager({RomVariant.DEMO, RomVariant.USA, RomVariant.JP})
+    add_u_d_constraint(manager, 0xbf1d2371, 0xbf1d2371)
+    add_j_d_constraint(manager, 0xbf1d2371, 0xbf1d2371)
+    manager.rebuild_relations()
+
+    
 # endregion

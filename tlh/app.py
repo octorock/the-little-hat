@@ -1,5 +1,6 @@
 import signal
 import sys
+from tlh.data.database import initialize_databases
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QIcon
@@ -38,6 +39,7 @@ class MainWindow(QMainWindow):
         self.ui.dockBuilder.hide()
 
 
+        initialize_databases(self)
 
 
         hex_editor_manager = HexEditorManager(self)

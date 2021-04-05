@@ -1,23 +1,21 @@
 from enum import Enum
-from tlh.data.database import read_constraints, read_pointers, write_constraints, write_pointers
+
+from PySide6.QtGui import QColor
+from tlh.data.database import get_pointer_database, read_constraints, write_constraints
 from tlh.data.constraints import Constraint, ConstraintManager
 from tlh.data.rom import Rom, get_rom
 from tlh.const import ROM_OFFSET, RomVariant
 from PySide6.QtCore import QObject, Signal
 from dataclasses import dataclass
 from tlh.data.pointer import Pointer
-
-
-class ByteStatus(Enum):
-    NONE = 0
-    DIFFERING = 1
+from tlh import settings
 
 
 
 @dataclass
 class DisplayByte:
     text: str
-    status: ByteStatus
+    background: QColor
 
 
 
@@ -35,6 +33,7 @@ class HexEditorInstance(QObject):
     selection_updated = Signal(int)
     selection_updated_externally = Signal(int)
     pointer_discovered = Signal(Pointer)
+    repaint_requested = Signal()
 
     def __init__(self, parent, rom_variant: RomVariant, rom: Rom, constraint_manager: ConstraintManager) -> None:
         super().__init__(parent=parent)
@@ -44,6 +43,29 @@ class HexEditorInstance(QObject):
         self.constraint_manager = constraint_manager
 
         self.display_byte_cache = {} # TODO invalidate this cache if a constraint is added
+
+
+        self.diff_color = QColor(158, 80, 88)#QColor(244, 108, 117)
+        self.pointer_color = QColor(68, 69, 34)
+
+        self.pointers: list[Pointer] = []
+
+        pointer_database = get_pointer_database()
+
+        self.update_pointers()
+        pointer_database.pointers_changed.connect(self.update_pointers)
+
+    def update_pointers(self):
+        print('update pointers')
+        pointer_database = get_pointer_database()
+        pointers = pointer_database.get_pointers()
+        self.pointers.clear()
+        for pointer in pointers:
+            if pointer.rom_variant == self.rom_variant:
+                self.pointers.append(pointer)
+        # TODO sort pointer list?
+        self.display_byte_cache = {} # Invalidate TODO only at the added pointers?
+        self.repaint_requested.emit()
 
 
     def get_local_label(self, index: int) -> str:
@@ -58,16 +80,27 @@ class HexEditorInstance(QObject):
 
         local_address = self.constraint_manager.to_local(self.rom_variant, index)
         if local_address == -1:
-            return DisplayByte('  ', ByteStatus.NONE)
+            return DisplayByte('  ', None)
 
         # TODO make sure local address is < length of rom
         
-        display_byte = DisplayByte('%02X' % self.rom.get_byte(local_address), 
-        ByteStatus.DIFFERING if self.manager.is_diffing(index) else ByteStatus.NONE
-        )
+        background = None
+        if self.manager.is_diffing(index):
+            background = self.diff_color
+
+        if self.is_pointer(index):
+            background = self.pointer_color
+
+        display_byte = DisplayByte('%02X' % self.rom.get_byte(local_address), background)
         self.display_byte_cache[index] = display_byte
         return display_byte
 
+    def is_pointer(self, index: int) -> bool:
+        # TODO binary search
+        for pointer in self.pointers:
+            if index >= pointer.address and index < pointer.address + 4:
+                return True
+        return False
 
     def get_bytes(self, from_index: int, to_index: int) -> list[DisplayByte]:
         return list(map(
@@ -163,10 +196,9 @@ class HexEditorManager(QObject):
         
     def add_pointers_and_constraints(self, pointer: Pointer) -> None:
         # Found a pointer that is the same for all variants
-        pointers = read_pointers()
         constraints = read_constraints()
 
-        pointers.append(pointer)
+        new_pointers = [pointer]
         virtual_address = self.constraint_manager.to_virtual(pointer.rom_variant, pointer.address)
 
         for variant in self.variants:
@@ -174,7 +206,7 @@ class HexEditorManager(QObject):
                 address = self.constraint_manager.to_local(variant, virtual_address)
                 points_to = self.roms[variant].get_pointer(address)
                 # Add a corresponding pointer for this variant
-                pointers.append(Pointer(variant, address, points_to, pointer.certainty, pointer.author, pointer.note))
+                new_pointers.append(Pointer(variant, address, points_to, pointer.certainty, pointer.author, pointer.note))
                 
                 # Add a constraint for the places that these two pointers are pointing to, as the pointers should be the same
                 # TODO check that it's actually a pointer into rom
@@ -186,6 +218,7 @@ class HexEditorManager(QObject):
                 # TODO test that adding the added constraints are not invalid
                 constraints.append(Constraint(pointer.rom_variant, pointer.points_to-ROM_OFFSET, variant, points_to-ROM_OFFSET, pointer.certainty, pointer.author, note))
 
-        # TODO send signal to invalidate constraints and annotations
-        write_pointers(pointers)
+
+        pointer_database = get_pointer_database()
+        pointer_database.add_pointers(new_pointers)
         write_constraints(constraints)
