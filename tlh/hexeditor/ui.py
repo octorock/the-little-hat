@@ -59,6 +59,7 @@ class HexEditorWidget (QWidget):
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_G), parent, self.show_goto_dialog, context=Qt.WidgetWithChildrenShortcut)
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), parent, self.copy_selected_bytes, context = Qt.WidgetWithChildrenShortcut)
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_A), parent, self.mark_as_all_pointer, context = Qt.WidgetWithChildrenShortcut)
+        QShortcut(QKeySequence(Qt.Key_4), parent, self.select_four_bytes, context = Qt.WidgetWithChildrenShortcut)
         self.update_status_bar()
 
     def setup_scroll_bar(self):
@@ -256,6 +257,9 @@ class HexEditorWidget (QWidget):
 
     def add_new_annotation(self, annotation: Annotation) -> None:
         get_annotation_database().add_annotation(annotation)
+
+    def select_four_bytes(self) -> None:
+        self.instance.selection_updated.emit(4)
 
     def mousePressEvent(self, event: PySide6.QtGui.QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:

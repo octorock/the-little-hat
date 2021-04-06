@@ -1,1 +1,2 @@
 rom_variant,address,length,color,author,note
+USA,0xb20a,4,#32b432,octorock,Might be a pointer to another script?

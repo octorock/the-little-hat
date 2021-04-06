@@ -95,10 +95,10 @@ class HexEditorInstance(QObject):
         
         background = None
 
-        annotation_color = self.is_annotation(index)
+        annotation_color = self.is_annotation(local_address)
         if annotation_color is not None:
             background = annotation_color
-        elif self.is_pointer(index):
+        elif self.is_pointer(local_address):
             background = self.pointer_color
         elif self.manager.is_diffing(index):
             background = self.diff_color
@@ -107,12 +107,12 @@ class HexEditorInstance(QObject):
         self.display_byte_cache[index] = display_byte
         return display_byte
 
-    def is_pointer(self, index: int) -> bool:
-        return len(self.pointers.get_pointers_at(index)) > 0
+    def is_pointer(self, local_address: int) -> bool:
+        return len(self.pointers.get_pointers_at(local_address)) > 0
 
-    def is_annotation(self, index: int) -> QColor:
+    def is_annotation(self, local_address: int) -> QColor:
         # Just returns the first annotation, does not care about multiple overlapping
-        annotations = self.annotations.get_annotations_at(index)
+        annotations = self.annotations.get_annotations_at(local_address)
         if len(annotations) > 0:
             return annotations[0].color
         return None
@@ -129,6 +129,9 @@ class HexEditorInstance(QObject):
 
     def to_virtual(self, local_address: int) -> int:
         return self.constraint_manager.to_virtual(self.rom_variant, local_address)
+
+    def to_local(self, virtual_address: int) -> int:
+        return self.constraint_manager.to_local(self.rom_variant, virtual_address)
     # def jump_to_local_address(self, local_address: int) -> None:
     #     virtual_address = self.constraint_manager.to_virtual(self.rom_variant, local_address)
     #     self.cursor_moved.emit(virtual_address)
@@ -236,7 +239,10 @@ class HexEditorManager(QObject):
                     note += '\n' + pointer.note
                 
                 # TODO test that adding the added constraints are not invalid
-                new_constraints.append(Constraint(pointer.rom_variant, pointer.points_to-ROM_OFFSET, variant, points_to-ROM_OFFSET, pointer.certainty, pointer.author, note))
+
+                enabled = self.constraint_manager.to_virtual(pointer.rom_variant, pointer.points_to-ROM_OFFSET) != self.constraint_manager.to_virtual(variant, points_to-ROM_OFFSET)
+                print(f'Add constraint {enabled}')
+                new_constraints.append(Constraint(pointer.rom_variant, pointer.points_to-ROM_OFFSET, variant, points_to-ROM_OFFSET, pointer.certainty, pointer.author, note, enabled))
 
 
         pointer_database = get_pointer_database()

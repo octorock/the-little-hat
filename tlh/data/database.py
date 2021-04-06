@@ -44,13 +44,17 @@ class ConstraintDatabase(QObject):
         self.constraints.append(constraint)
         # TODO don't save every time?
         self._write_constraints()
-        self.constraints_changed.emit()
+        if constraint.enabled:
+            self.constraints_changed.emit()
 
     def add_constraints(self, constraints: list[Constraint]) -> None:
         self.constraints += constraints
         # TODO don't save every time?
         self._write_constraints()
-        self.constraints_changed.emit()
+        for constraint in constraints:
+            if constraint.enabled: # Only emit change if one of the added constraints is enabled
+                self.constraints_changed.emit()
+                break
 
     def _read_constraints(self) -> list[Constraint]:
         constraints = []
