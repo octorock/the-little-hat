@@ -34,6 +34,7 @@ class HexEditorInstance(QObject):
     selection_updated = Signal(int)
     selection_updated_externally = Signal(int)
     pointer_discovered = Signal(Pointer)
+    only_in_current_marked = Signal(int, int)
     repaint_requested = Signal()
 
     def __init__(self, parent, rom_variant: RomVariant, rom: Rom, constraint_manager: ConstraintManager) -> None:
@@ -185,6 +186,7 @@ class HexEditorManager(QObject):
         instance.cursor_moved.connect(self.move_all_cursors)
         instance.selection_updated.connect(self.update_all_selections)
         instance.pointer_discovered.connect(self.add_pointers_and_constraints)
+        instance.only_in_current_marked.connect(lambda x,y: self.mark_only_in_one(rom_variant, x, y))
         self.instances.append(instance)
         return instance
 
@@ -207,8 +209,8 @@ class HexEditorManager(QObject):
         for variant in self.variants:
             local_address = self.constraint_manager.to_local(variant, virtual_address)
             if local_address == -1:
-                # does not count as a difference
-                continue
+                # does count as a difference
+                return True
             local_data = self.roms[variant].get_byte(local_address)
             if data is None:
                 data = local_data
@@ -249,3 +251,27 @@ class HexEditorManager(QObject):
         pointer_database.add_pointers(new_pointers)
         constraint_database = get_constraint_database()
         constraint_database.add_constraints(new_constraints)
+
+    def mark_only_in_one(self, rom_variant: RomVariant, virtual_address: int, length: int) -> None:
+
+        # TODO show dialog for inputs
+        certainty = 1
+        author = settings.get_username()
+        note = 'Only in ' + rom_variant
+        enabled = True
+
+        # Get the end of the section only in this variant + 1
+        local_address = self.constraint_manager.to_local(rom_variant, virtual_address + length)
+
+        new_constraints = []
+        for variant in self.variants:
+            if variant != rom_variant:
+                # Link it to the start of the selection in all other variants
+                la = self.constraint_manager.to_local(variant, virtual_address)
+                constraint = Constraint(rom_variant, local_address, variant, la, certainty, author, note, enabled)
+                new_constraints.append(constraint)
+
+        constraint_database = get_constraint_database()
+        constraint_database.add_constraints(new_constraints)
+
+        print(f'mark only in one {rom_variant} {virtual_address} {length}')

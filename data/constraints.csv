@@ -3455,3 +3455,6 @@ USA,0xe4c6,JP,0xe4cc,5,octorock,first addition to JP,True
 DEMO,0xe4c6,JP,0xe4cc,5,octorock,first addition to JP,True
 USA,0x7f3f9,JP,0x7f235,5,octorock,Pointer at USA 0xe4ca,False
 USA,0x7f3f9,DEMO,0x7f00d,5,octorock,Pointer at USA 0xe4ca,False
+DEMO,0x13b484,USA,0x13aa54,5,octorock,Here are a few less pointers in DEMO,True
+JP,0xe506,DEMO,0xe4fa,1,octorock,Only in JP,True
+JP,0xe506,USA,0xe4fa,1,octorock,Only in JP,True

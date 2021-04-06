@@ -192,6 +192,7 @@ class HexEditorWidget (QWidget):
         menu.addSeparator()
         menu.addAction('Add annotation at cursor', self.open_new_annotation_dialog)
         menu.addAction('Add manual constraint at cursor', self.open_new_constraint_dialog)
+        menu.addAction('Mark selected bytes only in current variant', self.mark_only_in_current)
 
         menu.addAction('Goto', self.show_goto_dialog)
         menu.exec_(event.globalPos())
@@ -273,6 +274,13 @@ class HexEditorWidget (QWidget):
 
     def add_new_constraint(self, constraint: Constraint) -> None:
         get_constraint_database().add_constraint(constraint)
+
+    def mark_only_in_current(self) -> None:
+        address = self.cursor
+        length = abs(self.selected_bytes)
+        if self.selected_bytes < 0:
+            address += self.selected_bytes + 1
+        self.instance.only_in_current_marked.emit(address, length)
 
     def mousePressEvent(self, event: PySide6.QtGui.QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
