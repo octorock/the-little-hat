@@ -3451,3 +3451,7 @@ USA,0x13711c,JP,0x136d48,5,octorock,Pointer at USA 0x137264,False
 USA,0x13711c,DEMO,0x137b6c,5,octorock,Pointer at USA 0x137264,False
 USA,0x137090,JP,0x136cbc,5,octorock,Pointer at USA 0x137254,False
 USA,0x137090,DEMO,0x137ae0,5,octorock,Pointer at USA 0x137254,False
+USA,0xe4c6,JP,0xe4cc,5,octorock,first addition to JP,True
+DEMO,0xe4c6,JP,0xe4cc,5,octorock,first addition to JP,True
+USA,0x7f3f9,JP,0x7f235,5,octorock,Pointer at USA 0xe4ca,False
+USA,0x7f3f9,DEMO,0x7f00d,5,octorock,Pointer at USA 0xe4ca,False

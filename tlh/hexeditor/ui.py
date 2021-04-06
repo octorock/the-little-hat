@@ -1,9 +1,11 @@
 # Inspired by https://github.com/PetterS/sexton
 # Paint custom widget https://blog.rburchell.com/2010/02/pyside-tutorial-custom-widget-painting.html
 
+from tlh.data.constraints import Constraint
+from tlh.hexeditor.edit_constraint_dialog import EditConstraintDialog
 from tlh.hexeditor.edit_annotation_dialog import EditAnnotationDialog
 from tlh.data.annotations import Annotation
-from tlh.data.database import get_annotation_database, get_pointer_database
+from tlh.data.database import get_annotation_database, get_constraint_database, get_pointer_database
 from tlh import settings
 from tlh.data.pointer import Pointer
 from tlh.hexeditor.edit_pointer_dialog import EditPointerDialog
@@ -189,6 +191,7 @@ class HexEditorWidget (QWidget):
         # General actions
         menu.addSeparator()
         menu.addAction('Add annotation at cursor', self.open_new_annotation_dialog)
+        menu.addAction('Add manual constraint at cursor', self.open_new_constraint_dialog)
 
         menu.addAction('Goto', self.show_goto_dialog)
         menu.exec_(event.globalPos())
@@ -219,7 +222,7 @@ class HexEditorWidget (QWidget):
             address -= 3           
         points_to = self.instance.get_as_pointer(address)
 
-        pointer = Pointer(self.instance.rom_variant, address, points_to, 5, settings.get_username())
+        pointer = Pointer(self.instance.rom_variant, self.instance.to_local(address), points_to, 5, settings.get_username())
 
         return EditPointerDialog(self, pointer)
         
@@ -250,7 +253,7 @@ class HexEditorWidget (QWidget):
         length = abs(self.selected_bytes)
         if self.selected_bytes < 0:
             address += self.selected_bytes + 1
-        annotation = Annotation(self.instance.rom_variant, address, length, self.default_annotation_color, settings.get_username())
+        annotation = Annotation(self.instance.rom_variant, self.instance.to_local(address), length, self.default_annotation_color, settings.get_username())
         dialog = EditAnnotationDialog(self, annotation)
         dialog.annotation_changed.connect(self.add_new_annotation)
         dialog.show()
@@ -260,6 +263,16 @@ class HexEditorWidget (QWidget):
 
     def select_four_bytes(self) -> None:
         self.instance.selection_updated.emit(4)
+
+    def open_new_constraint_dialog(self):
+        address = self.cursor
+        constraint = Constraint(self.instance.rom_variant, self.instance.to_local(address), None, None, 5, settings.get_username(), None, True)
+        dialog = EditConstraintDialog(self, constraint)
+        dialog.constraint_changed.connect(self.add_new_constraint)
+        dialog.show()
+
+    def add_new_constraint(self, constraint: Constraint) -> None:
+        get_constraint_database().add_constraint(constraint)
 
     def mousePressEvent(self, event: PySide6.QtGui.QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
@@ -380,7 +393,7 @@ class HexEditorWidget (QWidget):
         self.scroll_to_cursor()
         self.instance.cursor_moved.emit(cursor)
         self.instance.selection_updated.emit(1)
-
+    
     def update_cursor_from_external(self, cursor):
         self.cursor = cursor
         self.update_status_bar()
