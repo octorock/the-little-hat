@@ -1,6 +1,9 @@
 from csv import DictReader, DictWriter
 from os import path
 
+from PySide6.QtGui import QColor
+from tlh.data.annotations import Annotation
+
 from PySide6.QtCore import QObject, Signal
 from tlh.data.pointer import Pointer
 
@@ -17,9 +20,10 @@ def initialize_databases(parent) -> None:
     '''
     Initialize all database singletons
     '''
-    global pointer_database_instance, constraint_database_instance
+    global pointer_database_instance, constraint_database_instance, annotation_database_instance
     pointer_database_instance = PointerDatabase(parent)
     constraint_database_instance = ConstraintDatabase(parent)
+    annotation_database_instance = AnnotationDatabase(parent)
 
 ### Constraints ###
 constraint_database_instance = None
@@ -186,3 +190,71 @@ def get_pointer_database() -> PointerDatabase:
     return pointer_database_instance
 
 
+### Annotations ###
+annotation_database_instance = None
+class AnnotationDatabase(QObject):
+
+    annotations_changed = Signal()
+
+    def __init__(self, parent) -> None:
+        if annotation_database_instance is not None:
+            raise RuntimeError('Already initialized')
+        super().__init__(parent=parent)
+        self.annotations = self._read_annotations()
+
+    def get_annotations(self) -> list[Annotation]:
+        return self.annotations
+
+    def add_annotation(self, annotation: Annotation) -> None:
+        self.annotations.append(annotation)
+        # TODO don't save every time?
+        self._write_annotations()
+        self.annotations_changed.emit()
+
+    def add_annotations(self, annotations: list[Annotation]) -> None:
+        self.annotations += annotations
+        # TODO don't save every time?
+        self._write_annotations()
+        self.annotations_changed.emit()
+
+
+    def _read_annotations(self) -> list[Annotation]:
+        annotations = []
+        try:
+            with open(get_file_in_database('annotations.csv'), 'r') as file:
+                reader = DictReader(file)
+                for row in reader:
+                    annotations.append(
+                        Annotation(
+                            RomVariant(row['rom_variant']),
+                            int(row['address'], 16),
+                            int(row['length']),
+                            QColor(row['color']),
+                            row['author'],
+                            row['note']
+                        )
+                    )
+        except OSError:
+            # file cannot be read, just supply no annotations
+            pass
+        return annotations
+
+
+    def _write_annotations(self):
+        with open(get_file_in_database('annotations.csv'), 'w') as file:
+            writer = DictWriter(
+                file, fieldnames=['rom_variant', 'address', 'length', 'color', 'author', 'note'])
+            writer.writeheader()
+            for annotation in self.annotations:
+                writer.writerow({
+                    'rom_variant': annotation.rom_variant,
+                    'address': hex(annotation.address),
+                    'length': annotation.length,
+                    'color': annotation.color.name(),
+                    'author': annotation.author,
+                    'note': annotation.note
+                })
+
+
+def get_annotation_database() -> AnnotationDatabase:
+    return annotation_database_instance

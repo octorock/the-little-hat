@@ -1,7 +1,9 @@
 # Inspired by https://github.com/PetterS/sexton
 # Paint custom widget https://blog.rburchell.com/2010/02/pyside-tutorial-custom-widget-painting.html
 
-from tlh.data.database import get_pointer_database
+from tlh.hexeditor.edit_annotation_dialog import EditAnnotationDialog
+from tlh.data.annotations import Annotation
+from tlh.data.database import get_annotation_database, get_pointer_database
 from tlh import settings
 from tlh.data.pointer import Pointer
 from tlh.hexeditor.edit_pointer_dialog import EditPointerDialog
@@ -43,6 +45,7 @@ class HexEditorWidget (QWidget):
         self.byte_color = QColor(210, 210, 210)
         self.selection_color = QPen(QColor(97, 175, 239))
         self.selection_color.setWidth(2)
+        self.default_annotation_color = QColor(50,180,50)
         self.scroll_bar = scroll_bar
         self.setup_scroll_bar()
         self.scroll_bar.valueChanged.connect(self.on_scroll_bar_changed)
@@ -184,6 +187,8 @@ class HexEditorWidget (QWidget):
 
         # General actions
         menu.addSeparator()
+        menu.addAction('Add annotation at cursor', self.open_new_annotation_dialog)
+
         menu.addAction('Goto', self.show_goto_dialog)
         menu.exec_(event.globalPos())
 
@@ -237,6 +242,20 @@ class HexEditorWidget (QWidget):
 
     def add_new_pointer_and_constraints(self, pointer: Pointer) -> None:
         self.instance.pointer_discovered.emit(pointer)
+
+    
+    def open_new_annotation_dialog(self):
+        address = self.cursor
+        length = abs(self.selected_bytes)
+        if self.selected_bytes < 0:
+            address += self.selected_bytes + 1
+        annotation = Annotation(self.instance.rom_variant, address, length, self.default_annotation_color, settings.get_username())
+        dialog = EditAnnotationDialog(self, annotation)
+        dialog.annotation_changed.connect(self.add_new_annotation)
+        dialog.show()
+
+    def add_new_annotation(self, annotation: Annotation) -> None:
+        get_annotation_database().add_annotation(annotation)
 
     def mousePressEvent(self, event: PySide6.QtGui.QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:

@@ -1,7 +1,8 @@
 from enum import Enum
+from tlh.data.annotations import Annotation
 
 from PySide6.QtGui import QColor
-from tlh.data.database import get_pointer_database, get_constraint_database
+from tlh.data.database import get_annotation_database, get_pointer_database, get_constraint_database
 from tlh.data.constraints import Constraint, ConstraintManager
 from tlh.data.rom import Rom, get_rom
 from tlh.const import ROM_OFFSET, RomVariant
@@ -49,14 +50,17 @@ class HexEditorInstance(QObject):
         self.pointer_color = QColor(68, 69, 34)
 
         self.pointers: list[Pointer] = []
-
-        pointer_database = get_pointer_database()
+        self.annotations: list[Annotation] = []
 
         self.update_pointers()
+        pointer_database = get_pointer_database()
         pointer_database.pointers_changed.connect(self.update_pointers)
 
+        self.update_annotations()
+        annotation_database = get_annotation_database()
+        annotation_database.annotations_changed.connect(self.update_annotations)
+
     def update_pointers(self):
-        print('update pointers')
         pointer_database = get_pointer_database()
         pointers = pointer_database.get_pointers()
         self.pointers.clear()
@@ -64,6 +68,16 @@ class HexEditorInstance(QObject):
             if pointer.rom_variant == self.rom_variant:
                 self.pointers.append(pointer)
         # TODO sort pointer list?
+        self.request_repaint()
+
+    def update_annotations(self):
+        annotation_database = get_annotation_database()
+        annotations = annotation_database.get_annotations()
+        self.annotations.clear()
+        for annotation in annotations:
+            if annotation.rom_variant == self.rom_variant:
+                self.annotations.append(annotation)
+        # TODO sort annotation list
         self.request_repaint()
 
     def request_repaint(self):
@@ -88,11 +102,14 @@ class HexEditorInstance(QObject):
         # TODO make sure local address is < length of rom
         
         background = None
-        if self.manager.is_diffing(index):
-            background = self.diff_color
 
-        if self.is_pointer(index):
+        annotation_color = self.is_annotation(index)
+        if annotation_color is not None:
+            background = annotation_color
+        elif self.is_pointer(index):
             background = self.pointer_color
+        elif self.manager.is_diffing(index):
+            background = self.diff_color
 
         display_byte = DisplayByte('%02X' % self.rom.get_byte(local_address), background)
         self.display_byte_cache[index] = display_byte
@@ -104,6 +121,13 @@ class HexEditorInstance(QObject):
             if index >= pointer.address and index < pointer.address + 4:
                 return True
         return False
+
+    def is_annotation(self, index: int) -> QColor:
+        # Just returns the first annotation, does not care about multiple overlapping
+        for annotation in self.annotations:
+            if index >= annotation.address and index < annotation.address + annotation.length:
+                return annotation.color
+        return None
 
     def get_bytes(self, from_index: int, to_index: int) -> list[DisplayByte]:
         return list(map(
