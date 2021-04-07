@@ -3543,7 +3543,7 @@ USA,0x6c599,DEMO,0x6c4f1,5,octorock,Pointer at USA 0xe902,False
 USA,0x6c4f9,JP,0x6c335,5,octorock,Pointer at USA 0xe924,True
 USA,0x6c4f9,DEMO,0x6c451,5,octorock,Pointer at USA 0xe924,False
 JP,0x6c2e5,USA,0x6c4a9,5,octorock,Pointer at JP 0xe950,True
-JP,0x6c2e5,DEMO,0x6c401,5,octorock,Pointer at JP 0xe950,True
+JP,0x6c2e5,DEMO,0x6c401,5,octorock,Pointer at JP 0xe950,False
 USA,0x6c4dd,JP,0x6c319,5,octorock,Pointer at USA 0xe94e,False
 USA,0x6c4dd,DEMO,0x6c435,5,octorock,Pointer at USA 0xe94e,False
 USA,0x6b261,JP,0x6b0a1,5,octorock,Pointer at USA 0xe98c,False
@@ -4269,3 +4269,33 @@ USA,0x64181,DEMO,0x640d9,5,octorock,Pointer at USA 0x10c72,False
 USA,0x64181,JP,0x63fc1,5,octorock,Pointer at USA 0x10c72,False
 USA,0x11098,DEMO,0x11098,5,octorock,Pointer at USA 0x10c8a,False
 USA,0x11098,JP,0x110a0,5,octorock,Pointer at USA 0x10c8a,False
+USA,0xde7da4,JP,0xdc9d24,10,octorock,End of used data,True
+USA,0xde7da4,DEMO,0xdf1fcc,10,octorock,End of used data,True
+USA,0x11e214,JP,0x11ded8,10,octorock,Minish Maker: MAP section,False
+USA,0xd50fc,JP,0xd4e9c,10,octorock,Minish Maker: ENTITY? section,True
+USA,0x5a2e80,JP,0x5a2b20,10,octorock,Minish Maker: TILEOFFSET section,True
+DEMO,0x5a38b0,JP,0x5a2b20,5,octorock,TILEOFFSET,True
+USA,0xff850,JP,0xff500,10,octorock,Minish Maker: PALETTESET section,False
+USA,0x108398,JP,0x10805c,10,octorock,Minish Maker: CHUNK0 section,True
+DEMO,0x107f1c,JP,0x10805c,5,octorock,CHUNK0,True
+USA,0x108050,JP,0x107d18,10,octorock,Minish Maker: CHUNK0AREA1 section,True
+DEMO,0x107bd4,JP,0x107d18,5,octorock,CHUNK0AREA1,True
+USA,0x1083ae,JP,0x108072,10,octorock,Minish Maker: CHUNK1 section,False
+JP,0x108018,USA,0x108354,3,octorock,4 missing bytes in JP,True
+USA,0x1083c4,JP,0x108088,10,octorock,Minish Maker: CHUNK2 section,False
+USA,0x108408,JP,0x1080cc,10,octorock,Minish Maker: SWAP section,False
+USA,0x1081e4,JP,0x107eac,10,octorock,Minish Maker: PALETTECHANGE section,False
+JP,0x107cec,DEMO,0x107ba8,1,octorock,Only in JP,True
+JP,0x107cec,USA,0x108024,1,octorock,Only in JP,True
+USA,0x1080a4,JP,0x107d6c,10,octorock,Minish Maker: AREA1SWAP section,False
+USA,0x10246c,JP,0x102134,10,octorock,Minish Maker: TILESET section,True
+DEMO,0x101ff0,JP,0x102134,5,octorock,TILESET,True
+USA,0x324ae4,JP,0x324710,10,octorock,Minish Maker: GFXSOURCE section,False
+USA,0x10309c,JP,0x102d64,10,octorock,Minish Maker: METATILE section,False
+USA,0x107988,JP,0x107650,10,octorock,Minish Maker: TILEDATA section,False
+DEMO,0x128754,USA,0x127d04,3,octorock,,True
+DEMO,0x128754,JP,0x1279c8,3,octorock,,True
+DEMO,0x127cd0,USA,0x127280,1,octorock,Only in DEMO,True
+DEMO,0x127cd0,JP,0x126f44,1,octorock,Only in DEMO,True
+USA,0x127d30,JP,0x1279f4,10,octorock,Minish Maker: AREDATA section,False
+USA,0x13a7f0,JP,0x13a41c,10,octorock,Minish Maker: WARP section,False
