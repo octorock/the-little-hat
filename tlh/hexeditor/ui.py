@@ -1,6 +1,7 @@
 # Inspired by https://github.com/PetterS/sexton
 # Paint custom widget https://blog.rburchell.com/2010/02/pyside-tutorial-custom-widget-painting.html
 
+from PySide6 import QtGui
 from tlh.data.constraints import Constraint
 from tlh.hexeditor.edit_constraint_dialog import EditConstraintDialog
 from tlh.hexeditor.edit_annotation_dialog import EditAnnotationDialog
@@ -12,9 +13,9 @@ from tlh.hexeditor.edit_pointer_dialog import EditPointerDialog
 import PySide6
 from tlh.hexeditor.manager import HexEditorInstance
 from tlh.const import ROM_OFFSET
-from PySide6.QtCore import QPoint, Qt
+from PySide6.QtCore import QEvent, QPoint, Qt
 from PySide6.QtGui import QColor, QFont, QKeyEvent, QKeySequence, QPainter, QPen, QResizeEvent, QShortcut
-from PySide6.QtWidgets import QApplication, QInputDialog, QLabel, QMenu, QMessageBox, QScrollBar, QWidget
+from PySide6.QtWidgets import QApplication, QInputDialog, QLabel, QMenu, QMessageBox, QScrollBar, QToolTip, QWidget
 from tlh.ui.ui_hexeditor import Ui_HexEditor
 
 class HexEditorDock (QWidget):
@@ -284,11 +285,28 @@ class HexEditorWidget (QWidget):
 
     def mousePressEvent(self, event: PySide6.QtGui.QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
+
             # TODO handle click on label, etc
             cursor = self.xy_to_cursor(event.x(), event.y())
             if cursor is not None:
+
+
+                ctrl = event.modifiers() & Qt.ControlModifier == Qt.ControlModifier
+
+                if ctrl:
+                    # Go to pointer
+                    self.go_to_pointer_at(cursor)
+                    return
+
                 self.update_cursor(cursor)
                 self.is_dragging_to_select = True
+
+    def go_to_pointer_at(self, virtual_address: int) -> None:
+        pointers = self.instance.get_pointers_at(virtual_address)
+        if len(pointers) > 0:
+            # just jump to the first pointer
+            self.update_cursor(self.instance.to_virtual(pointers[0].points_to-ROM_OFFSET))
+
 
     def mouseMoveEvent(self, event: PySide6.QtGui.QMouseEvent) -> None:
         if self.is_dragging_to_select:
@@ -439,3 +457,19 @@ class HexEditorWidget (QWidget):
             return virtual_address > self.cursor + self.selected_bytes and virtual_address <= self.cursor
         else:
             return virtual_address >= self.cursor and virtual_address < self.cursor + self.selected_bytes
+
+
+    def event(self, event: PySide6.QtCore.QEvent) -> bool:
+        if event.type() == QEvent.ToolTip:
+            virtual_address = self.xy_to_cursor(event.pos().x(), event.pos().y())
+            if virtual_address is None:
+                QToolTip.hideText()
+                return True
+            pointers = self.instance.get_pointers_at(virtual_address)
+            if len(pointers) == 0:
+                QToolTip.hideText()
+                return True
+            QToolTip.showText(event.globalPos(), f'Pointer to {hex(pointers[0].points_to)}')
+            return True
+
+        return super().event(event)

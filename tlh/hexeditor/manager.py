@@ -111,6 +111,12 @@ class HexEditorInstance(QObject):
     def is_pointer(self, local_address: int) -> bool:
         return len(self.pointers.get_pointers_at(local_address)) > 0
 
+    def get_pointers_at(self, virtual_address: int) -> list[Pointer]:
+        local_address = self.constraint_manager.to_local(self.rom_variant, virtual_address)
+        if local_address == -1:
+            return []
+        return self.pointers.get_pointers_at(local_address)
+
     def is_annotation(self, local_address: int) -> QColor:
         # Just returns the first annotation, does not care about multiple overlapping
         annotations = self.annotations.get_annotations_at(local_address)
