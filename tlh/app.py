@@ -1,5 +1,7 @@
 import signal
 import sys
+from tlh.common.ui.layout import Layout
+from tlh.dock_manager import DockManager
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QIcon
@@ -31,6 +33,11 @@ class MainWindow(QMainWindow):
         self.ui.actionDisableRedundantConstraints.triggered.connect(
             self.disable_redundant_constraints)
 
+        self.ui.actionUSA.triggered.connect(lambda: self.dock_manager.add_hex_editor(RomVariant.USA))
+        self.ui.actionDEMO.triggered.connect(lambda: self.dock_manager.add_hex_editor(RomVariant.DEMO))
+        self.ui.actionEU.triggered.connect(lambda: self.dock_manager.add_hex_editor(RomVariant.EU))
+        self.ui.actionJP.triggered.connect(lambda: self.dock_manager.add_hex_editor(RomVariant.JP))
+
         self.build_layouts_toolbar()
 
         # self.setCentralWidget(widget)
@@ -41,41 +48,18 @@ class MainWindow(QMainWindow):
 
         initialize_databases(self)
 
-        hex_editor_manager = HexEditorManager(self)
-        # TODO make dynamic via menus?
-        dock1 = QDockWidget('Hex Editor USA', self)
-        dock1.setObjectName('dockHex')
-        self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock1)
-        dock1.setWidget(HexEditorDock(
-            self, hex_editor_manager.get_hex_editor_instance(RomVariant.USA)))
-
-        dock2 = QDockWidget('Hex Editor DEMO', self)
-        dock2.setObjectName('dockHex2')
-        self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock2)
-        dock2.setWidget(HexEditorDock(
-            self, hex_editor_manager.get_hex_editor_instance(RomVariant.DEMO)))
-
-        dock3 = QDockWidget('Hex Editor JP', self)
-        dock3.setObjectName('dockHex3')
-        self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock3)
-        dock3.setWidget(HexEditorDock(
-            self, hex_editor_manager.get_hex_editor_instance(RomVariant.JP)))
-
-        # dock4 = QDockWidget('Hex Editor EU', self)
-        # dock4.setObjectName('dockHex4')
-        # self.addDockWidget(Qt.DockWidgetArea.TopDockWidgetArea, dock4)
-        # dock4.setWidget(HexEditorDock(self, hex_editor_manager.get_hex_editor_instance(RomVariant.EU)))
+        self.dock_manager = DockManager(self)
 
         # Load plugins
         load_plugins(self)
 
         # Restore layout
-        self.restoreState(settings.get_window_state())
-        self.restoreGeometry(settings.get_geometry())
+        self.load_layout(settings.get_session_layout())
+
 
     def closeEvent(self, event):
-        settings.set_window_state(self.saveState())
-        settings.set_geometry(self.saveGeometry())
+        layout = Layout('', self.saveState(), self.saveGeometry(), self.dock_manager.save_state())
+        settings.set_session_layout(layout)
 
     def save_layout(self):
         (layout_name, res) = QInputDialog.getText(
@@ -91,9 +75,7 @@ class MainWindow(QMainWindow):
                 if res != QMessageBox.StandardButton.Yes:
                     return
             else:
-                layout = settings.Layout()
-                layout.name = layout_name
-                layout.windowState = self.saveState()
+                layout = Layout(layout_name, self.saveState(), self.saveGeometry(), self.dock_manager.save_state())
                 layouts.append(layout)
                 settings.set_layouts(layouts)
 
@@ -101,7 +83,9 @@ class MainWindow(QMainWindow):
 
     def load_layout(self, layout: settings.Layout):
         print(f'Loading layout {layout.name}')
-        self.restoreState(layout.windowState)
+        self.dock_manager.restore_state(layout.dock_state)
+        self.restoreState(layout.state)
+        self.restoreGeometry(layout.geometry)
 
     def build_layouts_toolbar(self):
         self.ui.menuLayouts.clear()

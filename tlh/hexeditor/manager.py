@@ -19,14 +19,7 @@ class DisplayByte:
     background: QColor
 
 
-
-
-class HexEditorInstance(QObject):
-    """
-    Object that is passed to a single hex editor
-    uses the constraint manager to translate from virtual to local addresses and vice versa
-    """
-
+class AbstractHexEditorInstance(QObject):
     start_offset_moved = Signal(int)
     start_offset_moved_externally = Signal(int)
     cursor_moved = Signal(int)
@@ -36,6 +29,15 @@ class HexEditorInstance(QObject):
     pointer_discovered = Signal(Pointer)
     only_in_current_marked = Signal(int, int)
     repaint_requested = Signal()
+
+    def __init__(self, parent) -> None:
+        super().__init__(parent=parent)
+
+class HexEditorInstance(AbstractHexEditorInstance):
+    """
+    Object that is passed to a single hex editor
+    uses the constraint manager to translate from virtual to local addresses and vice versa
+    """
 
     def __init__(self, parent, rom_variant: RomVariant, rom: Rom, constraint_manager: ConstraintManager) -> None:
         super().__init__(parent=parent)
@@ -161,13 +163,123 @@ class HexEditorInstance(QObject):
 
 
 
+class SoloHexEditorInstance(AbstractHexEditorInstance):
+    def __init__(self, parent, rom_variant: RomVariant, rom: Rom) -> None:
+        super().__init__(parent=parent)
+        self.rom_variant = rom_variant
+        self.rom = rom
+
+        self.display_byte_cache = {} # TODO invalidate this cache if a constraint is added
+        self.pointer_color = QColor(68, 69, 34)
+
+        self.pointers: PointerList = None
+        self.annotations: AnnotationList = None
+
+        self.update_pointers()
+        pointer_database = get_pointer_database()
+        pointer_database.pointers_changed.connect(self.update_pointers)
+
+        self.update_annotations()
+        annotation_database = get_annotation_database()
+        annotation_database.annotations_changed.connect(self.update_annotations)
+
+
+        self.start_offset_moved.connect(self.start_offset_moved_externally)
+        self.cursor_moved.connect(self.cursor_moved_externally)
+        self.selection_updated.connect(self.selection_updated_externally)
+
+    def update_pointers(self):
+        pointer_database = get_pointer_database()
+        pointers = pointer_database.get_pointers()
+        self.pointers = PointerList(pointers, self.rom_variant)
+        self.request_repaint()
+
+    def update_annotations(self):
+        annotation_database = get_annotation_database()
+        annotations = annotation_database.get_annotations()
+        self.annotations = AnnotationList(annotations, self.rom_variant)
+        self.request_repaint()
+
+    def request_repaint(self):
+        self.display_byte_cache = {} # Invalidate TODO only at the added pointers?
+        self.repaint_requested.emit()
+
+
+    def get_local_label(self, local_address: int) -> str:
+        return '%08X' % (local_address + ROM_OFFSET)
+
+    def get_display_byte_for_index(self, index: int) -> DisplayByte:
+        if index in self.display_byte_cache: # TODO test if the cache actually improves performance or is just a memory waste
+            return self.display_byte_cache[index]
+
+        local_address = index
+
+        # TODO make sure local address is < length of rom
+        
+        background = None
+
+        annotation_color = self.is_annotation(local_address)
+        if annotation_color is not None:
+            background = annotation_color
+        elif self.is_pointer(local_address):
+            background = self.pointer_color
+
+        display_byte = DisplayByte('%02X' % self.rom.get_byte(local_address), background)
+        self.display_byte_cache[index] = display_byte
+        return display_byte
+
+    def is_pointer(self, local_address: int) -> bool:
+        return len(self.pointers.get_pointers_at(local_address)) > 0
+
+    def get_pointers_at(self, local_address: int) -> list[Pointer]:
+        return self.pointers.get_pointers_at(local_address)
+
+    def is_annotation(self, local_address: int) -> QColor:
+        # Just returns the first annotation, does not care about multiple overlapping
+        annotations = self.annotations.get_annotations_at(local_address)
+        if len(annotations) > 0:
+            return annotations[0].color
+        return None
+
+    def get_bytes(self, from_index: int, to_index: int) -> list[DisplayByte]:
+        return list(map(
+            self.get_display_byte_for_index
+                    , range(from_index, to_index)
+        ))
+
+    def length(self) -> int:
+        # TODO calculate length of virtual rom
+        return self.rom.length()
+
+    def to_virtual(self, local_address: int) -> int:
+        return local_address
+
+    def to_local(self, virtual_address: int) -> int:
+        return virtual_address
+
+    def get_local_address_str(self, virtual_address: int) -> str:
+        return hex(self.get_local_address(virtual_address) + ROM_OFFSET)
+
+    def get_local_address(self, virtual_address: int) -> int:
+        return virtual_address
+
+    def get_bytes_str(self, range: range) -> str:
+        results = []
+        for local_address in map(self.get_local_address, range):
+            if local_address != -1:
+                results.append('%02X' % self.rom.get_byte(local_address))
+        return ' '.join(results)
+
+    def get_as_pointer(self, virtual_address: int) -> int:
+        return self.rom.get_pointer(self.get_local_address(virtual_address))
+
 class HexEditorManager(QObject):
     """
     Manages all hex editors
     """
     def __init__(self, parent) -> None:
         super().__init__(parent=parent)
-        self.variants = {RomVariant.USA, RomVariant.DEMO, RomVariant.JP}
+        self.variants = {RomVariant.USA, RomVariant.DEMO, RomVariant.JP, RomVariant.EU}
         self.roms: dict[RomVariant, Rom] = {}
         for variant in self.variants:
             self.roms[variant] = get_rom(variant)

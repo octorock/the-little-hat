@@ -39,6 +39,16 @@
     <property name="title">
      <string>Tools</string>
     </property>
+    <widget class="QMenu" name="menuHex_Editor">
+     <property name="title">
+      <string>Hex Editor</string>
+     </property>
+     <addaction name="actionUSA"/>
+     <addaction name="actionDEMO"/>
+     <addaction name="actionEU"/>
+     <addaction name="actionJP"/>
+    </widget>
+    <addaction name="menuHex_Editor"/>
     <addaction name="actionBuilder"/>
     <addaction name="actionDisableRedundantConstraints"/>
     <addaction name="separator"/>
@@ -95,6 +105,26 @@
   <action name="actionDisableRedundantConstraints">
    <property name="text">
     <string>Disable redundant constraints</string>
+   </property>
+  </action>
+  <action name="actionUSA">
+   <property name="text">
+    <string>USA</string>
+   </property>
+  </action>
+  <action name="actionDEMO">
+   <property name="text">
+    <string>DEMO</string>
+   </property>
+  </action>
+  <action name="actionEU">
+   <property name="text">
+    <string>EU</string>
+   </property>
+  </action>
+  <action name="actionJP">
+   <property name="text">
+    <string>JP</string>
    </property>
   </action>
  </widget>

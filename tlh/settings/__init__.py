@@ -1,3 +1,4 @@
+from tlh.common.ui.layout import Layout
 from tlh.const import RomVariant
 from PySide6.QtCore import QSettings, Signal
 from getpass import getuser
@@ -87,26 +88,20 @@ def set_rom_jp(rom):
 
 # Layouts
 
+def get_session_layout() -> Layout:
+    settings.beginGroup('session_layout')
+    layout = Layout(settings.value('name', ''), settings.value('state', None), settings.value('geometry', None), settings.value('dock_state', ''))
+    settings.endGroup()
+    return layout
 
-def get_window_state():
-    return settings.value('windowState')
+def set_session_layout(layout: Layout) -> None:
+    settings.beginGroup('session_layout')
+    settings.setValue('name', layout.name)
+    settings.setValue('state', layout.state)
+    settings.setValue('geometry', layout.geometry)
+    settings.setValue('dock_state', layout.dock_state)    
+    settings.endGroup()
 
-
-def set_window_state(windowState):
-    settings.setValue('windowState', windowState)
-
-
-def get_geometry():
-    return settings.value('geometry')
-
-
-def set_geometry(geometry):
-    settings.setValue('geometry', geometry)
-
-
-class Layout:
-    name = ''
-    windowState = None
 
 
 def get_layouts() -> list[Layout]:
@@ -114,9 +109,7 @@ def get_layouts() -> list[Layout]:
     size = settings.beginReadArray('layouts')
     for i in range(size):
         settings.setArrayIndex(i)
-        layout = Layout()
-        layout.name = settings.value('name')
-        layout.windowState = settings.value('windowState')
+        layout = Layout(settings.value('name'), settings.value('state'), settings.value('geometry'), settings.value('dock_state'))
         layouts.append(layout)
     settings.endArray()
     # layouts = settings.value('layouts', [])
@@ -130,5 +123,7 @@ def set_layouts(layouts: list[Layout]):
     for i in range(len(layouts)):
         settings.setArrayIndex(i)
         settings.setValue('name', layouts[i].name)
-        settings.setValue('windowState', layouts[i].windowState)
+        settings.setValue('state', layouts[i].state)
+        settings.setValue('geometry', layouts[i].geometry)
+        settings.setValue('dock_state', layouts[i].dock_state)
     settings.endArray()
