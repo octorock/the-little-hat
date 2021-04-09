@@ -13,19 +13,22 @@ from tlh.hexeditor.edit_pointer_dialog import EditPointerDialog
 import PySide6
 from tlh.hexeditor.manager import HexEditorInstance
 from tlh.const import ROM_OFFSET
-from PySide6.QtCore import QEvent, QPoint, Qt
+from PySide6.QtCore import QEvent, QPoint, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QKeyEvent, QKeySequence, QPainter, QPen, QResizeEvent, QShortcut
 from PySide6.QtWidgets import QApplication, QInputDialog, QLabel, QMenu, QMessageBox, QScrollBar, QToolTip, QWidget
 from tlh.ui.ui_hexeditor import Ui_HexEditor
 
 class HexEditorDock (QWidget):
+    toggle_linked = Signal(bool)
     def __init__(self, parent, instance: HexEditorInstance) -> None:
         super().__init__(parent)
         self.ui = Ui_HexEditor()
         self.ui.setupUi(self)
         self.widget = HexEditorWidget(self, instance, self.ui.scrollBar, self.ui.labelStatusBar)
         self.ui.horizontalLayout_2.insertWidget(0, self.widget)
-        
+        self.ui.pushButtonGoto.clicked.connect(self.widget.show_goto_dialog)
+        self.ui.pushButtonLink.toggled.connect(self.toggle_linked.emit)
+        instance.linked_changed.connect(self.ui.pushButtonLink.setChecked)
 
 class HexEditorWidget (QWidget):
     def __init__(self, parent, instance: HexEditorInstance, scroll_bar: QScrollBar, statusBar: QLabel):

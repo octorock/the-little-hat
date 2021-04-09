@@ -94,6 +94,12 @@ class ConstraintManager:
         for variant in variants:
             self.rom_relations[variant] = RomRelations(variant)
 
+    def set_variants(self, variants: set[RomVariant]) -> None:
+        self.variants = variants
+        self.rom_relations = {}
+        for variant in variants:
+            self.rom_relations[variant] = RomRelations(variant)
+
     def reset(self):
         self.constraints = []
         for variant in self.variants:
@@ -107,7 +113,10 @@ class ConstraintManager:
 
     def add_all_constraints(self, constraints: list[Constraint]) -> None:
         for constraint in constraints:
-            self.add_constraint(constraint)
+
+            if constraint.romA in self.variants and constraint.romB in self.variants:
+                self.add_constraint(constraint)
+            # TODO handle transitive constraints here?
         self.rebuild_relations()
 
         # print('Num of relations')

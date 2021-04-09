@@ -12,8 +12,6 @@ from tlh import settings
 from tlh.common.ui.dark_theme import apply_dark_theme
 from tlh.const import RomVariant
 from tlh.data.database import get_constraint_database, initialize_databases
-from tlh.hexeditor.manager import HexEditorManager
-from tlh.hexeditor.ui import HexEditorDock, HexEditorWidget
 from tlh.plugin.loader import load_plugins
 from tlh.settings.ui import SettingsDialog
 from tlh.ui.ui_mainwindow import Ui_MainWindow

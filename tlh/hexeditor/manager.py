@@ -29,6 +29,7 @@ class AbstractHexEditorInstance(QObject):
     pointer_discovered = Signal(Pointer)
     only_in_current_marked = Signal(int, int)
     repaint_requested = Signal()
+    linked_changed = Signal(bool)
 
     def __init__(self, parent) -> None:
         super().__init__(parent=parent)
@@ -277,12 +278,9 @@ class HexEditorManager(QObject):
     """
     Manages all hex editors
     """
-    def __init__(self, parent) -> None:
+    def __init__(self, parent, linked_variants: set[RomVariant]) -> None:
         super().__init__(parent=parent)
-        self.variants = {RomVariant.USA, RomVariant.DEMO, RomVariant.JP, RomVariant.EU}
-        self.roms: dict[RomVariant, Rom] = {}
-        for variant in self.variants:
-            self.roms[variant] = get_rom(variant)
+        self.variants = linked_variants
         self.instances: list[HexEditorInstance] = []
 
         self.constraint_manager = ConstraintManager(self.variants) # TODO make configurable
@@ -294,18 +292,22 @@ class HexEditorManager(QObject):
     def update_constraints(self):
         print('update constraints')
         self.constraint_manager.reset()
-        self.constraint_manager.add_all_constraints(get_constraint_database().get_constraints())        
+        if len(self.variants) > 0:
+            self.constraint_manager.add_all_constraints(get_constraint_database().get_constraints())        
         for instance in self.instances:
             instance.request_repaint()
 
-    def get_hex_editor_instance(self, rom_variant: RomVariant)-> HexEditorInstance:
-        instance = HexEditorInstance(self, rom_variant, self.roms[rom_variant], self.constraint_manager)
-        instance.start_offset_moved.connect(self.move_all_start_offsets)
-        instance.cursor_moved.connect(self.move_all_cursors)
-        instance.selection_updated.connect(self.update_all_selections)
-        instance.pointer_discovered.connect(self.add_pointers_and_constraints)
-        instance.only_in_current_marked.connect(lambda x,y: self.mark_only_in_one(rom_variant, x, y))
-        self.instances.append(instance)
+    def get_hex_editor_instance(self, rom_variant: RomVariant, linked: bool)-> HexEditorInstance:
+        if linked:
+            instance = HexEditorInstance(self, rom_variant, get_rom(rom_variant), self.constraint_manager)
+            instance.start_offset_moved.connect(self.move_all_start_offsets)
+            instance.cursor_moved.connect(self.move_all_cursors)
+            instance.selection_updated.connect(self.update_all_selections)
+            instance.pointer_discovered.connect(self.add_pointers_and_constraints)
+            instance.only_in_current_marked.connect(lambda x,y: self.mark_only_in_one(rom_variant, x, y))
+            self.instances.append(instance)
+        else:
+            instance = SoloHexEditorInstance(self, rom_variant, get_rom(rom_variant))
         return instance
 
     def move_all_start_offsets(self, virtual_address: int) -> None:
@@ -329,7 +331,7 @@ class HexEditorManager(QObject):
             if local_address == -1:
                 # does count as a difference
                 return True
-            local_data = self.roms[variant].get_byte(local_address)
+            local_data = get_rom(variant).get_byte(local_address)
             if data is None:
                 data = local_data
                 continue
@@ -347,7 +349,7 @@ class HexEditorManager(QObject):
         for variant in self.variants:
             if variant != pointer.rom_variant:
                 address = self.constraint_manager.to_local(variant, virtual_address)
-                points_to = self.roms[variant].get_pointer(address)
+                points_to = get_rom(variant).get_pointer(address)
                 # Add a corresponding pointer for this variant
                 new_pointers.append(Pointer(variant, address, points_to, pointer.certainty, pointer.author, pointer.note))
                 
@@ -393,3 +395,21 @@ class HexEditorManager(QObject):
         constraint_database.add_constraints(new_constraints)
 
         print(f'mark only in one {rom_variant} {virtual_address} {length}')
+
+    def is_already_linked(self, rom_variant: RomVariant) -> bool:
+        return rom_variant in self.variants
+
+    def link(self, rom_variant: RomVariant) -> None:
+        self.variants.add(rom_variant)
+        self.constraint_manager.set_variants(self.variants)
+        self.update_constraints()
+
+    def unlink(self, rom_variant: RomVariant) -> None:
+        self.variants.remove(rom_variant)
+        self.constraint_manager.set_variants(self.variants)
+        self.update_constraints()
+
+    def set_linked_variants(self, linked_variants: set[RomVariant]) -> None:
+        self.variants = linked_variants
+        self.constraint_manager.set_variants(linked_variants)
+        self.update_constraints()
