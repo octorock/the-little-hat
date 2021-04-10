@@ -27,7 +27,7 @@ class LinkedDiffCalculator(AbstractDiffCalculator):
         for variant in self.variants:
             local_address = self.constraint_manager.to_local(
                 variant, virtual_address)
-            if local_address == -1:
+            if local_address == -1 or local_address > 0xffffff:
                 # does count as a difference
                 return True
             local_data = get_rom(variant).get_byte(local_address)

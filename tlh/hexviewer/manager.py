@@ -349,13 +349,14 @@ class HexViewerManager(QObject):
     def unlink(self, controller: HexViewerController) -> None:
         self.linked_controllers.remove(controller)
         self.linked_variants.remove(controller.rom_variant)
-        controller.set_linked(False)
         controller.set_address_resolver_and_diff_calculator(
             TrivialAddressResolver(),
             NoDiffCalculator()
         )
+        controller.set_linked(False)
         controller.request_repaint()
         self.update_constraint_manager()
+        controller.setup_scroll_bar()
 
     def link(self, controller: HexViewerController) -> None:
         if controller.rom_variant in self.linked_variants:
@@ -397,6 +398,7 @@ class HexViewerManager(QObject):
                 get_constraint_database().get_constraints())
         for controller in self.linked_controllers:
             controller.request_repaint()
+            controller.setup_scroll_bar()
 
     def slot_move_linked_start_offset(self, virtual_address: int) -> None:
         for controller in self.linked_controllers:

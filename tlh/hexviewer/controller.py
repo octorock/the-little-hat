@@ -70,7 +70,7 @@ class HexViewerController(QObject):
         self.dock.ui.pushButtonGoto.clicked.connect(self.slot_show_goto_dialog)
         self.dock.ui.pushButtonLink.clicked.connect(self.slot_toggle_linked)
         # self.dock.ui.scrollBar.valueChanged.connect(self.on_scroll_bar_changed)
-        self.area.signal_resized.connect(self.update_hex_area)
+        self.area.signal_resized.connect(self.slot_on_resize)
         self.area.signal_scroll_wheel_changed.connect(
             self.slot_scroll_wheel_changed)
         self.area.signal_cursor_changed.connect(
@@ -326,7 +326,7 @@ class HexViewerController(QObject):
 
     def update_status_bar(self):
         local_address = self.address_resolver.to_local(self.cursor)
-        if local_address == -1:
+        if local_address == -1 or local_address > 0xffffff:
             text = 'Cursor not in used area '
         else:
             text = f'Cursor: {hex(local_address+ROM_OFFSET)}'
@@ -420,7 +420,8 @@ class HexViewerController(QObject):
         menu.exec_(pos)
 
     def copy_cursor_address(self):
-        local_address = self.address_resolver.to_local(self.cursor) + ROM
+        local_address = self.address_resolver.to_local(
+            self.cursor) + ROM_OFFSET
         QApplication.clipboard().setText(hex(local_address).upper().replace('0X', '0x'))
 
     def copy_selected_bytes(self):
@@ -537,3 +538,7 @@ class HexViewerController(QObject):
             # just jump to the first pointer
             self.update_cursor(self.address_resolver.to_virtual(
                 pointers[0].points_to-ROM_OFFSET))
+
+    def slot_on_resize(self) -> None:
+        self.setup_scroll_bar()
+        self.update_hex_area()

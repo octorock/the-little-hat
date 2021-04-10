@@ -5191,3 +5191,12 @@ EU,0x150,USA,0x108,1,octorock,Only in EU,True
 EU,0x150,JP,0x108,1,octorock,Only in EU,True
 EU,0xef333c,USA,0xde7da4,10,octorock,End of used data TODO slow,False
 EU,0x9aeb60,USA,0x9b1d90,2,octorock,Start of english language,True
+USA,0xcab14,DEMO,0xca698,5,octorock,Pointer at USA 0x21248,False
+USA,0xcab3a,DEMO,0xca6be,5,octorock,Pointer at USA 0x212cc,False
+USA,0xcab42,DEMO,0xca6c6,5,octorock,Pointer at USA 0x212d8,False
+USA,0x11e214,EU,0x11d95c,10,octorock,Minish Maker: MAP section,True
+JP,0x11ded8,EU,0x11d95c,5,octorock,MAP,True
+DEMO,0x11dd98,EU,0x11d95c,5,octorock,MAP,True
+DEMO,0x11c00c,USA,0x11c488,5,octorock,Pointer at DEMO 0x11dd98,True
+DEMO,0x11c00c,EU,0x11bbd0,5,octorock,Pointer at DEMO 0x11dd98,True
+DEMO,0x11c00c,JP,0x11c14c,5,octorock,Pointer at DEMO 0x11dd98,True
