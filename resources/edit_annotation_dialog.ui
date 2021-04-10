@@ -131,9 +131,12 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>plainTextEditNote</tabstop>
-  <tabstop>lineEditAuthor</tabstop>
+  <tabstop>lineEditVariant</tabstop>
   <tabstop>lineEditAddress</tabstop>
+  <tabstop>spinBoxLength</tabstop>
+  <tabstop>lineEditColor</tabstop>
+  <tabstop>lineEditAuthor</tabstop>
+  <tabstop>plainTextEditNote</tabstop>
  </tabstops>
  <resources/>
  <connections>

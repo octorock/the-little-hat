@@ -127,11 +127,11 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>spinBoxCertainty</tabstop>
-  <tabstop>plainTextEditNote</tabstop>
-  <tabstop>lineEditAuthor</tabstop>
-  <tabstop>lineEditPointsTo</tabstop>
   <tabstop>lineEditAddress</tabstop>
+  <tabstop>lineEditPointsTo</tabstop>
+  <tabstop>spinBoxCertainty</tabstop>
+  <tabstop>lineEditAuthor</tabstop>
+  <tabstop>plainTextEditNote</tabstop>
  </tabstops>
  <resources/>
  <connections>

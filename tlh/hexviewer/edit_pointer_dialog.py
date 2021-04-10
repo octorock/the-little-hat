@@ -1,10 +1,17 @@
 
+from tlh.const import ROM_OFFSET
 from PySide6.QtCore import Signal
 from tlh.data.pointer import Pointer
 import typing
 import PySide6
 from PySide6.QtWidgets import QDialog
 from tlh.ui.ui_edit_pointer_dialog import Ui_EditPointerDialog
+
+def parse_address(text: str) -> int:
+    addr = int(text, 16)
+    if addr > ROM_OFFSET:
+        addr -= ROM_OFFSET
+    return addr
 
 class EditPointerDialog(QDialog):
 
@@ -27,12 +34,13 @@ class EditPointerDialog(QDialog):
     def get_pointer(self) -> Pointer:
         return Pointer(
             self.rom_variant,
-            int(self.ui.lineEditAddress.text(), 16),
-            int(self.ui.lineEditPointsTo.text(), 16),
+            parse_address(self.ui.lineEditAddress.text()),
+            int(self.ui.lineEditPointsTo.text(), 16),# TODO why do we store them with full address?
             self.ui.spinBoxCertainty.value(),
             self.ui.lineEditAuthor.text(),
             self.ui.plainTextEditNote.toPlainText().strip()
         )
+
         
     def on_accept(self) -> None:
         self.pointer_changed.emit(self.get_pointer())

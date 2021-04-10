@@ -190,9 +190,14 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>plainTextEditNote</tabstop>
-  <tabstop>lineEditAuthor</tabstop>
+  <tabstop>comboBoxVariantA</tabstop>
   <tabstop>lineEditAddressA</tabstop>
+  <tabstop>comboBoxVariantB</tabstop>
+  <tabstop>lineEditAddressB</tabstop>
+  <tabstop>spinBoxCertainty</tabstop>
+  <tabstop>lineEditAuthor</tabstop>
+  <tabstop>plainTextEditNote</tabstop>
+  <tabstop>checkBoxEnabled</tabstop>
  </tabstops>
  <resources/>
  <connections>

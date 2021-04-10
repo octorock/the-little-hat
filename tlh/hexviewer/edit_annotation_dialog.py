@@ -1,4 +1,5 @@
 
+from tlh.hexviewer.edit_pointer_dialog import parse_address
 from PySide6.QtGui import QColor
 from tlh.const import RomVariant
 from PySide6.QtCore import Signal
@@ -30,7 +31,7 @@ class EditAnnotationDialog(QDialog):
     def get_annotation(self) -> Annotation:
         return Annotation(
             RomVariant(self.ui.lineEditVariant.text()),
-            int(self.ui.lineEditAddress.text(), 16),
+            parse_address(self.ui.lineEditAddress.text()),
             self.ui.spinBoxLength.value(),
             QColor(self.ui.lineEditColor.text()),
             self.ui.lineEditAuthor.text(),

@@ -1,4 +1,5 @@
 
+from tlh.hexviewer.edit_pointer_dialog import parse_address
 from tlh.const import RomVariant
 from PySide6.QtCore import Signal
 from tlh.data.constraints import Constraint
@@ -41,9 +42,9 @@ class EditConstraintDialog(QDialog):
     def get_constraint(self) -> Constraint:
         return Constraint(
             RomVariant(self.ui.comboBoxVariantA.currentText()),
-            int(self.ui.lineEditAddressA.text(), 16),
+            parse_address(self.ui.lineEditAddressA.text()),
             RomVariant(self.ui.comboBoxVariantB.currentText()),
-            int(self.ui.lineEditAddressB.text(), 16),
+            parse_address(self.ui.lineEditAddressB.text()),
             self.ui.spinBoxCertainty.value(),
             self.ui.lineEditAuthor.text(),
             self.ui.plainTextEditNote.toPlainText().strip(),

@@ -195,6 +195,8 @@ class HexViewerController(QObject):
 
         background = None
 
+        byte_value = self.rom.get_byte(local_address)
+
         annotation_color = self.is_annotation(local_address)
         if annotation_color is not None:
             background = annotation_color
@@ -202,9 +204,11 @@ class HexViewerController(QObject):
             background = self.pointer_color
         elif self.diff_calculator.is_diffing(virtual_address):
             background = self.diff_color
+        elif byte_value == 8: # Make visual pointer detection easier
+            background = QColor(0, 40, 0)
 
         display_byte = DisplayByte(
-            '%02X' % self.rom.get_byte(local_address),
+            '%02X' % byte_value,
             background,
             self.is_selected(virtual_address)
         )
