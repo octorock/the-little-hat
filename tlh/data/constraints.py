@@ -117,6 +117,7 @@ class ConstraintManager:
             if constraint.romA in self.variants and constraint.romB in self.variants:
                 self.add_constraint(constraint)
             # TODO handle transitive constraints here?
+        print(f'Added {len(self.constraints)} of {len(constraints)}')
         self.rebuild_relations()
 
         # print('Num of relations')

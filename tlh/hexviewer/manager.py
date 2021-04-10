@@ -1,5 +1,8 @@
-from enum import Enum
-from tlh.data.annotations import Annotation, AnnotationList
+from tlh.hexviewer.diff_calculator import LinkedDiffCalculator, NoDiffCalculator
+from tlh.hexviewer.address_resolver import LinkedAddressResolver, TrivialAddressResolver
+from PySide6.QtWidgets import QMessageBox
+from tlh.hexviewer.controller import HexViewerController
+from tlh.data.annotations import AnnotationList
 
 from PySide6.QtGui import QColor
 from tlh.data.database import get_annotation_database, get_pointer_database, get_constraint_database
@@ -13,10 +16,6 @@ from tlh import settings
 
 
 
-@dataclass
-class DisplayByte:
-    text: str
-    background: QColor
 
 
 class AbstractHexEditorInstance(QObject):
@@ -34,6 +33,7 @@ class AbstractHexEditorInstance(QObject):
     def __init__(self, parent) -> None:
         super().__init__(parent=parent)
 
+'''
 class HexEditorInstance(AbstractHexEditorInstance):
     """
     Object that is passed to a single hex editor
@@ -273,29 +273,112 @@ class SoloHexEditorInstance(AbstractHexEditorInstance):
 
     def get_as_pointer(self, virtual_address: int) -> int:
         return self.rom.get_pointer(self.get_local_address(virtual_address))
+'''
 
-class HexEditorManager(QObject):
+class HexViewerManager(QObject):
     """
-    Manages all hex editors
+    Manages all hex viewers
     """
-    def __init__(self, parent, linked_variants: set[RomVariant]) -> None:
+    def __init__(self, parent) -> None:
         super().__init__(parent=parent)
-        self.variants = linked_variants
-        self.instances: list[HexEditorInstance] = []
+        self.controllers: list[HexViewerController] = []
+        self.linked_controllers: list[HexViewerController] = []
+        self.linked_variants: list[RomVariant] = []
 
-        self.constraint_manager = ConstraintManager(self.variants) # TODO make configurable
-        self.update_constraints()
+        self.constraint_manager = ConstraintManager({}) # TODO make configurable
+        #self.update_constraints()
         get_constraint_database().constraints_changed.connect(self.update_constraints)
 
-        
+    def register_controller(self, controller: HexViewerController) -> None:
+        self.controllers.append(controller)
+        controller.signal_toggle_linked.connect(lambda linked: self.slot_toggle_linked(controller, linked))
+
+    def unregister_controller(self, controller: HexViewerController) -> None:
+        if controller in self.linked_controllers:
+            self.unlink(controller)
+        self.controllers.remove(controller)
+
+    def unlink_all(self) -> None:
+        '''
+        Unlinks all currently linked controllers
+        '''
+        for controller in self.linked_controllers:
+            controller.set_linked(False)
+            controller.set_address_resolver_and_diff_calculator(
+                TrivialAddressResolver(),
+                NoDiffCalculator()
+            )
+            controller.request_repaint()
+        self.linked_controllers = []
+        self.linked_variants = []
+        self.update_constraint_manager()
+
+    def link_multiple(self, linked_controllers: list[HexViewerController]) -> None:
+        '''
+        Links all passed controllers
+        '''
+        for controller in linked_controllers:
+            if controller.rom_variant in self.linked_variants:
+                # TODO error
+                return
+            self.linked_controllers.append(controller)
+            self.linked_variants.append(controller.rom_variant)            
+            controller.set_linked(True)
+            controller.set_address_resolver_and_diff_calculator(
+                LinkedAddressResolver(self.constraint_manager, controller.rom_variant),
+                LinkedDiffCalculator()
+            )
+        self.update_constraint_manager()
+
+    def unlink(self, controller: HexViewerController) -> None:
+        self.linked_controllers.remove(controller)
+        self.linked_variants.remove(controller.rom_variant)
+        controller.set_linked(False)
+        controller.set_address_resolver_and_diff_calculator(
+            TrivialAddressResolver(),
+            NoDiffCalculator()
+        )
+        controller.request_repaint()
+        self.update_constraint_manager()
+
+    def link(self, controller: HexViewerController) -> None:
+        if controller.rom_variant in self.linked_variants:
+            # TODO error
+            return
+        self.linked_controllers.append(controller)
+        self.linked_variants.append(controller.rom_variant)
+        controller.set_linked(True)
+        controller.set_address_resolver_and_diff_calculator(
+            LinkedAddressResolver(self.constraint_manager, controller.rom_variant),
+            LinkedDiffCalculator()
+        )
+        self.update_constraint_manager()
+
+    def slot_toggle_linked(self, controller: HexViewerController, linked: bool) -> None:
+        if linked:
+            if controller.rom_variant in self.linked_variants:
+                controller.set_linked(False)
+                QMessageBox.warning(controller.dock, 'Link Hex Editor', 'Hex editor cannot be linked, because another hex editor for the same rom variant is already linked.')
+                return
+            self.link(controller)
+        else:
+            self.unlink(controller)
+
+    def update_constraint_manager(self):
+        self.constraint_manager.set_variants(self.linked_variants)
+        self.update_constraints()
+
 
     def update_constraints(self):
         print('update constraints')
+        print(self.linked_variants)
         self.constraint_manager.reset()
-        if len(self.variants) > 0:
+        if len(self.linked_variants) > 1:
+            print('Add constraints')
             self.constraint_manager.add_all_constraints(get_constraint_database().get_constraints())        
-        for instance in self.instances:
-            instance.request_repaint()
+        for controller in self.linked_controllers:
+            controller.request_repaint()
+    """
 
     def get_hex_editor_instance(self, rom_variant: RomVariant, linked: bool)-> HexEditorInstance:
         if linked:
@@ -396,20 +479,21 @@ class HexEditorManager(QObject):
 
         print(f'mark only in one {rom_variant} {virtual_address} {length}')
 
-    def is_already_linked(self, rom_variant: RomVariant) -> bool:
-        return rom_variant in self.variants
+    """
+    # def is_already_linked(self, rom_variant: RomVariant) -> bool:
+    #     return rom_variant in self.variants
 
-    def link(self, rom_variant: RomVariant) -> None:
-        self.variants.add(rom_variant)
-        self.constraint_manager.set_variants(self.variants)
-        self.update_constraints()
+    # def link(self, rom_variant: RomVariant) -> None:
+    #     self.variants.append(rom_variant)
+    #     self.constraint_manager.set_variants(self.variants)
+    #     self.update_constraints()
 
-    def unlink(self, rom_variant: RomVariant) -> None:
-        self.variants.remove(rom_variant)
-        self.constraint_manager.set_variants(self.variants)
-        self.update_constraints()
+    # def unlink(self, rom_variant: RomVariant) -> None:
+    #     self.variants.remove(rom_variant)
+    #     self.constraint_manager.set_variants(self.variants)
+    #     self.update_constraints()
 
-    def set_linked_variants(self, linked_variants: set[RomVariant]) -> None:
-        self.variants = linked_variants
-        self.constraint_manager.set_variants(linked_variants)
-        self.update_constraints()
+    # def set_linked_variants(self, linked_variants: set[RomVariant]) -> None:
+    #     self.variants = linked_variants
+    #     self.constraint_manager.set_variants(linked_variants)
+    #     self.update_constraints()

@@ -39,16 +39,16 @@
     <property name="title">
      <string>Tools</string>
     </property>
-    <widget class="QMenu" name="menuHex_Editor">
+    <widget class="QMenu" name="menuHexViewer">
      <property name="title">
-      <string>Hex Editor</string>
+      <string>Hex Viewer</string>
      </property>
      <addaction name="actionUSA"/>
      <addaction name="actionDEMO"/>
      <addaction name="actionEU"/>
      <addaction name="actionJP"/>
     </widget>
-    <addaction name="menuHex_Editor"/>
+    <addaction name="menuHexViewer"/>
     <addaction name="actionBuilder"/>
     <addaction name="actionDisableRedundantConstraints"/>
     <addaction name="separator"/>
