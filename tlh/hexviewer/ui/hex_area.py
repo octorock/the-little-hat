@@ -18,6 +18,7 @@ class HexAreaWidget (QWidget):
     '''
 
     signal_resized = Signal()
+    signal_scroll_wheel_changed = Signal(int)
 
     def __init__(self, parent: QWidget):
         #, scroll_bar: QScrollBar, statusBar: QLabel
@@ -52,35 +53,20 @@ class HexAreaWidget (QWidget):
 
         # Make this widget focussable on click, so that we can reduce the context of the shortcut, so that multiple shortcuts are possible in the same window
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
-        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_G), parent, self.show_goto_dialog, context=Qt.WidgetWithChildrenShortcut)
+        #
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), parent, self.copy_selected_bytes, context = Qt.WidgetWithChildrenShortcut)
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_A), parent, self.mark_as_all_pointer, context = Qt.WidgetWithChildrenShortcut)
         QShortcut(QKeySequence(Qt.Key_4), parent, self.select_four_bytes, context = Qt.WidgetWithChildrenShortcut)
         #self.update_status_bar()
 
-    def setup_scroll_bar(self):
-        # TODO call this again once the hex view has it's size / changes it's size
-        self.scroll_bar.setMinimum(0)
-        self.scroll_bar.setMaximum(
-            self.number_of_rows() - self.number_of_lines_on_screen()+1)
-        self.scroll_bar.setPageStep(self.number_of_lines_on_screen())
-
-    def on_scroll_bar_changed(self, value):
-        self.start_offset = value * self.bytes_per_line
-        self.instance.start_offset_moved.emit(self.start_offset)
-        self.update()
 
     def wheelEvent(self, event):
         # TODO make scroll speed configurable
         lines_delta = - int(event.angleDelta().y() /
                             self.line_height) * self.bytes_per_line
-        if lines_delta <= 0:
-            self.update_start_offset(max(self.start_offset + lines_delta, 0))
-        else:
-            self.update_start_offset(min(self.start_offset + lines_delta,
-                                         (self.number_of_rows() - self.number_of_lines_on_screen() + 1)*self.bytes_per_line))
 
-        self.update()
+        self.signal_scroll_wheel_changed.emit(lines_delta)
+
 
     def update_start_offset_from_external(self, virtual_address):
         self.start_offset = virtual_address
@@ -119,9 +105,7 @@ class HexAreaWidget (QWidget):
 
                 #virtual_address = self.start_offset + l*self.bytes_per_line + i
 
-
                 p.setPen(self.byte_color)
-
 
                 current_byte = self.display_data[i + l*self.bytes_per_line]
                 if current_byte.background is not None:
@@ -147,24 +131,7 @@ class HexAreaWidget (QWidget):
         # +1 to draw cutof lines as well
         return int(self.height() // self.line_height) + 1
 
-    def number_of_rows(self):
-        num_rows = self.instance.length() // self.bytes_per_line
-        if self.instance.length() % self.bytes_per_line > 0:
-            num_rows += 1
-        return num_rows
 
-    def show_goto_dialog(self):
-        (local_address, res) = QInputDialog.getText(
-        self, 'Goto', 'Enter local address to jump to')
-        if res:
-            # Parse as hex (TODO maybe as decimal, if no 0x and no)
-            # TODO handle errors
-            local_address = int(local_address, 16)
-
-            if local_address > ROM_OFFSET:
-                local_address -= ROM_OFFSET
-            # TODO error for everything that is not in [0x00000000, 0x00FFFFFF] or [0x08000000, 0x08FFFFFF]
-            self.update_cursor(self.instance.to_virtual(local_address))
 
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
         menu = QMenu(self)
@@ -429,24 +396,7 @@ class HexAreaWidget (QWidget):
 
 
 
-    def scroll_to_cursor(self):
-        full_lines = self.number_of_lines_on_screen()-2
-        # Is the cursor too far down?
-        if (self.cursor - self.start_offset) // self.bytes_per_line >= full_lines:
-            # Move to the cursor.
-            self.update_start_offset((self.cursor//self.bytes_per_line - full_lines)*self.bytes_per_line)#(self.cursor // self.bytes_per_line - self.number_of_lines_on_screen() -3) * self.bytes_per_line)
 
-        # Is the cursor too far up?
-        elif (self.cursor - self.start_offset) // self.bytes_per_line < 0:
-            # Move to the cursor.
-            self.update_start_offset((self.cursor//self.bytes_per_line)*self.bytes_per_line)
-
-
-    def is_selected(self, virtual_address: int) -> bool:
-        if self.selected_bytes < 0:
-            return virtual_address > self.cursor + self.selected_bytes and virtual_address <= self.cursor
-        else:
-            return virtual_address >= self.cursor and virtual_address < self.cursor + self.selected_bytes
 
 
     def event(self, event: QEvent) -> bool:

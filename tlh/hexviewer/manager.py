@@ -12,10 +12,9 @@ from tlh.const import ROM_OFFSET, RomVariant
 from PySide6.QtCore import QObject, Signal
 from dataclasses import dataclass
 from tlh.data.pointer import Pointer, PointerList
-from tlh import settings
 
 
-
+'''
 
 
 class AbstractHexEditorInstance(QObject):
@@ -33,7 +32,6 @@ class AbstractHexEditorInstance(QObject):
     def __init__(self, parent) -> None:
         super().__init__(parent=parent)
 
-'''
 class HexEditorInstance(AbstractHexEditorInstance):
     """
     Object that is passed to a single hex editor
@@ -291,7 +289,11 @@ class HexViewerManager(QObject):
 
     def register_controller(self, controller: HexViewerController) -> None:
         self.controllers.append(controller)
+        # Link all signals connected to linked viewers
         controller.signal_toggle_linked.connect(lambda linked: self.slot_toggle_linked(controller, linked))
+        controller.signal_start_offset_moved.connect(self.slot_move_linked_start_offset)
+        controller.signal_cursor_moved.connect(self.slot_move_linked_cursor)
+        controller.signal_section_updated.connect(self.slot_update_linked_selection)
 
     def unregister_controller(self, controller: HexViewerController) -> None:
         if controller in self.linked_controllers:
@@ -378,6 +380,19 @@ class HexViewerManager(QObject):
             self.constraint_manager.add_all_constraints(get_constraint_database().get_constraints())        
         for controller in self.linked_controllers:
             controller.request_repaint()
+
+
+    def slot_move_linked_start_offset(self, virtual_address: int) -> None:
+        for controller in self.linked_controllers:
+            controller.set_start_offset(virtual_address)
+
+    def slot_move_linked_cursor(self, virtual_address: int) -> None:
+        for controller in self.linked_controllers:
+            controller.set_cursor(virtual_address)
+
+    def slot_update_linked_selection(self, selected_bytes: int) -> None:
+        for controller in self.linked_controllers:
+            controller.set_selected_bytes(selected_bytes)
     """
 
     def get_hex_editor_instance(self, rom_variant: RomVariant, linked: bool)-> HexEditorInstance:
