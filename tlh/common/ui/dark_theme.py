@@ -1,7 +1,11 @@
 from PySide6.QtGui import QColor, QPalette
+from PySide6.QtCore import Qt
 
 
 def apply_dark_theme(app):  # https://stackoverflow.com/a/56851493
+
+    # TODO check everything also looks good disabled and compare with the comments on https://gist.github.com/lschmierer/443b8e21ad93e2a2d7eb
+
     # Force the style to be the same on all OSs:
     app.setStyle("Fusion")
 
@@ -37,4 +41,8 @@ def apply_dark_theme(app):  # https://stackoverflow.com/a/56851493
                      QColor(80, 80, 80))
     palette.setColor(QPalette.Disabled, QPalette.HighlightedText,
                      QColor(127, 127, 127))
+
+    palette.setColor(QPalette.Disabled, QPalette.Text, Qt.darkGray)
+    palette.setColor(
+        QPalette.Disabled, QPalette.Light, QColor(53, 53, 53))
     app.setPalette(palette)

@@ -3,6 +3,7 @@ from tlh.const import RomVariant
 from PySide6.QtCore import QSettings, Signal
 from getpass import getuser
 import multiprocessing
+from typing import Optional
 settings = QSettings('octorock', 'the-little-hat')
 
 
@@ -43,17 +44,20 @@ def set_tidy_command(command):
     settings.setValue('tidy_command', command)
 
 # ROMs
-def get_rom(variant: RomVariant) -> str:
+
+
+def get_rom(variant: RomVariant) -> Optional[str]:
     if variant == RomVariant.USA:
         return get_rom_usa()
     elif variant == RomVariant.DEMO:
         return get_rom_demo()
     elif variant == RomVariant.EU:
-            return get_rom_eu()
+        return get_rom_eu()
     elif variant == RomVariant.JP:
-            return get_rom_jp()
+        return get_rom_jp()
     else:
         raise RuntimeError(f'Unknown rom variant {variant}')
+
 
 def get_rom_usa():
     return settings.value('rom_usa')
@@ -88,20 +92,22 @@ def set_rom_jp(rom):
 
 # Layouts
 
+
 def get_session_layout() -> Layout:
     settings.beginGroup('session_layout')
-    layout = Layout(settings.value('name', ''), settings.value('state', None), settings.value('geometry', None), settings.value('dock_state', ''))
+    layout = Layout(settings.value('name', ''), settings.value(
+        'state', None), settings.value('geometry', None), settings.value('dock_state', ''))
     settings.endGroup()
     return layout
+
 
 def set_session_layout(layout: Layout) -> None:
     settings.beginGroup('session_layout')
     settings.setValue('name', layout.name)
     settings.setValue('state', layout.state)
     settings.setValue('geometry', layout.geometry)
-    settings.setValue('dock_state', layout.dock_state)    
+    settings.setValue('dock_state', layout.dock_state)
     settings.endGroup()
-
 
 
 def get_layouts() -> list[Layout]:
@@ -109,7 +115,8 @@ def get_layouts() -> list[Layout]:
     size = settings.beginReadArray('layouts')
     for i in range(size):
         settings.setArrayIndex(i)
-        layout = Layout(settings.value('name'), settings.value('state'), settings.value('geometry'), settings.value('dock_state'))
+        layout = Layout(settings.value('name'), settings.value(
+            'state'), settings.value('geometry'), settings.value('dock_state'))
         layouts.append(layout)
     settings.endArray()
     # layouts = settings.value('layouts', [])

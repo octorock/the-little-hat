@@ -46,7 +46,7 @@ init: venv/touchfile
 venv/touchfile: requirements.txt
 	test -d venv || python -m venv venv
 ifeq ($(OS),Windows_NT)
-	venv/Scripts/activate.bat; pip install -Ur requirements.txt
+	venv/Scripts/activate; pip install -Ur requirements.txt
 else
 	. venv/bin/activate; pip install -Ur requirements.txt
 endif
@@ -54,7 +54,7 @@ endif
 
 run: all
 ifeq ($(OS),Windows_NT)
-	venv/Scripts/activate.bat; python main.py
+	venv/Scripts/activate; python main.py
 else
 	. venv/bin/activate; python main.py
 endif

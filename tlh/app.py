@@ -1,5 +1,6 @@
 import signal
 import sys
+from tlh.data.rom import get_rom
 from tlh.common.ui.layout import Layout
 from tlh.dock_manager import DockManager
 
@@ -31,10 +32,16 @@ class MainWindow(QMainWindow):
         self.ui.actionDisableRedundantConstraints.triggered.connect(
             self.disable_redundant_constraints)
 
-        self.ui.actionUSA.triggered.connect(lambda: self.dock_manager.add_hex_editor(RomVariant.USA))
-        self.ui.actionDEMO.triggered.connect(lambda: self.dock_manager.add_hex_editor(RomVariant.DEMO))
-        self.ui.actionEU.triggered.connect(lambda: self.dock_manager.add_hex_editor(RomVariant.EU))
-        self.ui.actionJP.triggered.connect(lambda: self.dock_manager.add_hex_editor(RomVariant.JP))
+        self.update_hex_viewer_actions()
+
+        self.ui.actionUSA.triggered.connect(
+            lambda: self.dock_manager.add_hex_editor(RomVariant.USA))
+        self.ui.actionDEMO.triggered.connect(
+            lambda: self.dock_manager.add_hex_editor(RomVariant.DEMO))
+        self.ui.actionEU.triggered.connect(
+            lambda: self.dock_manager.add_hex_editor(RomVariant.EU))
+        self.ui.actionJP.triggered.connect(
+            lambda: self.dock_manager.add_hex_editor(RomVariant.JP))
 
         self.build_layouts_toolbar()
 
@@ -54,9 +61,9 @@ class MainWindow(QMainWindow):
         # Restore layout
         self.load_layout(settings.get_session_layout())
 
-
     def closeEvent(self, event):
-        layout = Layout('', self.saveState(), self.saveGeometry(), self.dock_manager.save_state())
+        layout = Layout('', self.saveState(), self.saveGeometry(),
+                        self.dock_manager.save_state())
         settings.set_session_layout(layout)
 
     def save_layout(self):
@@ -73,7 +80,8 @@ class MainWindow(QMainWindow):
                 if res != QMessageBox.StandardButton.Yes:
                     return
             else:
-                layout = Layout(layout_name, self.saveState(), self.saveGeometry(), self.dock_manager.save_state())
+                layout = Layout(layout_name, self.saveState(
+                ), self.saveGeometry(), self.dock_manager.save_state())
                 layouts.append(layout)
                 settings.set_layouts(layouts)
 
@@ -133,6 +141,7 @@ class MainWindow(QMainWindow):
     def settings_dialog_closed(self, result: int):
         # TODO would be nicer with a signal in the settings, but that would require the settings to be a QObject
         self.build_layouts_toolbar()
+        self.update_hex_viewer_actions()
 
     def show_about_dialog(self):
         QMessageBox.about(self, 'The Little Hat',
@@ -140,6 +149,12 @@ class MainWindow(QMainWindow):
 
     def disable_redundant_constraints(self):
         get_constraint_database().disable_redundant_constraints()
+
+    def update_hex_viewer_actions(self):
+        self.ui.actionUSA.setDisabled(get_rom(RomVariant.USA) is None)
+        self.ui.actionDEMO.setDisabled(get_rom(RomVariant.DEMO) is None)
+        self.ui.actionJP.setDisabled(get_rom(RomVariant.JP) is None)
+        self.ui.actionEU.setDisabled(get_rom(RomVariant.EU) is None)
 
 
 def run():

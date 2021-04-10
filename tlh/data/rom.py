@@ -1,3 +1,4 @@
+from typing import Optional
 from tlh.const import RomVariant
 from tlh import settings
 
@@ -20,11 +21,19 @@ class Rom:
     def get_pointer(self, index: int) -> int:
         return int.from_bytes(self.bytes[index:index+4], 'little')
 
+
 # Rom data is read only, so we only need to read it once
 roms: dict[RomVariant, Rom] = {}
 
-def get_rom(variant: RomVariant) -> Rom:
+# TODO invalidate roms when settings change?
+# necessary? Once we have a valid rom, there will be no changes
+
+
+def get_rom(variant: RomVariant) -> Optional[Rom]:
     global roms
     if variant not in roms:
-        roms[variant] = Rom(settings.get_rom(variant))
+        try:
+            roms[variant] = Rom(settings.get_rom(variant))
+        except:
+            return None
     return roms[variant]

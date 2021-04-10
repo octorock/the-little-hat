@@ -25,8 +25,11 @@ def initialize_databases(parent) -> None:
     constraint_database_instance = ConstraintDatabase(parent)
     annotation_database_instance = AnnotationDatabase(parent)
 
+
 ### Constraints ###
 constraint_database_instance = None
+
+
 class ConstraintDatabase(QObject):
 
     constraints_changed = Signal()
@@ -52,7 +55,7 @@ class ConstraintDatabase(QObject):
         # TODO don't save every time?
         self._write_constraints()
         for constraint in constraints:
-            if constraint.enabled: # Only emit change if one of the added constraints is enabled
+            if constraint.enabled:  # Only emit change if one of the added constraints is enabled
                 self.constraints_changed.emit()
                 break
 
@@ -79,9 +82,8 @@ class ConstraintDatabase(QObject):
             pass
         return constraints
 
-
     def _write_constraints(self):
-        with open(get_file_in_database('constraints.csv'), 'w') as file:
+        with open(get_file_in_database('constraints.csv'), 'w', newline='') as file:
             writer = DictWriter(
                 file, fieldnames=['romA', 'addressA', 'romB', 'addressB', 'certainty', 'author', 'note', 'enabled'])
             writer.writeheader()
@@ -103,7 +105,8 @@ class ConstraintDatabase(QObject):
         '''
 
         # Test using a constraint manager with all variations
-        manager = ConstraintManager({RomVariant.USA, RomVariant.JP, RomVariant.EU, RomVariant.DEMO})
+        manager = ConstraintManager(
+            {RomVariant.USA, RomVariant.JP, RomVariant.EU, RomVariant.DEMO})
         for constraint in self.constraints:
             if not constraint.enabled:
                 continue
@@ -124,8 +127,11 @@ class ConstraintDatabase(QObject):
 def get_constraint_database():
     return constraint_database_instance
 
+
 ### Pointers ###
 pointer_database_instance = None
+
+
 class PointerDatabase(QObject):
 
     pointers_changed = Signal()
@@ -151,7 +157,6 @@ class PointerDatabase(QObject):
         self._write_pointers()
         self.pointers_changed.emit()
 
-
     def _read_pointers(self) -> list[Pointer]:
         pointers = []
         try:
@@ -173,9 +178,8 @@ class PointerDatabase(QObject):
             pass
         return pointers
 
-
     def _write_pointers(self):
-        with open(get_file_in_database('pointers.csv'), 'w') as file:
+        with open(get_file_in_database('pointers.csv'), 'w', newline='') as file:
             writer = DictWriter(
                 file, fieldnames=['rom_variant', 'address', 'points_to', 'certainty', 'author', 'note'])
             writer.writeheader()
@@ -196,6 +200,8 @@ def get_pointer_database() -> PointerDatabase:
 
 ### Annotations ###
 annotation_database_instance = None
+
+
 class AnnotationDatabase(QObject):
 
     annotations_changed = Signal()
@@ -221,7 +227,6 @@ class AnnotationDatabase(QObject):
         self._write_annotations()
         self.annotations_changed.emit()
 
-
     def _read_annotations(self) -> list[Annotation]:
         annotations = []
         try:
@@ -243,9 +248,8 @@ class AnnotationDatabase(QObject):
             pass
         return annotations
 
-
     def _write_annotations(self):
-        with open(get_file_in_database('annotations.csv'), 'w') as file:
+        with open(get_file_in_database('annotations.csv'), 'w', newline='') as file:
             writer = DictWriter(
                 file, fieldnames=['rom_variant', 'address', 'length', 'color', 'author', 'note'])
             writer.writeheader()
