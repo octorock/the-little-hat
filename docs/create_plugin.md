@@ -1,5 +1,7 @@
 # Create Plugin
 
+Plugins are small program parts that are not necessary for every user. By default all plugins are disabled and can be enabled from the <kbd>Plugins</kbd> tab in the settings dialog.
+
 ## Set up a new plugin
 A simple example plugin is available at [plugins/test/](../plugins/test/__init__.py).
 
@@ -27,7 +29,7 @@ class MyFirstPlugin:
 ```
 
 ## Add a menu item
-Create a method and then use `register_menu_entry` on the `PluginApi` to register a menu entry in the `Tools`->`Plugins` menu:
+Create a method and then use `register_menu_entry` on the `PluginApi` to register a menu entry in the <kbd>Tools | Plugins</kbd> menu:
 
 ```py
     def do_something_cool(self) -> None:
