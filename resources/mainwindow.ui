@@ -26,7 +26,7 @@
      <x>0</x>
      <y>0</y>
      <width>541</width>
-     <height>23</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -54,9 +54,7 @@
      </property>
     </widget>
     <addaction name="menuHexViewer"/>
-    <addaction name="actionBuilder"/>
     <addaction name="menuPlugins"/>
-    <addaction name="actionDisableRedundantConstraints"/>
     <addaction name="separator"/>
     <addaction name="actionSettings"/>
    </widget>

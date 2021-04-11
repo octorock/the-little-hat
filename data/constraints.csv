@@ -595,7 +595,7 @@ USA,0x12714c,JP,0x126e10,5,octorock,Pointer at USA 0x3414,False
 USA,0x12714c,DEMO,0x127b58,5,octorock,Pointer at USA 0x3414,False
 USA,0x11f118,JP,0x11eddc,5,octorock,Pointer at USA 0x3424,False
 USA,0x11f118,DEMO,0x11fb24,5,octorock,Pointer at USA 0x3424,False
-USA,0x11ee10,JP,0x11ead4,5,octorock,Pointer at USA 0x3434,False
+USA,0x11ee10,JP,0x11ead4,5,octorock,Pointer at USA 0x3434,True
 USA,0x11ee10,DEMO,0x11f81c,5,octorock,Pointer at USA 0x3434,True
 USA,0xca650,JP,0xca3f0,5,octorock,Pointer at USA 0x3444,False
 USA,0xca650,DEMO,0xca1d4,5,octorock,Pointer at USA 0x3444,False
@@ -4272,7 +4272,7 @@ USA,0x11098,JP,0x110a0,5,octorock,Pointer at USA 0x10c8a,False
 USA,0xde7da4,JP,0xdc9d24,10,octorock,End of used data,True
 USA,0xde7da4,DEMO,0xdf1fcc,10,octorock,End of used data,True
 USA,0x11e214,JP,0x11ded8,10,octorock,Minish Maker: MAP section,False
-USA,0xd50fc,JP,0xd4e9c,10,octorock,Minish Maker: ENTITY? section,True
+USA,0xd50fc,JP,0xd4e9c,10,octorock,Minish Maker: ENTITY? section,False
 USA,0x5a2e80,JP,0x5a2b20,10,octorock,Minish Maker: TILEOFFSET section,True
 DEMO,0x5a38b0,JP,0x5a2b20,5,octorock,TILEOFFSET,True
 USA,0xff850,JP,0xff500,10,octorock,Minish Maker: PALETTESET section,False
@@ -4298,7 +4298,7 @@ DEMO,0x128754,JP,0x1279c8,3,octorock,,True
 DEMO,0x127cd0,USA,0x127280,1,octorock,Only in DEMO,True
 DEMO,0x127cd0,JP,0x126f44,1,octorock,Only in DEMO,True
 USA,0x127d30,JP,0x1279f4,10,octorock,Minish Maker: AREDATA section,False
-USA,0x13a7f0,JP,0x13a41c,10,octorock,Minish Maker: WARP section,False
+USA,0x13a7f0,JP,0x13a41c,10,octorock,Minish Maker: WARP section,True
 USA,0x7fb29,DEMO,0x7f73d,5,octorock,Pointer at USA 0x10dc0,False
 USA,0x7fb29,JP,0x7f965,5,octorock,Pointer at USA 0x10dc0,False
 USA,0x7fb29,DEMO,0x7f73d,5,octorock,Pointer at USA 0x10e12,False
@@ -4370,7 +4370,7 @@ USA,0x791bd,JP,0x78ff9,5,octorock,Pointer at USA 0x11122,False
 JP,0x11140,USA,0x11132,1,octorock,Only in JP,True
 JP,0x11140,DEMO,0x11132,1,octorock,Only in JP,True
 JP,0xf03d8,USA,0xf06b0,5,octorock,Pointer at JP 0x11150,True
-JP,0xf03d8,DEMO,0xf0234,5,octorock,Pointer at JP 0x11150,True
+JP,0xf03d8,DEMO,0xf0234,5,octorock,Pointer at JP 0x11150,False
 USA,0x7f3c9,DEMO,0x7efdd,5,octorock,Pointer at USA 0x111b0,False
 USA,0x7f3c9,JP,0x7f205,5,octorock,Pointer at USA 0x111b0,False
 USA,0x66d05,DEMO,0x66c5d,5,octorock,Pointer at USA 0x111d8,False
@@ -4385,7 +4385,7 @@ USA,0x95811,DEMO,0x95425,5,octorock,Pointer at USA 0x11264,False
 USA,0x95811,JP,0x955d9,5,octorock,Pointer at USA 0x11264,False
 USA,0x66e21,DEMO,0x66d79,5,octorock,Pointer at USA 0x1129c,False
 USA,0x66e21,JP,0x66c61,5,octorock,Pointer at USA 0x1129c,False
-USA,0x1214b,DEMO,0x1214b,1,octorock,Only in USA,True
+USA,0x1214b,DEMO,0x1214b,1,octorock,Only in USA,False
 USA,0x1214b,JP,0x1214b,1,octorock,Only in USA,True
 JP,0x12124,USA,0x12122,3,octorock,,True
 JP,0x1213c,USA,0x1213c,3,octorock,,True
@@ -4548,7 +4548,7 @@ USA,0xd8e50,JP,0xd8bf0,5,octorock,Pointer at USA 0x4c000,False
 USA,0xd90c8,DEMO,0xd8c4c,5,octorock,Pointer at USA 0x4c03c,False
 USA,0xd90c8,JP,0xd8e68,5,octorock,Pointer at USA 0x4c03c,False
 JP,0xeab30,DEMO,0xea984,5,octorock,Pointer at JP 0x4d6dc,True
-JP,0xeab30,USA,0xeae00,5,octorock,Pointer at JP 0x4d6dc,True
+JP,0xeab30,USA,0xeae00,5,octorock,Pointer at JP 0x4d6dc,False
 USA,0xeae00,DEMO,0xea984,5,octorock,Pointer at USA 0x4d818,False
 USA,0xeae00,JP,0xeab30,5,octorock,Pointer at USA 0x4d818,False
 USA,0xeaec0,DEMO,0xeaa44,5,octorock,Pointer at USA 0x4d870,False
@@ -4664,7 +4664,7 @@ JP,0x53719,USA,0x53895,5,octorock,Pointer at JP 0xfca20,False
 JP,0x53915,DEMO,0x53a01,5,octorock,Pointer at JP 0xfca30,False
 JP,0x53915,USA,0x53a91,5,octorock,Pointer at JP 0xfca30,False
 JP,0x153d8,DEMO,0x153ec,5,octorock,Pointer at JP 0xfca40,True
-JP,0x153d8,USA,0x153ec,5,octorock,Pointer at JP 0xfca40,True
+JP,0x153d8,USA,0x153ec,5,octorock,Pointer at JP 0xfca40,False
 JP,0x154f8,DEMO,0x1550c,5,octorock,Pointer at JP 0xfca50,False
 JP,0x154f8,USA,0x1550c,5,octorock,Pointer at JP 0xfca50,False
 JP,0x15604,DEMO,0x15618,5,octorock,Pointer at JP 0xfca60,False
@@ -5197,7 +5197,7 @@ USA,0xcab42,DEMO,0xca6c6,5,octorock,Pointer at USA 0x212d8,False
 USA,0x11e214,EU,0x11d95c,10,octorock,Minish Maker: MAP section,True
 JP,0x11ded8,EU,0x11d95c,5,octorock,MAP,True
 DEMO,0x11dd98,EU,0x11d95c,5,octorock,MAP,True
-DEMO,0x11c00c,USA,0x11c488,5,octorock,Pointer at DEMO 0x11dd98,True
+DEMO,0x11c00c,USA,0x11c488,5,octorock,Pointer at DEMO 0x11dd98,False
 DEMO,0x11c00c,EU,0x11bbd0,5,octorock,Pointer at DEMO 0x11dd98,True
 DEMO,0x11c00c,JP,0x11c14c,5,octorock,Pointer at DEMO 0x11dd98,True
 USA,0x5a2e80,EU,0x5a23d0,10,octorock,Minish Maker: TILEOFFSET section,True
@@ -5749,17 +5749,17 @@ EU,0x7d0fd,USA,0x7d6d9,5,octorock,Pointer at EU 0x18c,False
 EU,0x7d0fd,DEMO,0x7d2ed,5,octorock,Pointer at EU 0x18c,False
 EU,0x7d0fd,JP,0x7d515,5,octorock,Pointer at EU 0x18c,False
 EU,0xb7038,USA,0xb7910,5,octorock,Pointer at EU 0x258,True
-EU,0xb7038,DEMO,0xb7494,5,octorock,Pointer at EU 0x258,True
-EU,0xb7038,JP,0xb76b0,5,octorock,Pointer at EU 0x258,True
+EU,0xb7038,DEMO,0xb7494,5,octorock,Pointer at EU 0x258,False
+EU,0xb7038,JP,0xb76b0,5,octorock,Pointer at EU 0x258,False
 EU,0x2c0,USA,0x278,5,octorock,Pointer at EU 0x268,False
 EU,0x2c0,DEMO,0x278,5,octorock,Pointer at EU 0x268,False
 EU,0x2c0,JP,0x278,5,octorock,Pointer at EU 0x268,False
 EU,0xb35a8,USA,0xb3e80,5,octorock,Pointer at EU 0x264,True
-EU,0xb35a8,DEMO,0xb3a04,5,octorock,Pointer at EU 0x264,True
-EU,0xb35a8,JP,0xb3c20,5,octorock,Pointer at EU 0x264,True
+EU,0xb35a8,DEMO,0xb3a04,5,octorock,Pointer at EU 0x264,False
+EU,0xb35a8,JP,0xb3c20,5,octorock,Pointer at EU 0x264,False
 EU,0xb2ec8,USA,0xb37a0,5,octorock,Pointer at EU 0x260,True
-EU,0xb2ec8,DEMO,0xb3324,5,octorock,Pointer at EU 0x260,True
-EU,0xb2ec8,JP,0xb3540,5,octorock,Pointer at EU 0x260,True
+EU,0xb2ec8,DEMO,0xb3324,5,octorock,Pointer at EU 0x260,False
+EU,0xb2ec8,JP,0xb3540,5,octorock,Pointer at EU 0x260,False
 EU,0x270,USA,0x228,5,octorock,Pointer at EU 0x250,False
 EU,0x270,DEMO,0x228,5,octorock,Pointer at EU 0x250,False
 EU,0x270,JP,0x228,5,octorock,Pointer at EU 0x250,False
@@ -5775,8 +5775,8 @@ EU,0x4445,JP,0x43ad,5,octorock,Pointer at EU 0x131c,False
 USA,0x43b1,DEMO,0x43b1,5,octorock,Pointer at USA 0x12d8,False
 USA,0x43b1,JP,0x43b1,5,octorock,Pointer at USA 0x12d8,False
 USA,0x43b1,EU,0x4449,5,octorock,Pointer at USA 0x12d8,False
-USA,0x4277,DEMO,0x4277,5,octorock,Pointer at USA 0x135c,True
-USA,0x4277,JP,0x4277,5,octorock,Pointer at USA 0x135c,True
+USA,0x4277,DEMO,0x4277,5,octorock,Pointer at USA 0x135c,False
+USA,0x4277,JP,0x4277,5,octorock,Pointer at USA 0x135c,False
 USA,0x4277,EU,0x430f,5,octorock,Pointer at USA 0x135c,True
 DEMO,0x43b5,USA,0x43b5,5,octorock,Pointer at DEMO 0x1360,False
 DEMO,0x43b5,EU,0x444d,5,octorock,Pointer at DEMO 0x1360,False
@@ -6533,8 +6533,8 @@ EU,0xc8908,USA,0xc91e0,5,octorock,Pointer at EU 0x2a24,False
 EU,0xc8908,DEMO,0xc8d64,5,octorock,Pointer at EU 0x2a24,False
 EU,0xc8908,JP,0xc8f80,5,octorock,Pointer at EU 0x2a24,False
 EU,0x1146e0,USA,0x114f98,5,octorock,Pointer at EU 0x2a70,True
-EU,0x1146e0,DEMO,0x114b1c,5,octorock,Pointer at EU 0x2a70,True
-EU,0x1146e0,JP,0x114c5c,5,octorock,Pointer at EU 0x2a70,True
+EU,0x1146e0,DEMO,0x114b1c,5,octorock,Pointer at EU 0x2a70,False
+EU,0x1146e0,JP,0x114c5c,5,octorock,Pointer at EU 0x2a70,False
 EU,0x7530,USA,0x7498,5,octorock,Pointer at EU 0x2a6c,False
 EU,0x7530,DEMO,0x7498,5,octorock,Pointer at EU 0x2a6c,False
 EU,0x7530,JP,0x7498,5,octorock,Pointer at EU 0x2a6c,False
@@ -6563,8 +6563,8 @@ EU,0x7bc0,USA,0x7b28,5,octorock,Pointer at EU 0x2aec,False
 EU,0x7bc0,DEMO,0x7b28,5,octorock,Pointer at EU 0x2aec,False
 EU,0x7bc0,JP,0x7b28,5,octorock,Pointer at EU 0x2aec,False
 EU,0x11e760,USA,0x11f018,5,octorock,Pointer at EU 0x2afc,True
-EU,0x11e760,DEMO,0x11fa24,5,octorock,Pointer at EU 0x2afc,True
-EU,0x11e760,JP,0x11ecdc,5,octorock,Pointer at EU 0x2afc,True
+EU,0x11e760,DEMO,0x11fa24,5,octorock,Pointer at EU 0x2afc,False
+EU,0x11e760,JP,0x11ecdc,5,octorock,Pointer at EU 0x2afc,False
 EU,0x11ecd8,USA,0x11f590,5,octorock,Pointer at EU 0x2b0c,False
 EU,0x11ecd8,DEMO,0x11ff9c,5,octorock,Pointer at EU 0x2b0c,False
 EU,0x11ecd8,JP,0x11f254,5,octorock,Pointer at EU 0x2b0c,False
@@ -6572,17 +6572,17 @@ EU,0x7b48,USA,0x7ab0,5,octorock,Pointer at EU 0x2b1c,False
 EU,0x7b48,DEMO,0x7ab0,5,octorock,Pointer at EU 0x2b1c,False
 EU,0x7b48,JP,0x7ab0,5,octorock,Pointer at EU 0x2b1c,False
 EU,0x131e2c,USA,0x1327dc,5,octorock,Pointer at EU 0x2bcc,True
-EU,0x131e2c,DEMO,0x13322c,5,octorock,Pointer at EU 0x2bcc,True
-EU,0x131e2c,JP,0x132408,5,octorock,Pointer at EU 0x2bcc,True
+EU,0x131e2c,DEMO,0x13322c,5,octorock,Pointer at EU 0x2bcc,False
+EU,0x131e2c,JP,0x132408,5,octorock,Pointer at EU 0x2bcc,False
 EU,0x1092d4,USA,0x109b80,5,octorock,Pointer at EU 0x2bdc,False
 EU,0x1092d4,DEMO,0x109704,5,octorock,Pointer at EU 0x2bdc,False
 EU,0x1092d4,JP,0x109844,5,octorock,Pointer at EU 0x2bdc,False
 EU,0x131da4,USA,0x132754,5,octorock,Pointer at EU 0x131e2c,True
-EU,0x131da4,DEMO,0x1331a4,5,octorock,Pointer at EU 0x131e2c,True
-EU,0x131da4,JP,0x132380,5,octorock,Pointer at EU 0x131e2c,True
+EU,0x131da4,DEMO,0x1331a4,5,octorock,Pointer at EU 0x131e2c,False
+EU,0x131da4,JP,0x132380,5,octorock,Pointer at EU 0x131e2c,False
 EU,0x131d94,USA,0x132744,5,octorock,Pointer at EU 0x131e30,True
-EU,0x131d94,DEMO,0x133194,5,octorock,Pointer at EU 0x131e30,True
-EU,0x131d94,JP,0x132370,5,octorock,Pointer at EU 0x131e30,True
+EU,0x131d94,DEMO,0x133194,5,octorock,Pointer at EU 0x131e30,False
+EU,0x131d94,JP,0x132370,5,octorock,Pointer at EU 0x131e30,False
 EU,0x131dfc,USA,0x1327ac,5,octorock,Pointer at EU 0x131e58,False
 EU,0x131dfc,DEMO,0x1331fc,5,octorock,Pointer at EU 0x131e58,False
 EU,0x131dfc,JP,0x1323d8,5,octorock,Pointer at EU 0x131e58,False
@@ -6590,8 +6590,8 @@ EU,0x131de4,USA,0x132794,5,octorock,Pointer at EU 0x131e54,False
 EU,0x131de4,DEMO,0x1331e4,5,octorock,Pointer at EU 0x131e54,False
 EU,0x131de4,JP,0x1323c0,5,octorock,Pointer at EU 0x131e54,False
 EU,0x131d84,USA,0x132734,5,octorock,Pointer at EU 0x131e34,True
-EU,0x131d84,DEMO,0x133184,5,octorock,Pointer at EU 0x131e34,True
-EU,0x131d84,JP,0x132360,5,octorock,Pointer at EU 0x131e34,True
+EU,0x131d84,DEMO,0x133184,5,octorock,Pointer at EU 0x131e34,False
+EU,0x131d84,JP,0x132360,5,octorock,Pointer at EU 0x131e34,False
 EU,0x131db4,USA,0x132764,5,octorock,Pointer at EU 0x131e44,False
 EU,0x131db4,DEMO,0x1331b4,5,octorock,Pointer at EU 0x131e44,False
 EU,0x131db4,JP,0x132390,5,octorock,Pointer at EU 0x131e44,False
@@ -6824,8 +6824,8 @@ EU,0x1093b4,USA,0x109c60,5,octorock,Pointer at EU 0x2bec,False
 EU,0x1093b4,DEMO,0x1097e4,5,octorock,Pointer at EU 0x2bec,False
 EU,0x1093b4,JP,0x109924,5,octorock,Pointer at EU 0x2bec,False
 EU,0x110ce4,USA,0x111594,5,octorock,Pointer at EU 0x2bfc,True
-EU,0x110ce4,DEMO,0x111118,5,octorock,Pointer at EU 0x2bfc,True
-EU,0x110ce4,JP,0x111258,5,octorock,Pointer at EU 0x2bfc,True
+EU,0x110ce4,DEMO,0x111118,5,octorock,Pointer at EU 0x2bfc,False
+EU,0x110ce4,JP,0x111258,5,octorock,Pointer at EU 0x2bfc,False
 EU,0x1def20,USA,0x1df834,5,octorock,Pointer at EU 0x2bf4,False
 EU,0x1def20,DEMO,0x1e0264,5,octorock,Pointer at EU 0x2bf4,False
 EU,0x1def20,JP,0x1df460,5,octorock,Pointer at EU 0x2bf4,False
@@ -7439,8 +7439,8 @@ EU,0x2d3f80,USA,0x2d4894,5,octorock,Pointer at EU 0x3304,False
 EU,0x2d3f80,DEMO,0x2d52c4,5,octorock,Pointer at EU 0x3304,False
 EU,0x2d3f80,JP,0x2d44c0,5,octorock,Pointer at EU 0x3304,False
 EU,0x110c38,USA,0x1114e8,5,octorock,Pointer at EU 0x2c0c,True
-EU,0x110c38,DEMO,0x11106c,5,octorock,Pointer at EU 0x2c0c,True
-EU,0x110c38,JP,0x1111ac,5,octorock,Pointer at EU 0x2c0c,True
+EU,0x110c38,DEMO,0x11106c,5,octorock,Pointer at EU 0x2c0c,False
+EU,0x110c38,JP,0x1111ac,5,octorock,Pointer at EU 0x2c0c,False
 EU,0x112464,USA,0x112d14,5,octorock,Pointer at EU 0x2c2c,False
 EU,0x112464,DEMO,0x112898,5,octorock,Pointer at EU 0x2c2c,False
 EU,0x112464,JP,0x1129d8,5,octorock,Pointer at EU 0x2c2c,False
@@ -7451,8 +7451,8 @@ EU,0x109d0c,USA,0x10a5b8,5,octorock,Pointer at EU 0x2c4c,False
 EU,0x109d0c,DEMO,0x10a13c,5,octorock,Pointer at EU 0x2c4c,False
 EU,0x109d0c,JP,0x10a27c,5,octorock,Pointer at EU 0x2c4c,False
 EU,0x110254,USA,0x110b04,5,octorock,Pointer at EU 0x2c5c,True
-EU,0x110254,DEMO,0x110688,5,octorock,Pointer at EU 0x2c5c,True
-EU,0x110254,JP,0x1107c8,5,octorock,Pointer at EU 0x2c5c,True
+EU,0x110254,DEMO,0x110688,5,octorock,Pointer at EU 0x2c5c,False
+EU,0x110254,JP,0x1107c8,5,octorock,Pointer at EU 0x2c5c,False
 EU,0x1223d8,USA,0x122c90,5,octorock,Pointer at EU 0x2c6c,False
 EU,0x1223d8,DEMO,0x12369c,5,octorock,Pointer at EU 0x2c6c,False
 EU,0x1223d8,JP,0x122954,5,octorock,Pointer at EU 0x2c6c,False
@@ -7487,8 +7487,8 @@ EU,0x10ef68,USA,0x10f814,5,octorock,Pointer at EU 0x2d0c,False
 EU,0x10ef68,DEMO,0x10f398,5,octorock,Pointer at EU 0x2d0c,False
 EU,0x10ef68,JP,0x10f4d8,5,octorock,Pointer at EU 0x2d0c,False
 EU,0x10fd58,USA,0x110608,5,octorock,Pointer at EU 0x2d1c,True
-EU,0x10fd58,DEMO,0x11018c,5,octorock,Pointer at EU 0x2d1c,True
-EU,0x10fd58,JP,0x1102cc,5,octorock,Pointer at EU 0x2d1c,True
+EU,0x10fd58,DEMO,0x11018c,5,octorock,Pointer at EU 0x2d1c,False
+EU,0x10fd58,JP,0x1102cc,5,octorock,Pointer at EU 0x2d1c,False
 EU,0x10fdf8,USA,0x1106a8,5,octorock,Pointer at EU 0x2d2c,False
 EU,0x10fdf8,DEMO,0x11022c,5,octorock,Pointer at EU 0x2d2c,False
 EU,0x10fdf8,JP,0x11036c,5,octorock,Pointer at EU 0x2d2c,False
@@ -7514,8 +7514,8 @@ EU,0x10a34c,USA,0x10abf8,5,octorock,Pointer at EU 0x2d9c,False
 EU,0x10a34c,DEMO,0x10a77c,5,octorock,Pointer at EU 0x2d9c,False
 EU,0x10a34c,JP,0x10a8bc,5,octorock,Pointer at EU 0x2d9c,False
 EU,0x10f778,USA,0x110028,5,octorock,Pointer at EU 0x2dac,True
-EU,0x10f778,DEMO,0x10fbac,5,octorock,Pointer at EU 0x2dac,True
-EU,0x10f778,JP,0x10fcec,5,octorock,Pointer at EU 0x2dac,True
+EU,0x10f778,DEMO,0x10fbac,5,octorock,Pointer at EU 0x2dac,False
+EU,0x10f778,JP,0x10fcec,5,octorock,Pointer at EU 0x2dac,False
 EU,0x10f834,USA,0x1100e4,5,octorock,Pointer at EU 0x2dbc,False
 EU,0x10f834,DEMO,0x10fc68,5,octorock,Pointer at EU 0x2dbc,False
 EU,0x10f834,JP,0x10fda8,5,octorock,Pointer at EU 0x2dbc,False
@@ -7619,8 +7619,8 @@ EU,0x10fa8c,USA,0x11033c,5,octorock,Pointer at EU 0x2fdc,False
 EU,0x10fa8c,DEMO,0x10fec0,5,octorock,Pointer at EU 0x2fdc,False
 EU,0x10fa8c,JP,0x110000,5,octorock,Pointer at EU 0x2fdc,False
 EU,0x113cc8,USA,0x114580,5,octorock,Pointer at EU 0x2fec,True
-EU,0x113cc8,DEMO,0x114104,5,octorock,Pointer at EU 0x2fec,True
-EU,0x113cc8,JP,0x114244,5,octorock,Pointer at EU 0x2fec,True
+EU,0x113cc8,DEMO,0x114104,5,octorock,Pointer at EU 0x2fec,False
+EU,0x113cc8,JP,0x114244,5,octorock,Pointer at EU 0x2fec,False
 EU,0x113c10,USA,0x1144c8,5,octorock,,True
 EU,0x113a14,USA,0x1142cc,5,octorock,,True
 EU,0x11117c,USA,0x111a2c,5,octorock,Pointer at EU 0x2ffc,False
@@ -7639,8 +7639,8 @@ EU,0x1105fc,USA,0x110eac,5,octorock,Pointer at EU 0x303c,False
 EU,0x1105fc,DEMO,0x110a30,5,octorock,Pointer at EU 0x303c,False
 EU,0x1105fc,JP,0x110b70,5,octorock,Pointer at EU 0x303c,False
 EU,0x113970,USA,0x114228,5,octorock,Pointer at EU 0x304c,True
-EU,0x113970,DEMO,0x113dac,5,octorock,Pointer at EU 0x304c,True
-EU,0x113970,JP,0x113eec,5,octorock,Pointer at EU 0x304c,True
+EU,0x113970,DEMO,0x113dac,5,octorock,Pointer at EU 0x304c,False
+EU,0x113970,JP,0x113eec,5,octorock,Pointer at EU 0x304c,False
 EU,0x122864,USA,0x12311c,5,octorock,Pointer at EU 0x305c,False
 EU,0x122864,DEMO,0x123b28,5,octorock,Pointer at EU 0x305c,False
 EU,0x122864,JP,0x122de0,5,octorock,Pointer at EU 0x305c,False
@@ -7654,8 +7654,8 @@ EU,0xcbdc4,USA,0xcc69c,5,octorock,Pointer at EU 0x309c,False
 EU,0xcbdc4,DEMO,0xcc220,5,octorock,Pointer at EU 0x309c,False
 EU,0xcbdc4,JP,0xcc43c,5,octorock,Pointer at EU 0x309c,False
 EU,0x11e568,USA,0x11ee20,5,octorock,Pointer at EU 0x30ac,True
-EU,0x11e568,DEMO,0x11f82c,5,octorock,Pointer at EU 0x30ac,True
-EU,0x11e568,JP,0x11eae4,5,octorock,Pointer at EU 0x30ac,True
+EU,0x11e568,DEMO,0x11f82c,5,octorock,Pointer at EU 0x30ac,False
+EU,0x11e568,JP,0x11eae4,5,octorock,Pointer at EU 0x30ac,False
 EU,0xcc58c,USA,0xcce64,5,octorock,Pointer at EU 0x30bc,False
 EU,0xcc58c,DEMO,0xcc9e8,5,octorock,Pointer at EU 0x30bc,False
 EU,0xcc58c,JP,0xccc04,5,octorock,Pointer at EU 0x30bc,False
@@ -7768,8 +7768,8 @@ EU,0x122af8,USA,0x1233b0,5,octorock,Pointer at EU 0x32fc,False
 EU,0x122af8,DEMO,0x123dbc,5,octorock,Pointer at EU 0x32fc,False
 EU,0x122af8,JP,0x123074,5,octorock,Pointer at EU 0x32fc,False
 EU,0x10f688,USA,0x10ff38,5,octorock,Pointer at EU 0x330c,True
-EU,0x10f688,DEMO,0x10fabc,5,octorock,Pointer at EU 0x330c,True
-EU,0x10f688,JP,0x10fbfc,5,octorock,Pointer at EU 0x330c,True
+EU,0x10f688,DEMO,0x10fabc,5,octorock,Pointer at EU 0x330c,False
+EU,0x10f688,JP,0x10fbfc,5,octorock,Pointer at EU 0x330c,False
 EU,0x10f628,USA,0x10fed8,5,octorock,,True
 EU,0x10f538,USA,0x10fde8,5,octorock,,True
 EU,0x10f324,USA,0x10fbd0,5,octorock,Pointer at EU 0x331c,False
@@ -7845,13 +7845,13 @@ EU,0xcada4,USA,0xcb67c,5,octorock,Pointer at EU 0x34ac,False
 EU,0xcada4,DEMO,0xcb200,5,octorock,Pointer at EU 0x34ac,False
 EU,0xcada4,JP,0xcb41c,5,octorock,Pointer at EU 0x34ac,False
 EU,0x126884,USA,0x12714c,5,octorock,Pointer at EU 0x34bc,True
-EU,0x126884,DEMO,0x127b58,5,octorock,Pointer at EU 0x34bc,True
-EU,0x126884,JP,0x126e10,5,octorock,Pointer at EU 0x34bc,True
+EU,0x126884,DEMO,0x127b58,5,octorock,Pointer at EU 0x34bc,False
+EU,0x126884,JP,0x126e10,5,octorock,Pointer at EU 0x34bc,False
 EU,0x11e860,USA,0x11f118,5,octorock,Pointer at EU 0x34cc,False
 EU,0x11e860,DEMO,0x11fb24,5,octorock,Pointer at EU 0x34cc,False
 EU,0x11e860,JP,0x11eddc,5,octorock,Pointer at EU 0x34cc,False
 EU,0x11e558,USA,0x11ee10,5,octorock,Pointer at EU 0x34dc,True
-EU,0x11e558,DEMO,0x11f81c,5,octorock,Pointer at EU 0x34dc,True
+EU,0x11e558,DEMO,0x11f81c,5,octorock,Pointer at EU 0x34dc,False
 EU,0x11e558,JP,0x11ead4,5,octorock,Pointer at EU 0x34dc,False
 EU,0xc9d78,USA,0xca650,5,octorock,Pointer at EU 0x34ec,False
 EU,0xc9d78,DEMO,0xca1d4,5,octorock,Pointer at EU 0x34ec,False
@@ -8312,8 +8312,8 @@ EU,0x12918c,USA,0x129a54,5,octorock,Pointer at EU 0x3e5c,False
 EU,0x12918c,DEMO,0x12a4a4,5,octorock,Pointer at EU 0x3e5c,False
 EU,0x12918c,JP,0x129718,5,octorock,Pointer at EU 0x3e5c,False
 EU,0xfd51c,USA,0xfdfd8,5,octorock,Pointer at EU 0x3e6c,True
-EU,0xfd51c,DEMO,0xfdb5c,5,octorock,Pointer at EU 0x3e6c,True
-EU,0xfd51c,JP,0xfdc88,5,octorock,Pointer at EU 0x3e6c,True
+EU,0xfd51c,DEMO,0xfdb5c,5,octorock,Pointer at EU 0x3e6c,False
+EU,0xfd51c,JP,0xfdc88,5,octorock,Pointer at EU 0x3e6c,False
 EU,0xfd51c,USA,0xfdfd8,5,octorock,Pointer at EU 0x3e7c,False
 EU,0xfd51c,DEMO,0xfdb5c,5,octorock,Pointer at EU 0x3e7c,False
 EU,0xfd51c,JP,0xfdc88,5,octorock,Pointer at EU 0x3e7c,False
@@ -8345,7 +8345,7 @@ EU,0x11b088,USA,0x11b940,5,octorock,Pointer at EU 0x3ed0,False
 EU,0x11b088,DEMO,0x11b4c4,5,octorock,Pointer at EU 0x3ed0,False
 EU,0x11b088,JP,0x11b604,5,octorock,Pointer at EU 0x3ed0,False
 EU,0x131d3c,USA,0x1326ec,5,octorock,Pointer at EU 0x43f0,True
-EU,0x131d3c,DEMO,0x13313c,5,octorock,Pointer at EU 0x43f0,True
+EU,0x131d3c,DEMO,0x13313c,5,octorock,Pointer at EU 0x43f0,False
 EU,0x131d3c,JP,0x132318,5,octorock,Pointer at EU 0x43f0,True
 EU,0x290,USA,0x248,5,octorock,Pointer at EU 0x4418,False
 EU,0x290,DEMO,0x248,5,octorock,Pointer at EU 0x4418,False

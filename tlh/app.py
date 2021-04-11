@@ -1,18 +1,19 @@
 import signal
 import sys
+from tlh.common.ui.progress_dialog import ProgressDialog
 from tlh.data.rom import get_rom
 from tlh.common.ui.layout import Layout
 from tlh.dock_manager import DockManager
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QIcon
-from PySide6.QtWidgets import (QApplication, QDockWidget, QInputDialog,
+from PySide6.QtWidgets import (QApplication, QInputDialog,
                                QMainWindow, QMenu, QMessageBox)
 
 from tlh import settings
 from tlh.common.ui.dark_theme import apply_dark_theme
 from tlh.const import RomVariant
-from tlh.data.database import get_constraint_database, initialize_databases
+from tlh.data.database import initialize_databases
 from tlh.plugin.loader import load_plugins
 from tlh.settings.ui import SettingsDialog
 from tlh.ui.ui_mainwindow import Ui_MainWindow
@@ -29,8 +30,6 @@ class MainWindow(QMainWindow):
         self.ui.actionQuit.triggered.connect(app.quit)
         self.ui.actionSettings.triggered.connect(self.show_settings_dialog)
         self.ui.actionAbout.triggered.connect(self.show_about_dialog)
-        self.ui.actionDisableRedundantConstraints.triggered.connect(
-            self.disable_redundant_constraints)
 
         self.update_hex_viewer_actions()
 
@@ -50,6 +49,7 @@ class MainWindow(QMainWindow):
 
         # Build all docks and then hide them, so they exist for layouts?
         self.ui.dockBuilder.hide()
+        self.ui.menuTools.insertAction(self.ui.menuPlugins.menuAction(), self.ui.dockBuilder.toggleViewAction())
 
         initialize_databases(self)
 
@@ -146,9 +146,6 @@ class MainWindow(QMainWindow):
     def show_about_dialog(self):
         QMessageBox.about(self, 'The Little Hat',
                           'The Little Hat\nVersion: 0.0')  # TODO
-
-    def disable_redundant_constraints(self):
-        get_constraint_database().disable_redundant_constraints()
 
     def update_hex_viewer_actions(self):
         self.ui.actionUSA.setDisabled(get_rom(RomVariant.USA) is None)

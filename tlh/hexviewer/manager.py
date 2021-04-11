@@ -200,7 +200,8 @@ class HexViewerManager(QObject):
                     note += '\n' + pointer.note
 
                 # TODO test that adding the added constraints are not invalid
-
+                # TODO It might be that a constraint that is added with the new_constraints invalidates some other newly added
+                # constraint which then would need to be enabled. Need to test for all new_constraints whether they are actually still valid after adding them to the constraint manager?
                 enabled = self.constraint_manager.to_virtual(
                     pointer.rom_variant, pointer.points_to-ROM_OFFSET) != self.constraint_manager.to_virtual(variant, points_to-ROM_OFFSET)
                 print(f'Add constraint {enabled}')

@@ -99,29 +99,6 @@ class ConstraintDatabase(QObject):
                     'enabled': constraint.enabled
                 })
 
-    def disable_redundant_constraints(self):
-        '''
-        Disables all constraints that only contain redundant information and don't create more relations
-        '''
-
-        # Test using a constraint manager with all variations
-        manager = ConstraintManager(
-            {RomVariant.USA, RomVariant.JP, RomVariant.EU, RomVariant.DEMO})
-        for constraint in self.constraints:
-            if not constraint.enabled:
-                continue
-
-            # test if constraint is redundant
-            va_a = manager.to_virtual(constraint.romA, constraint.addressA)
-            va_b = manager.to_virtual(constraint.romB, constraint.addressB)
-            if va_a == va_b:
-                print(f'Disable {constraint}')
-                constraint.enabled = False
-            else:
-                print(f'Keep {constraint}')
-                manager.add_constraint(constraint)
-                manager.rebuild_relations()
-        self._write_constraints()
 
 
 def get_constraint_database():

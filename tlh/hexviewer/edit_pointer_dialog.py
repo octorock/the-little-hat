@@ -2,8 +2,6 @@
 from tlh.const import ROM_OFFSET
 from PySide6.QtCore import Signal
 from tlh.data.pointer import Pointer
-import typing
-import PySide6
 from PySide6.QtWidgets import QDialog
 from tlh.ui.ui_edit_pointer_dialog import Ui_EditPointerDialog
 
