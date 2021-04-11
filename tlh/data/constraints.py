@@ -12,8 +12,8 @@ class Constraint:
     romB: RomVariant = None
     addressB: int = 0
     certainty: int = 0
-    author: str = None
-    note: str = None
+    author: str = ''
+    note: str = ''
     enabled: bool = True
 
 

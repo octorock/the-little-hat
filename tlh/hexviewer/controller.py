@@ -486,11 +486,27 @@ class HexViewerController(QObject):
         get_pointer_database().add_pointer(pointer)
 
     def mark_as_all_pointer(self):
-        if abs(self.selected_bytes) != 4:
+        if abs(self.selected_bytes) % 4 != 0:
             return
-        dialog = self.get_new_pointer_dialog()
-        dialog.pointer_changed.connect(self.add_new_pointer_and_constraints)
-        dialog.show()
+
+        if abs(self.selected_bytes) == 4: # Mark one pointer
+            dialog = self.get_new_pointer_dialog()
+            dialog.pointer_changed.connect(self.add_new_pointer_and_constraints)
+            dialog.show()
+        else: # Mark multiple pointers
+            reply = QMessageBox.question(self.dock, 'Add pointer and constraints', f'Do you really want to mark {abs(self.selected_bytes)//4} pointers and add the corresponding constraints?')
+            if reply == QMessageBox.Yes:
+                base_address = self.cursor
+                if self.selected_bytes <0:
+                    base_address += self.selected_bytes + 1
+                print(base_address)
+                for i in range(0, abs(self.selected_bytes)//4):
+                    address = base_address + i * 4
+                    points_to = self.get_as_pointer(address)
+
+                    pointer = Pointer(self.rom_variant, self.address_resolver.to_local(
+                        address), points_to, 5, settings.get_username())
+                    self.signal_pointer_discovered.emit(pointer)
 
     def add_new_pointer_and_constraints(self, pointer: Pointer) -> None:
         if pointer.points_to < ROM_OFFSET or pointer.points_to > ROM_OFFSET + ROM_SIZE:

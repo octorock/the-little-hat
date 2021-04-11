@@ -10,8 +10,8 @@ class Pointer:
     address: int = 0
     points_to: int = 0
     certainty: int = 0
-    author: str = None
-    note: str = None
+    author: str = ''
+    note: str = ''
 
 
 class PointerList:

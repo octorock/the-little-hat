@@ -9,8 +9,8 @@ class Annotation:
     address: int = 0
     length: int = 0
     color: QColor = None
-    author: str = None
-    note: str = None
+    author: str = ''
+    note: str = ''
 
 class AnnotationList:
     def __init__(self, annotations: list[Annotation], rom_variant: RomVariant) -> None:
