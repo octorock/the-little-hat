@@ -19,7 +19,7 @@ from tlh.hexviewer.edit_annotation_dialog import EditAnnotationDialog
 from tlh.hexviewer.edit_constraint_dialog import EditConstraintDialog
 from tlh.hexviewer.edit_pointer_dialog import EditPointerDialog
 
-
+import traceback
 
 class HexViewerController(QObject):
     '''
@@ -147,7 +147,8 @@ class HexViewerController(QObject):
         '''
         Builds the display model for the hex area to paint
         '''
-        # print('updating hex area') TODO reduce the amount of repaint at the start
+        #print(f'updating hex area {self.dock.windowTitle()}') # TODO reduce the amount of repaint at the start
+
         data = self.get_bytes(
             self.start_offset,
             self.start_offset + self.area.number_of_lines_on_screen() * self.area.bytes_per_line
@@ -271,7 +272,8 @@ class HexViewerController(QObject):
         self.update_status_bar()
         self.update_hex_area()
         # TODO change to 1 once finished annotating pointers
-        self.update_selected_bytes(4)
+        if self.selected_bytes != 4:
+            self.update_selected_bytes(4)
 
     def slot_update_cursor_from_offset(self, offset: int) -> None:
         self.update_cursor(self.start_offset + offset)
@@ -338,7 +340,7 @@ class HexViewerController(QObject):
                 symbol = get_symbol_at(local_address)
                 if symbol is not None:
                     offset = local_address - symbol.address
-                    text += f'\n{symbol.name} (+{offset}) [{symbol.file}]'
+                    text += f'\n{symbol.name} (+{offset}|{symbol.length}) [{symbol.file}] '
 
         self.status_bar.setText(text)
 
@@ -504,6 +506,9 @@ class HexViewerController(QObject):
                     address = base_address + i * 4
                     points_to = self.get_as_pointer(address)
 
+                    if points_to < ROM_OFFSET or points_to > ROM_OFFSET + ROM_SIZE:
+                                QMessageBox.critical(self.dock, 'Add pointer and constraints', f'Address {hex(points_to)} is not inside the rom.')
+                                return
                     pointer = Pointer(self.rom_variant, self.address_resolver.to_local(
                         address), points_to, 5, settings.get_username())
                     self.signal_pointer_discovered.emit(pointer)

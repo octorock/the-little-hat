@@ -11,6 +11,7 @@ class Symbol:
     address: int = 0
     name: str = None
     file: str = None
+    length: int = 0
 
 symbols = SortedKeyList([], key=lambda x:x.address)
 
@@ -35,6 +36,8 @@ def load_symbols_from_map(path: str) -> None:
             line = map_file.readline()
 
         # Parse declarations
+
+        prev_symbol = None
         current_file = 'UNKNOWN'
         for line in map_file:
             if line.startswith(' .'):
@@ -43,7 +46,13 @@ def load_symbols_from_map(path: str) -> None:
             elif line.startswith('  '):
                 parts = line.split()
                 if len(parts) == 2 and parts[1] !='': # it is actually a symbol
-                    symbols.add(Symbol(int(parts[0],16)-ROM_OFFSET, parts[1], current_file ))
+                    addr = int(parts[0],16)-ROM_OFFSET
+                    if prev_symbol is not None:
+                        prev_symbol.length = addr-prev_symbol.address
+                    symbol = Symbol(addr, parts[1], current_file)
+                    symbols.add(symbol)
+                    prev_symbol = symbol
+                    
             elif not line.startswith(' *'):
                 # this defines the name
                 current_file = line.split('(')[0].strip()
