@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from tlh.data.symbols import get_symbol_at
 from tlh.hexviewer.display_byte import DisplayByte
 from tlh.hexviewer.ui.hex_area import KeyType
 from tlh.data.rom import Rom, get_rom
@@ -329,8 +330,16 @@ class HexViewerController(QObject):
         else:
             text = f'Cursor: {hex(local_address+ROM_OFFSET)}'
 
-        if (self.selected_bytes != 0):
-            text += f' Bytes selected: {self.selected_bytes}'
+            if self.selected_bytes != 0:
+                text += f' Bytes selected: {self.selected_bytes}'
+
+            if self.rom_variant == RomVariant.USA:
+                # Show symbol at cursor for USA if symbols are loaded from .map file
+                symbol = get_symbol_at(local_address)
+                if symbol is not None:
+                    offset = local_address - symbol.address
+                    text += f'\n{symbol.name} (+{offset}) [{symbol.file}]'
+
         self.status_bar.setText(text)
 
     def scroll_to_cursor(self):
@@ -531,8 +540,14 @@ class HexViewerController(QObject):
         if len(pointers) == 0:
             QToolTip.hideText()
             return True
-        QToolTip.showText(pos,
-                          f'Pointer to {hex(pointers[0].points_to)}')
+        text = f'Pointer to {hex(pointers[0].points_to)}'
+        if self.rom_variant == RomVariant.USA:
+            points_to = pointers[0].points_to-ROM_OFFSET
+            symbol = get_symbol_at(points_to)
+            if symbol is not None:
+                offset = points_to - symbol.address
+                text += f'\n{symbol.name} (+{offset}) [{symbol.file}]'
+        QToolTip.showText(pos, text)
 
     def slot_go_to_pointer_at(self, offset: int) -> None:
         virtual_address = self.start_offset + offset

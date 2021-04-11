@@ -1,5 +1,6 @@
 import signal
 import sys
+from tlh.data.symbols import load_symbols_from_map
 from tlh.common.ui.progress_dialog import ProgressDialog
 from tlh.data.rom import get_rom
 from tlh.common.ui.layout import Layout
@@ -17,7 +18,7 @@ from tlh.data.database import initialize_databases
 from tlh.plugin.loader import load_plugins
 from tlh.settings.ui import SettingsDialog
 from tlh.ui.ui_mainwindow import Ui_MainWindow
-
+from os import path
 
 class MainWindow(QMainWindow):
     def __init__(self, app):
@@ -41,6 +42,7 @@ class MainWindow(QMainWindow):
             lambda: self.dock_manager.add_hex_editor(RomVariant.EU))
         self.ui.actionJP.triggered.connect(
             lambda: self.dock_manager.add_hex_editor(RomVariant.JP))
+        self.ui.actionLoadSymbols.triggered.connect(self.slot_load_symbols)
 
         self.build_layouts_toolbar()
 
@@ -152,6 +154,14 @@ class MainWindow(QMainWindow):
         self.ui.actionDEMO.setDisabled(get_rom(RomVariant.DEMO) is None)
         self.ui.actionJP.setDisabled(get_rom(RomVariant.JP) is None)
         self.ui.actionEU.setDisabled(get_rom(RomVariant.EU) is None)
+
+    def slot_load_symbols(self):
+        map_file = path.join(settings.get_repo_location(), 'tmc.map')
+        if not path.isfile(map_file):
+            QMessageBox.critical(self, 'Load symbols from .map file', f'Could not find tmc.map file at {map_file}.')
+            return
+        load_symbols_from_map(map_file)
+        QMessageBox.information(self, 'Load symbols', 'Successfully loaded symbols for USA rom from tmc.map file.')
 
 
 def run():

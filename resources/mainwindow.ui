@@ -54,6 +54,7 @@
      </property>
     </widget>
     <addaction name="menuHexViewer"/>
+    <addaction name="actionLoadSymbols"/>
     <addaction name="menuPlugins"/>
     <addaction name="separator"/>
     <addaction name="actionSettings"/>
@@ -129,6 +130,11 @@
   <action name="actionJP">
    <property name="text">
     <string>JP</string>
+   </property>
+  </action>
+  <action name="actionLoadSymbols">
+   <property name="text">
+    <string>Load Symbols</string>
    </property>
   </action>
  </widget>
