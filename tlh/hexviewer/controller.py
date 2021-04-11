@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from tlh.hexviewer.display_byte import DisplayByte
 from tlh.hexviewer.ui.hex_area import KeyType
 from tlh.data.rom import Rom, get_rom
 from tlh.data.database import get_annotation_database, get_pointer_database, get_constraint_database
@@ -17,12 +18,6 @@ from tlh.hexviewer.edit_annotation_dialog import EditAnnotationDialog
 from tlh.hexviewer.edit_constraint_dialog import EditConstraintDialog
 from tlh.hexviewer.edit_pointer_dialog import EditPointerDialog
 
-
-@dataclass
-class DisplayByte:
-    text: str
-    background: QColor
-    is_selected: bool
 
 
 class HexViewerController(QObject):
@@ -54,7 +49,6 @@ class HexViewerController(QObject):
         self.start_offset = 0
         self.cursor = 0
         self.selected_bytes = 1
-        self.displayed_bytes = []
 
         self.display_byte_cache = {}  # TODO invalidate this cache if a constraint is added
 

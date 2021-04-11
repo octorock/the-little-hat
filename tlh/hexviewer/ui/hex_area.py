@@ -1,5 +1,6 @@
 
 from enum import Enum
+from tlh.hexviewer.display_byte import DisplayByte
 from tlh.data.constraints import Constraint
 from tlh.data.annotations import Annotation
 from tlh.data.database import get_annotation_database, get_constraint_database, get_pointer_database
