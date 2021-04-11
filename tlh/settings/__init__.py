@@ -134,3 +134,16 @@ def set_layouts(layouts: list[Layout]):
         settings.setValue('geometry', layouts[i].geometry)
         settings.setValue('dock_state', layouts[i].dock_state)
     settings.endArray()
+
+
+def is_plugin_enabled(name: str) -> bool:
+    settings.beginGroup('plugins')
+    enabled = str(settings.value(name, False)).lower() == 'true'
+    settings.endGroup()
+    return enabled
+
+def set_plugin_enabled(name: str, enabled: bool) -> None:
+    settings.beginGroup('plugins')
+    settings.setValue(name, enabled)
+    settings.endGroup()
+

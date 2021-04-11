@@ -48,8 +48,14 @@
      <addaction name="actionEU"/>
      <addaction name="actionJP"/>
     </widget>
+    <widget class="QMenu" name="menuPlugins">
+     <property name="title">
+      <string>Plugins</string>
+     </property>
+    </widget>
     <addaction name="menuHexViewer"/>
     <addaction name="actionBuilder"/>
+    <addaction name="menuPlugins"/>
     <addaction name="actionDisableRedundantConstraints"/>
     <addaction name="separator"/>
     <addaction name="actionSettings"/>

@@ -1,11 +1,12 @@
 import hashlib
+from tlh.plugin.loader import disable_plugin, enable_plugin, get_plugins
 import typing
 
 import PySide6
 from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import (QDialog, QDialogButtonBox, QFileDialog,
-                               QListView, QMessageBox)
+from PySide6.QtWidgets import (QCheckBox, QDialog, QDialogButtonBox, QFileDialog, QLabel,
+                               QListView, QMessageBox, QSizePolicy, QSpacerItem, QTableWidgetItem)
 from tlh import settings
 from tlh.const import SHA1_DEMO, SHA1_EU, SHA1_JP, SHA1_USA
 from tlh.ui.ui_settings import Ui_dialogSettings
@@ -92,6 +93,7 @@ class SettingsDialog(QDialog):
         self.setup_general_tab()
         self.setup_roms_tab()
         self.setup_layouts_tab()
+        self.setup_plugins_tab()
 
     def setup_general_tab(self):
         self.ui.lineEditUserName.setText(settings.get_username())
@@ -170,6 +172,24 @@ class SettingsDialog(QDialog):
     def delete_layout(self):
         self.layouts_model.removeRow(self.ui.listLayouts.currentIndex().row())
 
+    def setup_plugins_tab(self) -> None:
+
+        self.plugins = get_plugins()
+        self.plugin_checkboxes = {}
+
+        for plugin in self.plugins:
+            checkbox = QCheckBox()
+            checkbox.setChecked(plugin.enabled)
+            self.plugin_checkboxes[plugin.get_settings_name()] = checkbox
+            self.ui.gridLayoutPlugins.addWidget(checkbox)
+            self.ui.gridLayoutPlugins.addWidget(QLabel(plugin.name))
+            self.ui.gridLayoutPlugins.addWidget(QLabel(plugin.description))
+
+        # Add spacer to fill the remaining space
+        self.ui.gridLayoutPlugins.addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
+        pass
+
+
     def save_settings(self):
         # General
         settings.set_username(self.ui.lineEditUserName.text())
@@ -185,6 +205,18 @@ class SettingsDialog(QDialog):
 
         # Layouts
         settings.set_layouts(self.layouts_model.layouts)
+
+        # Plugins
+        for plugin in self.plugins:
+            name = plugin.get_settings_name()
+            enabled = self.plugin_checkboxes[name].isChecked()
+            if enabled != settings.is_plugin_enabled(name):
+                settings.set_plugin_enabled(name, enabled)
+                print(enabled)
+                if enabled:
+                    enable_plugin(plugin)
+                else:
+                    disable_plugin(plugin)
 
 
 # Returns sha1 for a file path

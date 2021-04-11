@@ -1,15 +1,32 @@
+from dataclasses import dataclass
 import os
 from importlib import import_module
+from typing import Optional
+from tlh import settings
 from tlh.plugin.api import PluginApi
 import inspect
 
 plugin_folder = './plugins'
 main_module = '__init__'
 
-plugins = []
+@dataclass
+class Plugin:
+    name: str
+    description: str
+    class_name: str
+    pkg_name: str
+    enabled: bool
+    cls: any
+    instance: any
+
+    def get_settings_name(self) -> str:
+        return self.pkg_name + ':' + self.class_name
+
+plugins: list[Plugin] = []
+api: PluginApi = None
 
 def load_plugins(main_window):
-    global plugins
+    global plugins, api
 
     api = PluginApi(main_window)
 
@@ -29,15 +46,40 @@ def load_plugins(main_window):
         found = False
         for name, cls in clsmembers:
             if name.endswith('Plugin'):
-                instance = cls(api)
+                if not hasattr(cls, 'name'):
+                    print(f'Plugin class {name} is missing attribute "name"')
+                    continue
+                if not hasattr(cls, 'description'):
+                    print(f'Plugin class {name} is missing attribute "description"')
+                    continue
+                
                 found = True
-                plugins.append({
-                    'name': i,
-                    'instance':  instance
-                })
+                enabled = settings.is_plugin_enabled(i + ':' + name)
+                instance = None
+                plugin = Plugin(cls.name, cls.description, name, i, enabled, cls, instance)
+                plugins.append(plugin)
+
+                if enabled:
+                    enable_plugin(plugin)
+
                 break
         if not found:
             print(f'No class ending with "Plugin" found in plugin {i}')
         
 
     #return plugins
+
+def enable_plugin(plugin: Plugin) -> None:
+    plugin.instance = plugin.cls(api)
+    plugin.enabled = True
+    if (hasattr(plugin.instance, 'load')):
+        plugin.instance.load()
+
+def disable_plugin(plugin: Plugin) -> None:
+    if (hasattr(plugin.instance, 'unload')):
+        plugin.instance.unload()
+    plugin.instance = None
+    plugin.enabled = False
+
+def get_plugins() -> list[Plugin]:
+    return plugins
