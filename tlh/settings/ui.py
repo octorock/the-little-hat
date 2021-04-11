@@ -214,7 +214,9 @@ class SettingsDialog(QDialog):
                 settings.set_plugin_enabled(name, enabled)
                 print(enabled)
                 if enabled:
-                    enable_plugin(plugin)
+                    if not enable_plugin(plugin):
+                        self.plugin_checkboxes[name].setChecked(False)
+                        QMessageBox.critical(self, 'Load Plugin Failed', f'Unable to load plugin {plugin.name}.\nCheck console output for more information.')
                 else:
                     disable_plugin(plugin)
 

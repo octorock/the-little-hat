@@ -54,12 +54,10 @@ def load_plugins(main_window):
                     continue
                 
                 found = True
-                enabled = settings.is_plugin_enabled(i + ':' + name)
-                instance = None
-                plugin = Plugin(cls.name, cls.description, name, i, enabled, cls, instance)
+                plugin = Plugin(cls.name, cls.description, name, i, False, cls, None)
                 plugins.append(plugin)
 
-                if enabled:
+                if settings.is_plugin_enabled(i + ':' + name):
                     enable_plugin(plugin)
 
                 break
@@ -69,15 +67,28 @@ def load_plugins(main_window):
 
     #return plugins
 
-def enable_plugin(plugin: Plugin) -> None:
-    plugin.instance = plugin.cls(api)
-    plugin.enabled = True
-    if (hasattr(plugin.instance, 'load')):
-        plugin.instance.load()
+def enable_plugin(plugin: Plugin) -> bool:
+    try:
+        plugin.instance = plugin.cls(api)
+        if (hasattr(plugin.instance, 'load')):
+            plugin.instance.load()
+        plugin.enabled = True
+        return True
+    except Exception as e:
+        print(f'Exception occurred during enabling plugin {plugin.get_settings_name()}:')
+        print(e)
+        print('Plugin was disabled and has to be enabled again manually.')
+        settings.set_plugin_enabled(plugin.get_settings_name(), False)
+        return False
+
 
 def disable_plugin(plugin: Plugin) -> None:
-    if (hasattr(plugin.instance, 'unload')):
-        plugin.instance.unload()
+    try:
+        if (hasattr(plugin.instance, 'unload')):
+            plugin.instance.unload()
+    except Exception as e:
+        print(f'Exception occurred during unloading plugin {plugin.get_settings_name()}:')
+        print(e)
     plugin.instance = None
     plugin.enabled = False
 

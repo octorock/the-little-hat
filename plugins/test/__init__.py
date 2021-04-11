@@ -9,6 +9,7 @@ Descriptions can have multiple lines'''
 
     def __init__(self, api: PluginApi) -> None:
         self.api = api
+        raise RuntimeError('bla')
 
     def load(self) -> None:
         self.menu_entry = self.api.register_menu_entry('Test', self.show_test)    
