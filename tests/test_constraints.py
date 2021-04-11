@@ -636,5 +636,16 @@ def test_bug_5():
     add_j_d_constraint(manager, 0xbf1d2371, 0xbf1d2371)
     manager.rebuild_relations()
 
-    
+
+def test_slow_end_constraints():
+    manager = ConstraintManager({RomVariant.DEMO, RomVariant.USA, RomVariant.JP, RomVariant.EU})
+    # JP    0xdc9d24  14458148
+    # USA   0xde7da4  14581156
+    # DEMO  0xdf1fcc  14622668
+    # EU    0xef333c  15676220
+    add_u_j_constraint(manager, 0xde7da4, 0xdc9d24)
+    add_u_d_constraint(manager, 0xde7da4, 0xdf1fcc)
+    add_u_e_constraint(manager, 0xde7da4, 0xef333c)
+    manager.rebuild_relations()
+
 # endregion

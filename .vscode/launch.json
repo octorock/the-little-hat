@@ -18,7 +18,7 @@
             // to select a certain test to run, see https://stackoverflow.com/a/36539692
             // to print output for successful test after the test ran add -rP https://stackoverflow.com/a/59156707
             // to print output while test test runs, add -s https://stackoverflow.com/a/14414325
-            "args": ["-k", "test_three_cycle"]
+            "args": ["-k", "test_slow_end_constraints", "-s"]
         },
     ]
 }

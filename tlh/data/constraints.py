@@ -158,8 +158,18 @@ class ConstraintManager:
             responsible_object = None
 
             def to_virtual_based_on_current_local(variant, address):
-                #if len(local_blockers[variant]) > 0:
+                # Don't return a virtual address before the local_address of anything
+                # that is blocking this
+                # TODO more correct would be to test against the virtual address of the thing
+                # blocking us and then only advance to that position instead of simply returning
+                # 0xfffffff, but that would lead to loops of calculation if both variants are
+                # blocked.
+                # if len(local_blockers[variant]) > 0:
                     #return 0xfffffff
+                for blocker in local_blockers[variant]:
+                    if blocker.rom_address > address:
+                        return 0xfffffff
+
                 return virtual_address + address - local_addresses[variant]
 
 
@@ -199,6 +209,7 @@ class ConstraintManager:
             virtual_address += offset
 
             log(f'-- Go to {virtual_address} (+{offset})')
+            log(f'Due to {responsible_object}')
 
             # Advance all local_addresses where there is no blocker
             next_local_addresses = {}
@@ -230,9 +241,16 @@ class ConstraintManager:
                             
                             # Needed to add the following line for test_bug_4_simplified
                             next_local_addresses[variant] = local_addresses[variant] 
-                        elif next_local_addresses[blocker.rom_variant] > blocker.rom_address:
-                            log(f'{blocker} {variant} creates invalid constraint: {next_local_addresses[blocker.rom_variant]} > {blocker.rom_address}:')
-                            raise InvalidConstraintError()
+
+                        # TODO After the introduction of the return in to_virtual_based_on_current_local
+                        # this no longer produces invalid constraints, instead this can happen when multiple 
+                        # blockers need to be resolved at the same address and the order of the variants
+                        # does not align with the inverse order of the local addresses
+                        # Maybe invalid constraints that were previously found by this are now only found by
+                        # the checking of all constraints at the end?
+                        #elif next_local_addresses[blocker.rom_variant] < blocker.rom_address:
+                            #log(f'{blocker} {variant} creates invalid constraint: {next_local_addresses[blocker.rom_variant]} > {blocker.rom_address}:')
+                            #raise InvalidConstraintError()
                         else:
                             log(f'Possibly resolve {blocker}')
                             next_local_addresses[variant] = blocker.local_address
