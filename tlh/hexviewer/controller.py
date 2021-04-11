@@ -9,9 +9,9 @@ from tlh.data.constraints import Constraint
 from tlh.hexviewer.diff_calculator import AbstractDiffCalculator, NoDiffCalculator
 from PySide6.QtCore import QObject, Signal, QPoint
 from PySide6.QtGui import QBrush, QColor, QKeySequence, QPainter, QShortcut, Qt
-from PySide6.QtWidgets import QInputDialog, QWidget, QToolTip, QMenu, QApplication
+from PySide6.QtWidgets import QInputDialog, QMessageBox, QWidget, QToolTip, QMenu, QApplication
 from tlh.hexviewer.ui.dock import HexViewerDock
-from tlh.const import ROM_OFFSET, RomVariant
+from tlh.const import ROM_OFFSET, ROM_SIZE, RomVariant
 from tlh.hexviewer.address_resolver import AbstractAddressResolver, TrivialAddressResolver
 from tlh import settings
 from tlh.hexviewer.edit_annotation_dialog import EditAnnotationDialog
@@ -471,6 +471,9 @@ class HexViewerController(QObject):
         dialog.show()
 
     def add_new_pointer(self, pointer: Pointer) -> None:
+        if pointer.points_to < ROM_OFFSET or pointer.points_to > ROM_OFFSET + ROM_SIZE:
+            QMessageBox.critical(self.dock, 'Add pointer and constraints', f'Address {hex(pointer.points_to)} is not inside the rom.')
+            return
         get_pointer_database().add_pointer(pointer)
 
     def mark_as_all_pointer(self):
@@ -481,8 +484,11 @@ class HexViewerController(QObject):
         dialog.show()
 
     def add_new_pointer_and_constraints(self, pointer: Pointer) -> None:
+        if pointer.points_to < ROM_OFFSET or pointer.points_to > ROM_OFFSET + ROM_SIZE:
+            QMessageBox.critical(self.dock, 'Add pointer and constraints', f'Address {hex(pointer.points_to)} is not inside the rom.')
+            return
         self.signal_pointer_discovered.emit(pointer)
-
+        
     def open_new_annotation_dialog(self):
         address = self.cursor
         length = abs(self.selected_bytes)

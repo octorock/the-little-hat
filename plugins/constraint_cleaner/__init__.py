@@ -1,7 +1,7 @@
 from PySide6.QtCore import QObject, QThread, Signal
 from PySide6.QtWidgets import QMessageBox
 from tlh.const import RomVariant
-from tlh.data.constraints import ConstraintManager
+from tlh.data.constraints import ConstraintManager, InvalidConstraintError
 from tlh.plugin.api import PluginApi
 from tlh.data.database import get_constraint_database
 
@@ -31,30 +31,34 @@ class ConstraintCleanerPlugin:
         progress_dialog = self.api.get_progress_dialog('Constraint Cleaner', 'Removing redundant constraints...', False)
         progress_dialog.show()
 
-        thread = QThread(self.api.main_window)
-        worker = RemoveRedundantWorker(self.api.main_window)
-        worker.moveToThread(thread)
+        self.thread = QThread()
+        self.worker = RemoveRedundantWorker()
+        self.worker.moveToThread(self.thread)
 
-        worker.signal_progress.connect(lambda progress: progress_dialog.set_progress(progress))
-        worker.signal_done.connect(lambda: ( # https://stackoverflow.com/a/13672943
-            thread.quit(),
+        self.worker.signal_progress.connect(lambda progress: progress_dialog.set_progress(progress))
+        self.worker.signal_done.connect(lambda: ( # https://stackoverflow.com/a/13672943
+            self.thread.quit(),
             progress_dialog.close(),
             QMessageBox.information(self.api.main_window, 'Constraint Cleaner', 'All redundant constraints are removed.')
         ))
+        self.worker.signal_fail.connect(lambda: (
+            self.thread.quit(),
+            progress_dialog.close(),
+            QMessageBox.critical(self.api.main_window, 'Constraint Cleaner', 'Failed to add a constraint.\nSee console for more information.')
+        ))
         
-        thread.started.connect(worker.process)
-        thread.start()
+        self.thread.started.connect(self.worker.process)
+        self.thread.start()
         
 
 
 class RemoveRedundantWorker(QObject):
     signal_progress = Signal(int)
     signal_done = Signal()
-
-    def __init__(self, parent: QObject) -> None:
-        super().__init__(parent=parent)
+    signal_fail = Signal()
     
     def process(self) -> None:
+        print('Start processing')
 
         progress = 0
 
@@ -67,53 +71,61 @@ class RemoveRedundantWorker(QObject):
         i = 0
         count = len(constraints)
 
-        for constraint in constraints:
-            if not constraint.enabled:
+        try:
+
+            for constraint in constraints:
+                if not constraint.enabled:
+                    i = i + 1
+                    continue
+
+                # test if constraint is redundant
+                va_a = manager.to_virtual(constraint.romA, constraint.addressA)
+                va_b = manager.to_virtual(constraint.romB, constraint.addressB)
+                if va_a == va_b:
+                    print(f'Disable {constraint}')
+                    constraint.enabled = False
+                else:
+                    #print(f'Keep {constraint}')
+                    manager.add_constraint(constraint)
+                    manager.rebuild_relations()
+
                 i = i + 1
-                continue
+                new_progress = (i*50) // count
+                if new_progress != progress:
+                    progress = new_progress
+                    self.signal_progress.emit(new_progress)
 
-            # test if constraint is redundant
-            va_a = manager.to_virtual(constraint.romA, constraint.addressA)
-            va_b = manager.to_virtual(constraint.romB, constraint.addressB)
-            if va_a == va_b:
-                print(f'Disable {constraint}')
-                constraint.enabled = False
-            else:
-                print(f'Keep {constraint}')
-                manager.add_constraint(constraint)
-                manager.rebuild_relations()
+            self.signal_progress.emit(50)
 
-            i = i + 1
-            new_progress = (i*50) // count
-            if new_progress != progress:
-                progress = new_progress
-                self.signal_progress.emit(new_progress)
+            i = 0
+            # Test that there are no disabled constraints that are still needed
+            for constraint in constraints:
+                if constraint.enabled:
+                    i = i + 1
+                    continue
 
-        self.signal_progress.emit(50)
+                # test if constraint is redundant
+                va_a = manager.to_virtual(constraint.romA, constraint.addressA)
+                va_b = manager.to_virtual(constraint.romB, constraint.addressB)
+                if va_a != va_b:
+                    print(f'Need to reenable {constraint}')
+                    constraint.enabled = True
+                    manager.add_constraint(constraint)
+                    manager.rebuild_relations()
 
-        i = 0
-        # Test that there are no disabled constraints that are still needed
-        for constraint in constraints:
-            if constraint.enabled:
                 i = i + 1
-                continue
+                new_progress = (i*50) // count + 50
+                if new_progress != progress:
+                    progress = new_progress
+                    self.signal_progress.emit(new_progress)
 
-            # test if constraint is redundant
-            va_a = manager.to_virtual(constraint.romA, constraint.addressA)
-            va_b = manager.to_virtual(constraint.romB, constraint.addressB)
-            if va_a != va_b:
-                print(f'Need to reenable {constraint}')
-                constraint.enabled = True
-                manager.add_constraint(constraint)
-                manager.rebuild_relations()
+            constraint_database._write_constraints() # TODO add a public method to update changed constraints in the database?
+            constraint_database.constraints_changed.emit()
 
-            i = i + 1
-            new_progress = (i*50) // count + 50
-            if new_progress != progress:
-                progress = new_progress
-                self.signal_progress.emit(new_progress)
+            self.signal_done.emit()
 
-        constraint_database._write_constraints() # TODO add a public method to update changed constraints in the database?
-        constraint_database.constraints_changed.emit()
+        except InvalidConstraintError as e:
+            print(e)
+            self.signal_fail.emit()
 
-        self.signal_done.emit()
+        

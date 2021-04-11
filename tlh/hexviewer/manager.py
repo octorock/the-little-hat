@@ -208,10 +208,26 @@ class HexViewerManager(QObject):
                 new_constraints.append(Constraint(pointer.rom_variant, pointer.points_to-ROM_OFFSET,
                                        variant, points_to-ROM_OFFSET, pointer.certainty, pointer.author, note, enabled))
 
+        # Show dialog if one constraint was new
+        one_enabled = False
+        for constraint in new_constraints:
+            if constraint.enabled:
+                one_enabled = True
+                break
+
+        if one_enabled:
+            # TODO we cannot be sure yet that the one enabled constraint does not interfere with the disabled constraint,
+            # so just enable all constraints again (and disable them later via the constraint cleaner plugin)
+            for constraint in new_constraints:
+                constraint.enabled = True
+
         pointer_database = get_pointer_database()
         pointer_database.add_pointers(new_pointers)
         constraint_database = get_constraint_database()
         constraint_database.add_constraints(new_constraints)
+
+        if one_enabled:
+            QMessageBox.information(self.parent(), 'Add constraints', 'A constraint that changes the relations was added.')
 
     def mark_only_in_one(self, controller: HexViewerController, virtual_address: int, length: int) -> None:
 
