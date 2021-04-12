@@ -135,12 +135,18 @@ class HexAreaWidget (QWidget):
             if offset is not None:
 
                 ctrl = event.modifiers() & Qt.ControlModifier == Qt.ControlModifier
+                shift = event.modifiers() & Qt.ShiftModifier == Qt.ShiftModifier
 
                 if ctrl:
                     # Go to pointer
                     self.signal_go_to_pointer_at_offset.emit(offset)
                     return
 
+                if shift:
+                    # Move selection instead of cursor
+                    self.signal_selection_updated.emit(offset)
+                    self.is_dragging_to_select = True    
+                    return
                 self.signal_cursor_changed.emit(offset)
                 self.is_dragging_to_select = True
 
