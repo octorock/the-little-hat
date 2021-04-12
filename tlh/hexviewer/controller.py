@@ -92,7 +92,9 @@ class HexViewerController(QObject):
                   self.copy_selected_bytes, context=Qt.WidgetWithChildrenShortcut)
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_A), self.dock,
                   self.mark_as_all_pointer, context=Qt.WidgetWithChildrenShortcut)
-        QShortcut(QKeySequence(Qt.Key_4), self.dock, self.select_four_bytes,
+        QShortcut(QKeySequence(Qt.Key_4), self.dock, lambda:self.update_selected_bytes(4),
+                  context=Qt.WidgetWithChildrenShortcut)
+        QShortcut(QKeySequence(Qt.Key_8), self.dock, lambda:self.update_selected_bytes(8),
                   context=Qt.WidgetWithChildrenShortcut)
 
         self.pointers: PointerList = None
@@ -534,8 +536,6 @@ class HexViewerController(QObject):
     def add_new_annotation(self, annotation: Annotation) -> None:
         get_annotation_database().add_annotation(annotation)
 
-    def select_four_bytes(self) -> None:
-        self.update_selected_bytes(4)
 
     def open_new_constraint_dialog(self):
         address = self.cursor
