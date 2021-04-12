@@ -63,6 +63,10 @@ class MainWindow(QMainWindow):
         # Restore layout
         self.load_layout(settings.get_session_layout())
 
+
+        if settings.is_always_load_symbols():
+            self.load_symbols(True)
+
     def closeEvent(self, event):
         layout = Layout('', self.saveState(), self.saveGeometry(),
                         self.dock_manager.save_state())
@@ -156,12 +160,20 @@ class MainWindow(QMainWindow):
         self.ui.actionEU.setDisabled(get_rom(RomVariant.EU) is None)
 
     def slot_load_symbols(self):
+        self.load_symbols(False)
+
+    def load_symbols(self, silent: bool) -> None:
         map_file = path.join(settings.get_repo_location(), 'tmc.map')
         if not path.isfile(map_file):
-            QMessageBox.critical(self, 'Load symbols from .map file', f'Could not find tmc.map file at {map_file}.')
+            if silent:
+                print(f'Could not find tmc.map file at {map_file}.')    
+            else:
+                QMessageBox.critical(self, 'Load symbols from .map file', f'Could not find tmc.map file at {map_file}.')
             return
         load_symbols_from_map(map_file)
-        QMessageBox.information(self, 'Load symbols', 'Successfully loaded symbols for USA rom from tmc.map file.')
+        if not silent:
+            QMessageBox.information(self, 'Load symbols', 'Successfully loaded symbols for USA rom from tmc.map file.')
+
 
 
 def run():

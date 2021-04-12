@@ -6,6 +6,7 @@ import multiprocessing
 from typing import Optional
 settings = QSettings('octorock', 'the-little-hat')
 
+# TODO introduce caching of settings values
 
 # General
 def get_username():
@@ -43,8 +44,32 @@ def get_tidy_command():
 def set_tidy_command(command):
     settings.setValue('tidy_command', command)
 
-# ROMs
+def get_default_selection_size() -> int:
+    return int(settings.value('default_selection_size', 1))
 
+def set_default_selection_size(size: int) -> None:
+    settings.setValue('default_selection_size', size)
+
+def is_always_load_symbols() -> bool:
+    return str(settings.value('always_load_symbols', False)).lower() == 'true'
+
+def set_always_load_symbols(load_symbols: bool) -> None:
+    settings.setValue('always_load_symbols', load_symbols)
+
+def is_highlight_8_bytes() -> bool:
+    return str(settings.value('highlight_8_bytes', False)).lower() == 'true'
+
+def set_highlight_8_bytes(highlight: bool) -> None:
+    settings.setValue('highlight_8_bytes', highlight)
+
+def get_bytes_per_line() -> int:
+    return int(settings.value('bytes_per_line', 16))
+
+def set_bytes_per_line(bytes_per_line: int) -> None:
+    settings.setValue('bytes_per_line', bytes_per_line)
+
+
+# ROMs
 
 def get_rom(variant: RomVariant) -> Optional[str]:
     if variant == RomVariant.USA:

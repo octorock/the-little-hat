@@ -57,6 +57,8 @@ class HexViewerController(QObject):
         self.diff_color = QColor(158, 80, 88)  # QColor(244, 108, 117)
         self.pointer_color = QColor(68, 69, 34)
         self.default_annotation_color = QColor(50, 180, 50)
+        self.default_selection_size = settings.get_default_selection_size()
+        self.highlight_8_bytes = settings.is_highlight_8_bytes()
 
         self.setup_scroll_bar()
         self.scroll_bar.valueChanged.connect(self.slot_scroll_bar_changed)
@@ -200,7 +202,7 @@ class HexViewerController(QObject):
             background = self.pointer_color
         elif self.diff_calculator.is_diffing(virtual_address):
             background = self.diff_color
-        elif byte_value == 8: # Make visual pointer detection easier
+        elif self.highlight_8_bytes and byte_value == 8: # Make visual pointer detection easier
             background = QColor(0, 40, 0)
 
         display_byte = DisplayByte(
@@ -271,9 +273,8 @@ class HexViewerController(QObject):
         self.cursor = virtual_address
         self.update_status_bar()
         self.update_hex_area()
-        # TODO change to 1 once finished annotating pointers
-        if self.selected_bytes != 4:
-            self.update_selected_bytes(4)
+        if self.selected_bytes != self.default_selection_size:
+            self.update_selected_bytes(self.default_selection_size)
 
     def slot_update_cursor_from_offset(self, offset: int) -> None:
         self.update_cursor(self.start_offset + offset)

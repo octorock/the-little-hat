@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>585</width>
-    <height>289</height>
+    <width>596</width>
+    <height>421</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,17 +29,94 @@
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <layout class="QFormLayout" name="formLayout_3">
-         <item row="0" column="0">
+         <item row="1" column="0">
           <widget class="QLabel" name="label_9">
            <property name="text">
             <string>Username</string>
            </property>
+           <property name="buddy">
+            <cstring>lineEditUserName</cstring>
+           </property>
           </widget>
          </item>
-         <item row="0" column="1">
+         <item row="1" column="1">
           <widget class="QLineEdit" name="lineEditUserName">
            <property name="toolTip">
             <string>Username that is stored with changes</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QCheckBox" name="checkBoxAlwaysLoadSymbols">
+           <property name="toolTip">
+            <string>Always loads the symbols from the tmc.map file at the start of the program</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_12">
+           <property name="text">
+            <string>Always load symbols</string>
+           </property>
+           <property name="buddy">
+            <cstring>checkBoxAlwaysLoadSymbols</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_14">
+           <property name="text">
+            <string>Default selection size</string>
+           </property>
+           <property name="buddy">
+            <cstring>spinBoxDefaultSelectionSize</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QSpinBox" name="spinBoxDefaultSelectionSize">
+           <property name="toolTip">
+            <string>Changes the number of bytes that are selected with every click (Requires restart)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="label_15">
+           <property name="text">
+            <string>Highlight 0x08 bytes</string>
+           </property>
+           <property name="buddy">
+            <cstring>checkBoxHighlight8Bytes</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QCheckBox" name="checkBoxHighlight8Bytes">
+           <property name="toolTip">
+            <string>Highlights all 0x08 bytes (Requires restart)</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <widget class="QSpinBox" name="spinBoxBytesPerLine">
+           <property name="toolTip">
+            <string>Number of bytes that are displayed in one line (Requires restart)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="label_16">
+           <property name="text">
+            <string>Bytes per line</string>
+           </property>
+           <property name="buddy">
+            <cstring>spinBoxBytesPerLine</cstring>
            </property>
           </widget>
          </item>
@@ -51,15 +128,25 @@
           <string>Builder</string>
          </property>
          <layout class="QGridLayout" name="gridLayout">
-          <item row="3" column="1">
-           <widget class="QLineEdit" name="lineEditTidyCommand"/>
+          <item row="0" column="2">
+           <widget class="QToolButton" name="toolButtonRepoLocation">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="label_3">
             <property name="text">
              <string>Build Command</string>
             </property>
+            <property name="buddy">
+             <cstring>lineEditBuildCommand</cstring>
+            </property>
            </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="lineEditTidyCommand"/>
           </item>
           <item row="2" column="1">
            <widget class="QLineEdit" name="lineEditBuildCommand"/>
@@ -67,24 +154,23 @@
           <item row="0" column="1">
            <widget class="QLineEdit" name="lineEditRepoLocation"/>
           </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_2">
-            <property name="text">
-             <string>Repository Location</string>
-            </property>
-           </widget>
-          </item>
           <item row="3" column="0">
            <widget class="QLabel" name="label_4">
             <property name="text">
              <string>Tidy Command</string>
             </property>
+            <property name="buddy">
+             <cstring>lineEditTidyCommand</cstring>
+            </property>
            </widget>
           </item>
-          <item row="0" column="2">
-           <widget class="QToolButton" name="toolButtonRepoLocation">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_2">
             <property name="text">
-             <string>...</string>
+             <string>Repository Location</string>
+            </property>
+            <property name="buddy">
+             <cstring>lineEditRepoLocation</cstring>
             </property>
            </widget>
           </item>
@@ -129,12 +215,18 @@
          <property name="text">
           <string>USA (DEMO)</string>
          </property>
+         <property name="buddy">
+          <cstring>lineEditRomDemo</cstring>
+         </property>
         </widget>
        </item>
        <item row="4" column="0">
         <widget class="QLabel" name="label_7">
          <property name="text">
           <string>EU</string>
+         </property>
+         <property name="buddy">
+          <cstring>lineEditRomEu</cstring>
          </property>
         </widget>
        </item>
@@ -143,12 +235,18 @@
          <property name="text">
           <string>USA</string>
          </property>
+         <property name="buddy">
+          <cstring>lineEditRomUsa</cstring>
+         </property>
         </widget>
        </item>
        <item row="5" column="0">
         <widget class="QLabel" name="label_8">
          <property name="text">
           <string>JP</string>
+         </property>
+         <property name="buddy">
+          <cstring>lineEditRomJp</cstring>
          </property>
         </widget>
        </item>
@@ -229,8 +327,8 @@ Use / to define submenus</string>
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>549</width>
-            <height>181</height>
+            <width>560</width>
+            <height>313</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayoutPlugins">
@@ -312,6 +410,28 @@ Use / to define submenus</string>
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>lineEditUserName</tabstop>
+  <tabstop>spinBoxDefaultSelectionSize</tabstop>
+  <tabstop>checkBoxAlwaysLoadSymbols</tabstop>
+  <tabstop>checkBoxHighlight8Bytes</tabstop>
+  <tabstop>spinBoxBytesPerLine</tabstop>
+  <tabstop>lineEditRepoLocation</tabstop>
+  <tabstop>toolButtonRepoLocation</tabstop>
+  <tabstop>lineEditBuildCommand</tabstop>
+  <tabstop>lineEditTidyCommand</tabstop>
+  <tabstop>lineEditRomUsa</tabstop>
+  <tabstop>toolButtonUsa</tabstop>
+  <tabstop>lineEditRomDemo</tabstop>
+  <tabstop>toolButtonDemo</tabstop>
+  <tabstop>lineEditRomEu</tabstop>
+  <tabstop>toolButtonEu</tabstop>
+  <tabstop>lineEditRomJp</tabstop>
+  <tabstop>toolButtonJp</tabstop>
+  <tabstop>listLayouts</tabstop>
+  <tabstop>scrollArea</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
@@ -321,8 +441,8 @@ Use / to define submenus</string>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>254</x>
+     <y>414</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -337,8 +457,8 @@ Use / to define submenus</string>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>322</x>
+     <y>414</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>

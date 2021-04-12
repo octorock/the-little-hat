@@ -97,6 +97,12 @@ class SettingsDialog(QDialog):
 
     def setup_general_tab(self):
         self.ui.lineEditUserName.setText(settings.get_username())
+
+        self.ui.spinBoxDefaultSelectionSize.setValue(settings.get_default_selection_size())
+        self.ui.checkBoxAlwaysLoadSymbols.setChecked(settings.is_always_load_symbols())
+        self.ui.checkBoxHighlight8Bytes.setChecked(settings.is_highlight_8_bytes())
+        self.ui.spinBoxBytesPerLine.setValue(settings.get_bytes_per_line())
+
         self.ui.lineEditRepoLocation.setText(settings.get_repo_location())
         self.ui.toolButtonRepoLocation.clicked.connect(self.edit_repo_location)
         self.ui.lineEditBuildCommand.setText(settings.get_build_command())
@@ -193,6 +199,10 @@ class SettingsDialog(QDialog):
     def save_settings(self):
         # General
         settings.set_username(self.ui.lineEditUserName.text())
+        settings.set_default_selection_size(self.ui.spinBoxDefaultSelectionSize.value())
+        settings.set_always_load_symbols(self.ui.checkBoxAlwaysLoadSymbols.isChecked())
+        settings.set_highlight_8_bytes(self.ui.checkBoxHighlight8Bytes.isChecked())
+        settings.set_bytes_per_line(self.ui.spinBoxBytesPerLine.value())
         settings.set_repo_location(self.ui.lineEditRepoLocation.text())
         settings.set_build_command(self.ui.lineEditBuildCommand.text())
         settings.set_tidy_command(self.ui.lineEditTidyCommand.text())

@@ -46,7 +46,7 @@ class HexAreaWidget (QWidget):
 
         self.line_height = 18
         self.byte_width = 25
-        self.bytes_per_line = 16
+        self.bytes_per_line = settings.get_bytes_per_line()
 
         self.label_offset_x = 5
         self.label_length = 100
