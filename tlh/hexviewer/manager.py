@@ -3,7 +3,7 @@ from typing import Optional
 from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QMessageBox
 from tlh import settings
-from tlh.const import ROM_OFFSET, RomVariant
+from tlh.const import ROM_OFFSET, ROM_SIZE, RomVariant
 from tlh.data.constraints import Constraint, ConstraintManager
 from tlh.data.database import get_constraint_database, get_pointer_database
 from tlh.data.pointer import Pointer
@@ -48,7 +48,8 @@ class HexViewerManager(QObject):
         controller.signal_selection_updated.connect(
             self.slot_update_linked_selection)
         controller.signal_pointer_discovered.connect(
-            self.add_pointers_and_constraints)
+            self.slot_add_pointers_and_constraints)
+        controller.signal_multiple_pointers_discovered.connect(lambda a,b:self.slot_multiple_pointers_discovered(controller, a, b))
         controller.signal_only_in_current_marked.connect(
             lambda x, y: self.mark_only_in_one(controller, x, y))
 
@@ -175,8 +176,16 @@ class HexViewerManager(QObject):
         for controller in self.linked_controllers:
             controller.set_selected_bytes(selected_bytes)
 
-    def add_pointers_and_constraints(self, pointer: Pointer) -> None:
-        # Found a pointer that is the same for all variants
+    def slot_add_pointers_and_constraints(self, pointer: Pointer) -> None:
+        if self.add_pointers_and_constraints(pointer):
+            QMessageBox.information(self.parent(), 'Add constraints', 'A constraint that changes the relations was added.')
+
+    def add_pointers_and_constraints(self, pointer: Pointer) -> bool:
+        """
+        Add a pointer that is the same for all variants and the resulting constraints.
+        Returns true if the constraint changes the relations between the files.
+        """
+        # Found
 
         new_pointers = [pointer]
         new_constraints = []
@@ -226,8 +235,25 @@ class HexViewerManager(QObject):
         constraint_database = get_constraint_database()
         constraint_database.add_constraints(new_constraints)
 
-        if one_enabled:
-            QMessageBox.information(self.parent(), 'Add constraints', 'A constraint that changes the relations was added.')
+        return one_enabled
+
+    def slot_multiple_pointers_discovered(self, controller: HexViewerController, base_address: int, count: int) -> None:
+        print(base_address)
+        for i in range(0, count):
+            address = base_address + i * 4
+            points_to = controller.get_as_pointer(address)
+
+            if points_to < ROM_OFFSET or points_to > ROM_OFFSET + ROM_SIZE:
+                        QMessageBox.critical(self.parent(), 'Add pointer and constraints', f'Address {hex(points_to)} is not inside the rom.')
+                        return
+            pointer = Pointer(controller.rom_variant, controller.address_resolver.to_local(
+                address), points_to, 5, settings.get_username())
+            
+            if self.add_pointers_and_constraints(pointer):
+                if not QMessageBox.question(self.parent(), 'Add pointer and constraints', 'A constraint that changes the relations was added.\nDo you want to continue adding the rest of the pointers?') == QMessageBox.Yes:
+                    return
+
+
 
     def mark_only_in_one(self, controller: HexViewerController, virtual_address: int, length: int) -> None:
 

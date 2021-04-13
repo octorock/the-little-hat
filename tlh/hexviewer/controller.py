@@ -32,6 +32,7 @@ class HexViewerController(QObject):
     signal_cursor_moved = Signal(int)
     signal_selection_updated = Signal(int)
     signal_pointer_discovered = Signal(Pointer)
+    signal_multiple_pointers_discovered = Signal(int, int)
     signal_only_in_current_marked = Signal(int, int)
 
     def __init__(self, dock: HexViewerDock, rom_variant: RomVariant, rom: Rom) -> None:
@@ -504,17 +505,8 @@ class HexViewerController(QObject):
                 base_address = self.cursor
                 if self.selected_bytes <0:
                     base_address += self.selected_bytes + 1
-                print(base_address)
-                for i in range(0, abs(self.selected_bytes)//4):
-                    address = base_address + i * 4
-                    points_to = self.get_as_pointer(address)
 
-                    if points_to < ROM_OFFSET or points_to > ROM_OFFSET + ROM_SIZE:
-                                QMessageBox.critical(self.dock, 'Add pointer and constraints', f'Address {hex(points_to)} is not inside the rom.')
-                                return
-                    pointer = Pointer(self.rom_variant, self.address_resolver.to_local(
-                        address), points_to, 5, settings.get_username())
-                    self.signal_pointer_discovered.emit(pointer)
+                self.signal_multiple_pointers_discovered.emit(base_address, abs(self.selected_bytes)//4)
 
     def add_new_pointer_and_constraints(self, pointer: Pointer) -> None:
         if pointer.points_to < ROM_OFFSET or pointer.points_to > ROM_OFFSET + ROM_SIZE:
