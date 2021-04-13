@@ -250,7 +250,7 @@ class HexViewerManager(QObject):
                 address), points_to, 5, settings.get_username())
             
             if self.add_pointers_and_constraints(pointer):
-                if not QMessageBox.question(self.parent(), 'Add pointer and constraints', 'A constraint that changes the relations was added.\nDo you want to continue adding the rest of the pointers?') == QMessageBox.Yes:
+                if i == count -1 or not QMessageBox.question(self.parent(), 'Add pointer and constraints', 'A constraint that changes the relations was added.\nDo you want to continue adding the rest of the pointers?') == QMessageBox.Yes:
                     return
 
 
