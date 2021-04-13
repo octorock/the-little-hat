@@ -68,6 +68,11 @@ def get_bytes_per_line() -> int:
 def set_bytes_per_line(bytes_per_line: int) -> None:
     settings.setValue('bytes_per_line', bytes_per_line)
 
+def is_auto_save() -> bool:
+    return str(settings.value('auto_save', True)).lower() == 'true'
+
+def set_auto_save(auto_save: bool) -> None:
+    settings.setValue('auto_save', auto_save)
 
 # ROMs
 

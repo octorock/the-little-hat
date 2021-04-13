@@ -6,7 +6,7 @@ from tlh.data.rom import get_rom
 from tlh.common.ui.layout import Layout
 from tlh.dock_manager import DockManager
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (QApplication, QInputDialog,
                                QMainWindow, QMenu, QMessageBox)
@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (QApplication, QInputDialog,
 from tlh import settings
 from tlh.common.ui.dark_theme import apply_dark_theme
 from tlh.const import RomVariant
-from tlh.data.database import initialize_databases
+from tlh.data.database import initialize_databases, save_all_databases
 from tlh.plugin.loader import load_plugins
 from tlh.settings.ui import SettingsDialog
 from tlh.ui.ui_mainwindow import Ui_MainWindow
@@ -28,9 +28,10 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
+        self.ui.actionSave.triggered.connect(self.slot_save)
         self.ui.actionQuit.triggered.connect(app.quit)
-        self.ui.actionSettings.triggered.connect(self.show_settings_dialog)
-        self.ui.actionAbout.triggered.connect(self.show_about_dialog)
+        self.ui.actionSettings.triggered.connect(self.slot_show_settings_dialog)
+        self.ui.actionAbout.triggered.connect(self.slot_show_about_dialog)
 
         self.update_hex_viewer_actions()
 
@@ -139,7 +140,7 @@ class MainWindow(QMainWindow):
 
             parent.addAction(action)
 
-    def show_settings_dialog(self):
+    def slot_show_settings_dialog(self):
         dialog = SettingsDialog(self)
         dialog.show()
         dialog.finished.connect(self.settings_dialog_closed)
@@ -149,7 +150,7 @@ class MainWindow(QMainWindow):
         self.build_layouts_toolbar()
         self.update_hex_viewer_actions()
 
-    def show_about_dialog(self):
+    def slot_show_about_dialog(self):
         QMessageBox.about(self, 'The Little Hat',
                           'The Little Hat\nVersion: 0.0')  # TODO
 
@@ -174,6 +175,23 @@ class MainWindow(QMainWindow):
         if not silent:
             QMessageBox.information(self, 'Load symbols', 'Successfully loaded symbols for USA rom from tmc.map file.')
 
+
+    def slot_save(self) -> None:
+        save_all_databases()
+
+        # Misuse message dialog as notification https://stackoverflow.com/a/43134238
+        msgbox = QMessageBox(self)
+        msgbox.setWindowTitle('Save')
+        msgbox.setText('Saved pointers, constraints and annotations.')
+        msgbox.setModal(False)
+        msgbox.show()
+
+        # Automatically hide dialog after half a second
+        timer = QTimer(self)
+        timer.timeout.connect(msgbox.close)
+        timer.timeout.connect(timer.stop)
+        timer.timeout.connect(timer.deleteLater)
+        timer.start(500)
 
 
 def run():

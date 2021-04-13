@@ -26,13 +26,15 @@
      <x>0</x>
      <y>0</y>
      <width>541</width>
-     <height>19</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionSave"/>
+    <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuTools">
@@ -135,6 +137,14 @@
   <action name="actionLoadSymbols">
    <property name="text">
     <string>Load Symbols</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="text">
+    <string>Save</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
    </property>
   </action>
  </widget>

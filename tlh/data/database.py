@@ -1,5 +1,6 @@
 from csv import DictReader, DictWriter
 from os import path
+from tlh import settings
 
 from PySide6.QtGui import QColor
 from tlh.data.annotations import Annotation
@@ -45,15 +46,21 @@ class ConstraintDatabase(QObject):
 
     def add_constraint(self, constraint: Constraint) -> None:
         self.constraints.append(constraint)
-        # TODO don't save every time?
-        self._write_constraints()
+        if settings.is_auto_save():
+            self._write_constraints()
+        else:
+            # TODO Mark as dirty?
+            pass
         if constraint.enabled:
             self.constraints_changed.emit()
 
     def add_constraints(self, constraints: list[Constraint]) -> None:
         self.constraints += constraints
-        # TODO don't save every time?
-        self._write_constraints()
+        if settings.is_auto_save():
+            self._write_constraints()
+        else:
+            # TODO Mark as dirty?
+            pass
         for constraint in constraints:
             if constraint.enabled:  # Only emit change if one of the added constraints is enabled
                 self.constraints_changed.emit()
@@ -124,14 +131,20 @@ class PointerDatabase(QObject):
 
     def add_pointer(self, pointer: Pointer) -> None:
         self.pointers.append(pointer)
-        # TODO don't save every time?
-        self._write_pointers()
+        if settings.is_auto_save():
+            self._write_pointers()
+        else:
+            # TODO Mark as dirty?
+            pass
         self.pointers_changed.emit()
 
     def add_pointers(self, pointers: list[Pointer]) -> None:
         self.pointers += pointers
-        # TODO don't save every time?
-        self._write_pointers()
+        if settings.is_auto_save():
+            self._write_pointers()
+        else:
+            # TODO Mark as dirty?
+            pass
         self.pointers_changed.emit()
 
     def _read_pointers(self) -> list[Pointer]:
@@ -194,14 +207,20 @@ class AnnotationDatabase(QObject):
 
     def add_annotation(self, annotation: Annotation) -> None:
         self.annotations.append(annotation)
-        # TODO don't save every time?
-        self._write_annotations()
+        if settings.is_auto_save():
+            self._write_annotations()
+        else:
+            # TODO Mark as dirty?
+            pass
         self.annotations_changed.emit()
 
     def add_annotations(self, annotations: list[Annotation]) -> None:
         self.annotations += annotations
-        # TODO don't save every time?
-        self._write_annotations()
+        if settings.is_auto_save():
+            self._write_annotations()
+        else:
+            # TODO Mark as dirty?
+            pass
         self.annotations_changed.emit()
 
     def _read_annotations(self) -> list[Annotation]:
@@ -243,3 +262,10 @@ class AnnotationDatabase(QObject):
 
 def get_annotation_database() -> AnnotationDatabase:
     return annotation_database_instance
+
+
+
+def save_all_databases() -> None:
+    get_pointer_database()._write_pointers()
+    get_constraint_database()._write_constraints()
+    get_annotation_database()._write_annotations()
