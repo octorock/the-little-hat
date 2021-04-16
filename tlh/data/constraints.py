@@ -59,6 +59,8 @@ class RomRelations:
 
     def clear(self):
         self.relations.clear()
+        self.keys_local.clear()
+        self.keys_virtual.clear()
 
     def get_previous_relation_for_local_address(self, local_address: int) -> RomRelation:
         index = bisect_right(self.keys_local, local_address) - 1

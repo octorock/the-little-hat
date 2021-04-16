@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from tlh import const
 from tlh.data.symbols import get_symbol_at
 from tlh.hexviewer.display_byte import DisplayByte
 from tlh.hexviewer.ui.hex_area import KeyType
@@ -6,7 +7,7 @@ from tlh.data.rom import Rom, get_rom
 from tlh.data.database import get_annotation_database, get_pointer_database, get_constraint_database
 from tlh.data.annotations import AnnotationList, Annotation
 from tlh.data.pointer import Pointer, PointerList
-from tlh.data.constraints import Constraint
+from tlh.data.constraints import Constraint, ConstraintManager, InvalidConstraintError
 from tlh.hexviewer.diff_calculator import AbstractDiffCalculator, NoDiffCalculator
 from PySide6.QtCore import QObject, Signal, QPoint
 from PySide6.QtGui import QBrush, QColor, QKeySequence, QPainter, QShortcut, Qt
@@ -541,6 +542,17 @@ class HexViewerController(QObject):
         dialog.show()
 
     def add_new_constraint(self, constraint: Constraint) -> None:
+        # Check that constraint is valid
+        constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP})
+        constraint_manager.add_all_constraints(
+            get_constraint_database().get_constraints())
+        try:
+            constraint_manager.add_constraint(constraint)
+            constraint_manager.rebuild_relations()
+        except InvalidConstraintError as e:
+            QMessageBox.critical(self.parent(), 'Add constraint', 'Invalid Constraint')
+            return
+
         get_constraint_database().add_constraint(constraint)
 
     def mark_only_in_current(self) -> None:

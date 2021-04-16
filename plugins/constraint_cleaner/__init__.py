@@ -71,61 +71,71 @@ class RemoveRedundantWorker(QObject):
         i = 0
         count = len(constraints)
 
-        try:
 
-            for constraint in constraints:
-                if not constraint.enabled:
-                    i = i + 1
-                    continue
-
-                # test if constraint is redundant
-                va_a = manager.to_virtual(constraint.romA, constraint.addressA)
-                va_b = manager.to_virtual(constraint.romB, constraint.addressB)
-                if va_a == va_b:
-                    print(f'Disable {constraint}')
-                    constraint.enabled = False
-                else:
-                    #print(f'Keep {constraint}')
-                    manager.add_constraint(constraint)
-                    manager.rebuild_relations()
-
+        for constraint in constraints:
+            if not constraint.enabled:
                 i = i + 1
-                new_progress = (i*50) // count
-                if new_progress != progress:
-                    progress = new_progress
-                    self.signal_progress.emit(new_progress)
+                continue
 
-            self.signal_progress.emit(50)
-
-            i = 0
-            # Test that there are no disabled constraints that are still needed
-            for constraint in constraints:
-                if constraint.enabled:
-                    i = i + 1
-                    continue
-
-                # test if constraint is redundant
-                va_a = manager.to_virtual(constraint.romA, constraint.addressA)
-                va_b = manager.to_virtual(constraint.romB, constraint.addressB)
-                if va_a != va_b:
-                    print(f'Need to reenable {constraint}')
-                    constraint.enabled = True
-                    manager.add_constraint(constraint)
+            # test if constraint is redundant
+            va_a = manager.to_virtual(constraint.romA, constraint.addressA)
+            va_b = manager.to_virtual(constraint.romB, constraint.addressB)
+            if va_a == va_b:
+                print(f'Disable {constraint}')
+                constraint.enabled = False
+            else:
+                #print(f'Keep {constraint}')
+                manager.add_constraint(constraint)
+                try:
                     manager.rebuild_relations()
-
-                i = i + 1
-                new_progress = (i*50) // count + 50
-                if new_progress != progress:
-                    progress = new_progress
-                    self.signal_progress.emit(new_progress)
-
-            constraint_database._write_constraints() # TODO add a public method to update changed constraints in the database?
-            constraint_database.constraints_changed.emit()
-
-            self.signal_done.emit()
-
-        except InvalidConstraintError as e:
-            print(e)
-            self.signal_fail.emit()
+                except InvalidConstraintError as e:
+                    print(e)
+                    print(constraint)
+                    self.signal_fail.emit()
+                    return
 
         
+
+            i = i + 1
+            new_progress = (i*50) // count
+            if new_progress != progress:
+                progress = new_progress
+                self.signal_progress.emit(new_progress)
+
+        self.signal_progress.emit(50)
+
+        i = 0
+        # Test that there are no disabled constraints that are still needed
+        for constraint in constraints:
+            if constraint.enabled:
+                i = i + 1
+                continue
+
+            # test if constraint is redundant
+            va_a = manager.to_virtual(constraint.romA, constraint.addressA)
+            va_b = manager.to_virtual(constraint.romB, constraint.addressB)
+            if va_a != va_b:
+                print(f'Need to reenable {constraint}')
+                constraint.enabled = True
+                manager.add_constraint(constraint)
+                try:
+                    manager.rebuild_relations()
+                except InvalidConstraintError as e:
+                    print(e)
+                    print(constraint)
+                    self.signal_fail.emit()
+                    return
+
+        
+
+            i = i + 1
+            new_progress = (i*50) // count + 50
+            if new_progress != progress:
+                progress = new_progress
+                self.signal_progress.emit(new_progress)
+
+        constraint_database._write_constraints() # TODO add a public method to update changed constraints in the database?
+        constraint_database.constraints_changed.emit()
+
+        self.signal_done.emit()
+

@@ -266,8 +266,11 @@ class HexViewerManager(QObject):
             
             try:
                 if self.add_pointers_and_constraints(pointer):
-                    if i == count -1 or not QMessageBox.question(self.parent(), 'Add pointer and constraints', 'A constraint that changes the relations was added.\nDo you want to continue adding the rest of the pointers?') == QMessageBox.Yes:
+                    if i == count -1:
+                        QMessageBox.information(self.parent(), 'Add constraints', 'A constraint that changes the relations was added.')
+                    elif QMessageBox.question(self.parent(), 'Add pointer and constraints', 'A constraint that changes the relations was added.\nDo you want to continue adding the rest of the pointers?') != QMessageBox.Yes:
                         return
+
             except InvalidConstraintError as e:
                 QMessageBox.critical(self.parent(), 'Add constraints', 'Invalid Constraint')
                 return
@@ -296,6 +299,15 @@ class HexViewerManager(QObject):
                 constraint = Constraint(
                     rom_variant, local_address, variant, la, certainty, author, note, enabled)
                 new_constraints.append(constraint)
+
+        # Check whether the new constraint is invalid
+        constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP})
+        constraint_manager.add_all_constraints(
+            get_constraint_database().get_constraints())
+        try:
+            constraint_manager.add_all_constraints(new_constraints)
+        except InvalidConstraintError as e:
+            raise e
 
         constraint_database = get_constraint_database()
         constraint_database.add_constraints(new_constraints)
