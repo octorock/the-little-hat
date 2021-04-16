@@ -29,3 +29,9 @@ class PointerList:
         for interval in self.tree.at(index):
             pointers.append(interval.data)
         return pointers
+
+    def append(self, pointer: Pointer) -> None:
+        self.tree.add(Interval(pointer.address, pointer.address+4, pointer))
+
+    def __iter__(self):
+        return map(lambda x: x.data, self.tree.__iter__())

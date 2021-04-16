@@ -112,8 +112,7 @@ class HexViewerController(QObject):
 
     def update_pointers(self):
         pointer_database = get_pointer_database()
-        pointers = pointer_database.get_pointers()
-        self.pointers = PointerList(pointers, self.rom_variant)
+        self.pointers = pointer_database.get_pointers(self.rom_variant)
 
     def slot_update_pointers(self) -> None:
         self.update_pointers()
@@ -152,7 +151,7 @@ class HexViewerController(QObject):
         '''
         Builds the display model for the hex area to paint
         '''
-        #print(f'updating hex area {self.dock.windowTitle()}') # TODO reduce the amount of repaint at the start
+        print(f'updating hex area {self.dock.windowTitle()}') # TODO reduce the amount of repaint at the start
 
         data = self.get_bytes(
             self.start_offset,

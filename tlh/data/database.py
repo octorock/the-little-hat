@@ -6,7 +6,7 @@ from PySide6.QtGui import QColor
 from tlh.data.annotations import Annotation
 
 from PySide6.QtCore import QObject, Signal
-from tlh.data.pointer import Pointer
+from tlh.data.pointer import Pointer, PointerList
 
 from tlh.const import RomVariant
 from tlh.data.constraints import Constraint, ConstraintManager
@@ -124,13 +124,28 @@ class PointerDatabase(QObject):
         if pointer_database_instance is not None:
             raise RuntimeError('Already initialized')
         super().__init__(parent=parent)
-        self.pointers = self._read_pointers()
+        pointers = {
+            RomVariant.USA: [],
+            RomVariant.DEMO: [],
+            RomVariant.EU: [],
+            RomVariant.JP: [],
+        }
 
-    def get_pointers(self) -> list[Pointer]:
-        return self.pointers
+        for pointer in self._read_pointers():
+            pointers[pointer.rom_variant].append(pointer)
+
+        self.pointers = {
+            RomVariant.USA: PointerList(pointers[RomVariant.USA], RomVariant.USA), 
+            RomVariant.DEMO: PointerList(pointers[RomVariant.DEMO], RomVariant.DEMO), 
+            RomVariant.EU: PointerList(pointers[RomVariant.EU], RomVariant.EU), 
+            RomVariant.JP: PointerList(pointers[RomVariant.JP], RomVariant.JP), 
+        }
+
+    def get_pointers(self, rom_variant: RomVariant) -> PointerList:
+        return self.pointers[rom_variant]
 
     def add_pointer(self, pointer: Pointer) -> None:
-        self.pointers.append(pointer)
+        self.pointers[pointer.rom_variant].append(pointer)
         if settings.is_auto_save():
             self._write_pointers()
         else:
@@ -139,7 +154,8 @@ class PointerDatabase(QObject):
         self.pointers_changed.emit()
 
     def add_pointers(self, pointers: list[Pointer]) -> None:
-        self.pointers += pointers
+        for pointer in pointers:
+            self.pointers[pointer.rom_variant].append(pointer)
         if settings.is_auto_save():
             self._write_pointers()
         else:
@@ -173,15 +189,16 @@ class PointerDatabase(QObject):
             writer = DictWriter(
                 file, fieldnames=['rom_variant', 'address', 'points_to', 'certainty', 'author', 'note'])
             writer.writeheader()
-            for pointer in self.pointers:
-                writer.writerow({
-                    'rom_variant': pointer.rom_variant,
-                    'address': hex(pointer.address),
-                    'points_to': hex(pointer.points_to),
-                    'certainty': pointer.certainty,
-                    'author': pointer.author,
-                    'note': pointer.note
-                })
+            for variant in self.pointers:
+                for pointer in self.pointers[variant]:
+                    writer.writerow({
+                        'rom_variant': pointer.rom_variant,
+                        'address': hex(pointer.address),
+                        'points_to': hex(pointer.points_to),
+                        'certainty': pointer.certainty,
+                        'author': pointer.author,
+                        'note': pointer.note
+                    })
 
 
 def get_pointer_database() -> PointerDatabase:

@@ -230,6 +230,7 @@ class HexViewerManager(QObject):
             for constraint in new_constraints:
                 constraint.enabled = True
 
+        print('Adding to database')
         pointer_database = get_pointer_database()
         pointer_database.add_pointers(new_pointers)
         constraint_database = get_constraint_database()
