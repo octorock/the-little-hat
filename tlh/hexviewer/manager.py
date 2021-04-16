@@ -4,7 +4,7 @@ from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QMessageBox
 from tlh import settings
 from tlh.const import ROM_OFFSET, ROM_SIZE, RomVariant
-from tlh.data.constraints import Constraint, ConstraintManager
+from tlh.data.constraints import Constraint, ConstraintManager, InvalidConstraintError
 from tlh.data.database import get_constraint_database, get_pointer_database
 from tlh.data.pointer import Pointer
 from tlh.data.rom import get_rom
@@ -177,8 +177,11 @@ class HexViewerManager(QObject):
             controller.set_selected_bytes(selected_bytes)
 
     def slot_add_pointers_and_constraints(self, pointer: Pointer) -> None:
-        if self.add_pointers_and_constraints(pointer):
-            QMessageBox.information(self.parent(), 'Add constraints', 'A constraint that changes the relations was added.')
+        try:
+            if self.add_pointers_and_constraints(pointer):
+                QMessageBox.information(self.parent(), 'Add constraints', 'A constraint that changes the relations was added.')
+        except InvalidConstraintError as e:
+            QMessageBox.critical(self.parent(), 'Add constraints', 'Invalid Constraint')
 
     def add_pointers_and_constraints(self, pointer: Pointer) -> bool:
         """
@@ -230,6 +233,17 @@ class HexViewerManager(QObject):
             for constraint in new_constraints:
                 constraint.enabled = True
 
+            # Check whether the new constraint is invalid
+            constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP})
+            constraint_manager.add_all_constraints(
+                get_constraint_database().get_constraints())
+            try:
+                constraint_manager.add_all_constraints(new_constraints)
+            except InvalidConstraintError as e:
+                raise e
+
+
+
         print('Adding to database')
         pointer_database = get_pointer_database()
         pointer_database.add_pointers(new_pointers)
@@ -250,9 +264,13 @@ class HexViewerManager(QObject):
             pointer = Pointer(controller.rom_variant, controller.address_resolver.to_local(
                 address), points_to, 5, settings.get_username())
             
-            if self.add_pointers_and_constraints(pointer):
-                if i == count -1 or not QMessageBox.question(self.parent(), 'Add pointer and constraints', 'A constraint that changes the relations was added.\nDo you want to continue adding the rest of the pointers?') == QMessageBox.Yes:
-                    return
+            try:
+                if self.add_pointers_and_constraints(pointer):
+                    if i == count -1 or not QMessageBox.question(self.parent(), 'Add pointer and constraints', 'A constraint that changes the relations was added.\nDo you want to continue adding the rest of the pointers?') == QMessageBox.Yes:
+                        return
+            except InvalidConstraintError as e:
+                QMessageBox.critical(self.parent(), 'Add constraints', 'Invalid Constraint')
+                return
 
 
 

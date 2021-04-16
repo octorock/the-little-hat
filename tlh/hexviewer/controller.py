@@ -98,6 +98,10 @@ class HexViewerController(QObject):
         QShortcut(QKeySequence(Qt.Key_8), self.dock, lambda:self.update_selected_bytes(8),
                   context=Qt.WidgetWithChildrenShortcut)
 
+        # TODO tmp
+        QShortcut(QKeySequence(Qt.Key_Tab), self.dock, lambda:(self.update_cursor(self.cursor+5), self.update_selected_bytes(4)),
+                  context=Qt.WidgetWithChildrenShortcut) # Go to next midi command or whatever
+
         self.pointers: PointerList = None
         self.annotations: AnnotationList = None
 
@@ -151,7 +155,7 @@ class HexViewerController(QObject):
         '''
         Builds the display model for the hex area to paint
         '''
-        print(f'updating hex area {self.dock.windowTitle()}') # TODO reduce the amount of repaint at the start
+        #print(f'updating hex area {self.dock.windowTitle()}') # TODO reduce the amount of repaint at the start
 
         data = self.get_bytes(
             self.start_offset,
