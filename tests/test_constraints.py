@@ -648,4 +648,17 @@ def test_slow_end_constraints():
     add_u_e_constraint(manager, 0xde7da4, 0xef333c)
     manager.rebuild_relations()
 
+
+
+def test_many_relations():
+    # TODO optimize more, so this number can be higher
+    CONSTRAINT_COUNT = 2000
+    manager = ConstraintManager({RomVariant.EU, RomVariant.JP})
+    for i in range(0, CONSTRAINT_COUNT):
+        add_j_e_constraint(manager, i, 2*i)
+    manager.rebuild_relations()
+    for i in range(0, CONSTRAINT_COUNT):
+        assert_j_e_address(manager, 2*i,i,2*i)
+
+
 # endregion

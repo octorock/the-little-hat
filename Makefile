@@ -61,5 +61,9 @@ endif
 
 test:
 	# for issues see https://docs.pytest.org/en/stable/goodpractices.html#tests-outside-application-code
-	python -m pytest
+ifeq ($(OS),Windows_NT)
+	venv/Scripts/activate; python -m pytest
+else
+	. venv/bin/activate; python -m pytest
+endif
 .PHONY: init clean tidy run test
