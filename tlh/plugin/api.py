@@ -3,7 +3,7 @@
 
 from tlh.common.ui.progress_dialog import ProgressDialog
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMainWindow
+from PySide6.QtWidgets import QMainWindow, QMessageBox
 
 
 class PluginApi:
@@ -20,3 +20,13 @@ class PluginApi:
 
     def get_progress_dialog(self, title: str, text: str, abortable: bool) -> ProgressDialog:
         return ProgressDialog(self.main_window, title, text, abortable)
+
+
+    def show_message(self, title: str, text: str) -> None:
+        QMessageBox.information(self.main_window, title, text)
+
+    def show_warning(self, title: str, text: str) -> None:
+        QMessageBox.warning(self.main_window, title, text)
+
+    def show_error(self, title: str, text: str) -> None:
+        QMessageBox.critical(self.main_window, title, text)

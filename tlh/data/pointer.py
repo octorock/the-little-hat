@@ -1,6 +1,4 @@
 from dataclasses import dataclass
-
-import intervaltree
 from tlh.const import RomVariant
 from intervaltree import IntervalTree, Interval
 
