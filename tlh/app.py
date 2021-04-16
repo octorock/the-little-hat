@@ -7,9 +7,9 @@ from tlh.common.ui.layout import Layout
 from tlh.dock_manager import DockManager
 
 from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QAction, QIcon
+from PySide6.QtGui import QAction, QIcon, QPixmap
 from PySide6.QtWidgets import (QApplication, QInputDialog,
-                               QMainWindow, QMenu, QMessageBox)
+                               QMainWindow, QMenu, QMessageBox, QSplashScreen)
 
 from tlh import settings
 from tlh.common.ui.dark_theme import apply_dark_theme
@@ -204,7 +204,16 @@ def run():
     app = QApplication(arguments)
     apply_dark_theme(app)
 
+    # Show splash screen
+    pixmap = QPixmap(':/icons/splash.png')
+    splash = QSplashScreen(pixmap)
+    splash.setWindowTitle('The Little Hat')
+    splash.showMessage('loading...', alignment=Qt.AlignBottom | Qt.AlignCenter, color=Qt.white)
+    splash.show()
+    app.processEvents()
+
     window = MainWindow(app)
 
     window.show()
+    splash.finish(window)
     return app.exec_()
