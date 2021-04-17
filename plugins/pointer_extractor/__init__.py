@@ -1,4 +1,8 @@
-from tlh.const import RomVariant
+from operator import le
+from tlh.data.pointer import Pointer
+from sortedcontainers.sortedlist import SortedKeyList
+from tlh.data.symbols import are_symbols_loaded, get_symbol_at
+from tlh.const import ROM_OFFSET, RomVariant
 from tlh.data.database import get_pointer_database
 from tlh.plugin.api import PluginApi
 import os
@@ -12,6 +16,9 @@ class Incbin:
     address: int = 0
     length: int = 0
     file: str = ''
+
+def incbin_line(addr, length) -> str:
+    return f'\t.incbin "baserom.gba", {"{0:#08x}".format(addr).upper().replace("0X", "0x")}, {"{0:#09x}".format(length).upper().replace("0X", "0x")}\n'
 
 
 class PointerExtractorPlugin:
@@ -65,9 +72,13 @@ class PointerExtractorPlugin:
             #return
             self.slot_parse_incbins()
 
+        if not are_symbols_loaded():
+            self.api.show_error('Pointer Extractor', 'Symbols for USA rom need to be loaded first')
+            return
+
         pointers = get_pointer_database().get_pointers(RomVariant.USA)
 
-        to_extract: dict[str, SortedList] = {}
+        to_extract: dict[str, SortedKeyList[Pointer]] = {}
 
         for pointer in pointers:
             found = self.incbins.at(pointer.address)
@@ -76,15 +87,15 @@ class PointerExtractorPlugin:
                 file = interval.data
 
                 if not file in to_extract:
-                    to_extract[file] = SortedList()
+                    to_extract[file] = SortedKeyList(key=lambda x:x.address)
 
-                to_extract[file].add(pointer.address)
+                to_extract[file].add(pointer)
 #                print(hex(pointer.address))
                 #print(found.pop())
             elif len(found) > 1:
                 print(f'Found {len(found)} incbins for address {pointer.address}')
         
-        #print(to_extract)
+        # Count unextracted pointers
         count = 0
         for file in to_extract:
             print(f'{file}: {len(to_extract[file])}')
@@ -92,3 +103,90 @@ class PointerExtractorPlugin:
 
         self.api.show_message('Pointer Extractor', f'{count} unextracted pointers found')
         print(count)
+
+
+        # Find symbols that unextracted pointers point to
+        missing_labels = {}
+        count = 0
+        for file in to_extract:
+            for pointer in to_extract[file]:
+
+                symbol = get_symbol_at(pointer.points_to - ROM_OFFSET)
+                offset = pointer.points_to - ROM_OFFSET - symbol.address
+                if offset > 1: # Offset 1 is ok for function pointers
+                    if symbol.file not in missing_labels:
+                        missing_labels[symbol.file] = []
+                    # Missing label
+                    missing_labels[symbol.file].append((symbol.name, offset))
+                    count += 1
+                    continue
+
+        print(f'{count} missing labels')
+        for file in missing_labels:
+            print(f'{file}: {len(missing_labels[file])}')
+
+        # Extract pointers
+        for path in to_extract:
+            output_lines = []
+            pointers = to_extract[path]
+            next_pointer = pointers.pop(0)
+            with open(path, 'r') as file:
+                for line in file:
+                    if next_pointer is not None and line.strip().startswith('.incbin "baserom.gba"'):
+                        arr = line.split(',')
+                        if len(arr) == 3:
+                            addr = int(arr[1], 16)
+                            length = int(arr[2], 16)
+
+                            while next_pointer.address >= addr and next_pointer.address < addr+length:
+                                # Pointer is in this incbin
+                                symbol = get_symbol_at(next_pointer.points_to - ROM_OFFSET)
+                                offset = next_pointer.points_to - ROM_OFFSET - symbol.address
+                                if offset > 1:
+                                    # Missing label
+                                    if len(pointers) == 0: # Extracted all pointers
+                                        next_pointer = None
+                                        break
+                                    next_pointer = pointers.pop(0)
+                                    continue
+
+                                # Calculate new incbins
+                                prev_addr = addr
+                                prev_length = next_pointer.address - addr
+                                after_addr = next_pointer.address + 4
+                                after_length = addr+length - after_addr
+                                if after_length < 0:
+                                    message = f'Pointer at {hex(next_pointer.address)} crosses over from incbin at {hex(addr)}'
+                                    print(path)
+                                    print(after_length)
+                                    print(message)
+                                    self.api.show_error('Pointer Extractor', message)
+                                    return
+
+                                if prev_length > 0:
+                                    # print the incbin
+                                    output_lines.append(incbin_line(prev_addr, prev_length))
+                                
+                                # Print the pointer
+                                output_lines.append(f'\t.4byte {symbol.name}\n')
+
+
+                                addr = after_addr
+                                length = after_length
+
+                                if len(pointers) == 0: # Extracted all pointers
+                                    next_pointer = None
+                                    break
+                                next_pointer = pointers.pop(0)
+
+                            if length > 0:
+                                output_lines.append(incbin_line(addr, length))
+                            continue
+
+                    output_lines.append(line)
+
+            with open(path, 'w') as file:
+                file.writelines(output_lines)
+            #print(''.join(output_lines))
+            #self.api.show_message('Pointer Extractor', f'write file {path}')
+
