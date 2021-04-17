@@ -7,3 +7,4 @@ Maybe something is reordered in the roms?"
 EU,0x13a004,284,#32b432,octorock,"Not all of these pointers can be resolved without conflicts
 Investigate"
 USA,0x8efde,4,#32b432,octorock,TODO is this a pointer?
+USA,0x109220,16,#32b432,octorock,TODO pointers that create invalid constraints

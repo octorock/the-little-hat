@@ -411,6 +411,14 @@ class HexViewerController(QObject):
                 selection = 1
             # TODO file bounds
             self.update_selected_bytes(selection)
+        elif key == KeyType.UP:
+            selection = self.selected_bytes - self.area.bytes_per_line
+            # TODO passing 0, file bounds
+            self.update_selected_bytes(selection)
+        elif key == KeyType.DOWN:
+            selection = self.selected_bytes + self.area.bytes_per_line
+            # TODO passing 0, file bounds
+            self.update_selected_bytes(selection)
         else:
             # TODO
             pass

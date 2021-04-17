@@ -156,14 +156,14 @@ class PointerExtractorPlugin:
                             addr = int(arr[1], 16)
                             length = int(arr[2], 16)
 
-                            while next_label.address < addr:
+                            while next_label is not None and next_label.address < addr:
                                 if len(labels) == 0: # Extracted all labels
                                     next_label = None
                                     break
                                 next_label = labels.pop(0)
                                 continue
 
-                            while next_label.address >= addr and next_label.address < addr+length:
+                            while next_label is not None and next_label.address >= addr and next_label.address < addr+length:
                                 # Calculate new incbins
                                 prev_addr = addr
                                 prev_length = next_label.address - addr
@@ -274,5 +274,5 @@ class PointerExtractorPlugin:
             with open(path, 'w') as file:
                 file.writelines(output_lines)
             #print(''.join(output_lines))
-            #self.api.show_message('Pointer Extractor', f'write file {path}')
+        self.api.show_message('Pointer Extractor', f'Done extracting pointers')
 
