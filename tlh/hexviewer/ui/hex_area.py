@@ -23,6 +23,8 @@ class KeyType(Enum):
     RIGHT = 4
     PAGE_UP = 5
     PAGE_DOWN = 6
+    HOME = 7
+    END = 8
 
 
 class HexAreaWidget (QWidget):
@@ -203,6 +205,16 @@ class HexAreaWidget (QWidget):
                 self.signal_key_selection_pressed.emit(KeyType.PAGE_DOWN)
             else:
                 self.signal_key_cursor_pressed.emit(KeyType.PAGE_DOWN)
+        elif key == Qt.Key_Home:
+            if shift:
+                self.signal_key_selection_pressed.emit(KeyType.HOME)
+            else:
+                self.signal_key_cursor_pressed.emit(KeyType.HOME)
+        elif key == Qt.Key_End:
+            if shift:
+                self.signal_key_selection_pressed.emit(KeyType.END)
+            else:
+                self.signal_key_cursor_pressed.emit(KeyType.END)
 
     def event(self, event: QEvent) -> bool:
         if event.type() == QEvent.ToolTip:

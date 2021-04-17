@@ -6,3 +6,4 @@ EU,0x131810,4,#32b432,octorock,"TODO why do these create invalid constraints?
 Maybe something is reordered in the roms?"
 EU,0x13a004,284,#32b432,octorock,"Not all of these pointers can be resolved without conflicts
 Investigate"
+USA,0x8efde,4,#32b432,octorock,TODO is this a pointer?

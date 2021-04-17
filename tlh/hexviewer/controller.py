@@ -102,7 +102,7 @@ class HexViewerController(QObject):
         # TODO tmp
         QShortcut(QKeySequence(Qt.Key_Tab), self.dock, lambda:(self.update_cursor(self.cursor+5), self.update_selected_bytes(4)),
                   context=Qt.WidgetWithChildrenShortcut) # Go to next midi command or whatever
-        QShortcut(QKeySequence(Qt.Key_W), self.dock, lambda:(self.update_cursor(self.cursor+28), self.update_selected_bytes(8)),
+        QShortcut(QKeySequence(Qt.Key_W), self.dock, lambda:(self.update_cursor(self.cursor+12), self.update_selected_bytes(4)),
                   context=Qt.WidgetWithChildrenShortcut)
 
         self.pointers: PointerList = None
@@ -393,6 +393,10 @@ class HexViewerController(QObject):
             page_bytes = (self.area.number_of_lines_on_screen()-1) * \
                 self.area.bytes_per_line
             self.update_cursor(self.cursor + page_bytes)
+        elif key == KeyType.HOME:
+            self.update_cursor(self.cursor - self.cursor % self.area.bytes_per_line)
+        elif key == KeyType.END:
+            self.update_cursor(self.cursor - self.cursor % self.area.bytes_per_line + self.area.bytes_per_line - 1)
 
     def slot_key_selection_pressed(self, key: KeyType) -> None:
         if key == KeyType.LEFT:
