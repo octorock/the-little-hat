@@ -1,4 +1,4 @@
-from operator import le
+from operator import add, le
 from tlh.data.pointer import Pointer
 from sortedcontainers.sortedlist import SortedKeyList
 from tlh.data.symbols import are_symbols_loaded, get_symbol_at
@@ -15,6 +15,13 @@ from sortedcontainers import SortedList
 class Incbin:
     address: int = 0
     length: int = 0
+    file: str = ''
+
+@dataclass(frozen=True, eq=True) # To make it hashable https://stackoverflow.com/a/52390734
+class MissingLabel:
+    address: int = 0
+    symbol: str = ''
+    offset: int = 0
     file: str = ''
 
 def incbin_line(addr, length) -> str:
@@ -115,15 +122,94 @@ class PointerExtractorPlugin:
                 offset = pointer.points_to - ROM_OFFSET - symbol.address
                 if offset > 1: # Offset 1 is ok for function pointers
                     if symbol.file not in missing_labels:
-                        missing_labels[symbol.file] = []
-                    # Missing label
-                    missing_labels[symbol.file].append((symbol.name, offset))
-                    count += 1
+                        missing_labels[symbol.file] = SortedKeyList(key=lambda x:x.address)
+                    # Insert Missing label if there is not already one
+                    label = MissingLabel(pointer.points_to - ROM_OFFSET, symbol.name, offset, symbol.file)
+                    if label not in missing_labels[symbol.file]:
+                        missing_labels[symbol.file].add(label)
+                        count += 1
                     continue
 
         print(f'{count} missing labels')
         for file in missing_labels:
             print(f'{file}: {len(missing_labels[file])}')
+
+
+        # Insert labels for incbins
+        for path in missing_labels:
+            output_lines = []
+            labels = missing_labels[path]
+            next_label = labels.pop(0)
+
+            # Try to find source assembly file
+            asm_path = os.path.join(settings.get_repo_location(), path.replace('.o', '.s'))
+            if not os.path.isfile(asm_path):
+                print(f'Cannot insert labels in {path}')
+                print(missing_labels[path])
+                continue
+
+            with open(asm_path, 'r') as file:
+                for line in file:
+                    if next_label is not None and line.strip().startswith('.incbin "baserom.gba"'):
+                        arr = line.split(',')
+                        if len(arr) == 3:
+                            addr = int(arr[1], 16)
+                            length = int(arr[2], 16)
+
+                            while next_label.address < addr:
+                                if len(labels) == 0: # Extracted all labels
+                                    next_label = None
+                                    break
+                                next_label = labels.pop(0)
+                                continue
+
+                            while next_label.address >= addr and next_label.address < addr+length:
+                                # Calculate new incbins
+                                prev_addr = addr
+                                prev_length = next_label.address - addr
+                                after_addr = next_label.address
+                                after_length = addr+length - after_addr
+
+                                if prev_length > 0:
+                                    # print the incbin
+                                    output_lines.append(incbin_line(prev_addr, prev_length))
+                                
+                                # Print the label
+                                label_addr = '{0:#010x}'.format(next_label.address).upper().replace('0X', '')
+                                output_lines.append(f'gUnk_{label_addr}:: @ {label_addr}\n')
+
+                                addr = after_addr
+                                length = after_length
+
+                                if len(labels) == 0: # Extracted all labels
+                                    next_label = None
+                                    break
+                                next_label = labels.pop(0)
+                                continue
+
+
+                            if length > 0:
+                                output_lines.append(incbin_line(addr, length))
+                            continue
+                    output_lines.append(line)
+
+            while next_label is not None:
+
+                # tmp: print label for script
+                label_addr = '{0:#010x}'.format(next_label.address + ROM_OFFSET).upper().replace('0X', '')
+                print(f'SCRIPT_START script_{label_addr}')
+                print(f'at {next_label.symbol}')
+
+                #print(f'Could not insert {next_label}')
+                if len(labels) == 0: # Extracted all labels
+                    next_label = None
+                    break
+                next_label = labels.pop(0)
+
+            with open(asm_path, 'w') as file:
+                file.writelines(output_lines)
+
+        print('Extracting pointers')
 
         # Extract pointers
         for path in to_extract:

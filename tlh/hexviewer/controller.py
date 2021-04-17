@@ -102,6 +102,8 @@ class HexViewerController(QObject):
         # TODO tmp
         QShortcut(QKeySequence(Qt.Key_Tab), self.dock, lambda:(self.update_cursor(self.cursor+5), self.update_selected_bytes(4)),
                   context=Qt.WidgetWithChildrenShortcut) # Go to next midi command or whatever
+        QShortcut(QKeySequence(Qt.Key_W), self.dock, lambda:(self.update_cursor(self.cursor+28), self.update_selected_bytes(8)),
+                  context=Qt.WidgetWithChildrenShortcut)
 
         self.pointers: PointerList = None
         self.annotations: AnnotationList = None
