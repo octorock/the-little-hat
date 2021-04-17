@@ -33,3 +33,6 @@ class PointerList:
 
     def __iter__(self):
         return map(lambda x: x.data, self.tree.__iter__())
+
+    def get_sorted_pointers(self) -> list[Pointer]:
+        return map(lambda x: x.data, sorted(self.tree))

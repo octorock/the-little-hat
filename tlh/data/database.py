@@ -189,8 +189,8 @@ class PointerDatabase(QObject):
             writer = DictWriter(
                 file, fieldnames=['rom_variant', 'address', 'points_to', 'certainty', 'author', 'note'])
             writer.writeheader()
-            for variant in self.pointers:
-                for pointer in self.pointers[variant]:
+            for variant in [RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP]: # Name all explicitely to keep the same order
+                for pointer in self.pointers[variant].get_sorted_pointers():
                     writer.writerow({
                         'rom_variant': pointer.rom_variant,
                         'address': hex(pointer.address),

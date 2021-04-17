@@ -13,8 +13,10 @@ class Symbol:
     file: str = None
     length: int = 0
 
-symbols = SortedKeyList([], key=lambda x:x.address)
+symbols: SortedKeyList[Symbol] = None
 
+def are_symbols_loaded() -> bool:
+    return symbols is not None
 
 def get_symbol_at(local_address: int) -> Optional[Symbol]:
     if len(symbols) == 0:
@@ -25,6 +27,7 @@ def get_symbol_at(local_address: int) -> Optional[Symbol]:
 
 def load_symbols_from_map(path: str) -> None:
     global symbols
+    symbols = SortedKeyList([], key=lambda x:x.address)
     with open(path, 'r') as map_file:
 
         # ignore header
