@@ -150,7 +150,7 @@ class HexViewerManager(QObject):
 
     def update_constraint_manager(self):
         self.linked_diff_calculator.set_variants(self.linked_variants)
-        self.constraint_manager.set_variants(self.linked_variants)
+        self.constraint_manager.set_variants({RomVariant.USA, RomVariant.DEMO, RomVariant.JP, RomVariant.EU})
         self.update_constraints()
 
     def update_constraints(self):

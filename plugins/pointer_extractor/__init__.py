@@ -121,6 +121,7 @@ class PointerExtractorPlugin:
                 symbol = get_symbol_at(pointer.points_to - ROM_OFFSET)
                 offset = pointer.points_to - ROM_OFFSET - symbol.address
                 if offset > 1: # Offset 1 is ok for function pointers
+                    print(pointer)
                     if symbol.file not in missing_labels:
                         missing_labels[symbol.file] = SortedKeyList(key=lambda x:x.address)
                     # Insert Missing label if there is not already one
@@ -157,6 +158,7 @@ class PointerExtractorPlugin:
                             length = int(arr[2], 16)
 
                             while next_label is not None and next_label.address < addr:
+                                print(f'Cannot insert {next_label}')
                                 if len(labels) == 0: # Extracted all labels
                                     next_label = None
                                     break
@@ -206,6 +208,8 @@ class PointerExtractorPlugin:
                     break
                 next_label = labels.pop(0)
 
+            print(f'Write {asm_path}')
+            print(next_label)
             with open(asm_path, 'w') as file:
                 file.writelines(output_lines)
 
