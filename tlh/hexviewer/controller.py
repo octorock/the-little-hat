@@ -6,7 +6,7 @@ from tlh.data.rom import Rom
 from tlh.data.database import get_annotation_database, get_pointer_database, get_constraint_database
 from tlh.data.annotations import AnnotationList, Annotation
 from tlh.data.pointer import Pointer, PointerList
-from tlh.data.constraints import Constraint, ConstraintManager, InvalidConstraintError
+from tlh.data.constraints import Constraint, ConstraintList, ConstraintManager, InvalidConstraintError
 from tlh.hexviewer.diff_calculator import AbstractDiffCalculator, NoDiffCalculator
 from PySide6.QtCore import QObject, Signal, QPoint
 from PySide6.QtGui import QColor, QKeySequence, QShortcut, Qt
@@ -109,12 +109,17 @@ class HexViewerController(QObject):
 
         self.pointers: PointerList = None
         self.annotations: AnnotationList = None
+        self.constraints: ConstraintList = None
 
         self.update_pointers()
         get_pointer_database().pointers_changed.connect(self.slot_update_pointers)
 
         self.update_annotations()
         get_annotation_database().annotations_changed.connect(self.slot_update_annotations)
+
+        self.update_constraints()
+        get_constraint_database().constraints_changed.connect(self.slot_update_constraints)
+
         self.update_hex_area()
 
         self.status_bar.setText('loaded')
@@ -134,6 +139,15 @@ class HexViewerController(QObject):
 
     def slot_update_annotations(self) -> None:
         self.update_annotations()
+        self.request_repaint()
+
+    def update_constraints(self):
+        constraint_database = get_constraint_database()
+        constraints = constraint_database.get_constraints()
+        self.constraints = ConstraintList(constraints, self.rom_variant)
+
+    def slot_update_constraints(self) -> None:
+        self.update_constraints()
         self.request_repaint()
 
     def set_linked(self, linked: bool) -> None:
@@ -198,7 +212,7 @@ class HexViewerController(QObject):
 
         local_address = self.address_resolver.to_local(virtual_address)
         if local_address == -1 or local_address > 0xffffff:
-            return DisplayByte('  ', None, False)
+            return DisplayByte('  ', None, False, [], [], [])
 
         # TODO make sure local address is < length of rom
 
@@ -206,10 +220,14 @@ class HexViewerController(QObject):
 
         byte_value = self.rom.get_byte(local_address)
 
-        annotation_color = self.is_annotation(local_address)
-        if annotation_color is not None:
-            background = annotation_color
-        elif self.is_pointer(local_address):
+        # annotation_color = self.is_annotation(local_address)
+        # if annotation_color is not None:
+        #     background = annotation_color
+        # elif
+        
+        pointers = self.pointers.get_pointers_at(local_address)
+
+        if len(pointers) > 0:
             background = self.pointer_color
         elif self.diff_calculator.is_diffing(virtual_address):
             background = self.diff_color
@@ -219,7 +237,10 @@ class HexViewerController(QObject):
         display_byte = DisplayByte(
             '%02X' % byte_value,
             background,
-            self.is_selected(virtual_address)
+            self.is_selected(virtual_address),
+            self.annotations.get_annotations_at(local_address),
+            self.constraints.get_constraints_at(local_address),
+            pointers
         )
         # self.display_byte_cache[virtual_address] = display_byte
         return display_byte
@@ -233,12 +254,6 @@ class HexViewerController(QObject):
             return []
         return self.pointers.get_pointers_at(local_address)
 
-    def is_annotation(self, local_address: int) -> QColor:
-        # Just returns the first annotation, does not care about multiple overlapping
-        annotations = self.annotations.get_annotations_at(local_address)
-        if len(annotations) > 0:
-            return annotations[0].color
-        return None
 
     def is_selected(self, virtual_address: int) -> bool:
         if self.selected_bytes < 0:

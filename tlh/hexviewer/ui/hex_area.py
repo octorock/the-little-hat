@@ -63,6 +63,9 @@ class HexAreaWidget (QWidget):
         self.byte_color = QColor(210, 210, 210)
         self.selection_color = QPen(QColor(97, 175, 239))
         self.selection_color.setWidth(2)
+        self.annotation_pen = QPen(QColor(0,0,0), 2)
+        self.enabled_constraint_pen = QPen(QColor(255, 80, 0),2)
+        self.disabled_constraint_pen = QPen(QColor(130, 40, 0),2)
 
         # Make this widget focussable on click, so that we can reduce the context of the shortcut, so that multiple shortcuts are possible in the same window
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
@@ -112,6 +115,7 @@ class HexAreaWidget (QWidget):
                            * self.line_height), current_byte.text)
                 p.setBackgroundMode(Qt.TransparentMode)
 
+                # Draw selection rects
                 if current_byte.is_selected:
                     p.setPen(self.selection_color)
                     p.drawRect(
@@ -121,6 +125,32 @@ class HexAreaWidget (QWidget):
                         self.byte_width,
                         self.line_height
                     )
+                
+                # Draw annotation underlines
+                if len(current_byte.annotations) > 0:
+                    y_offset = 0
+                    for annotation in current_byte.annotations:
+                        self.annotation_pen.setColor(annotation.color)
+                        p.setPen(self.annotation_pen)
+                        x = self.label_length + i * self.byte_width
+                        y = (l+1) * self.line_height + y_offset + 2
+                        p.drawLine(x, y, x+self.byte_width, y)
+                        y_offset += 2
+
+                # Draw constraint pipes
+                if len(current_byte.constraints) > 0:
+                    enabled = False
+                    for constraint in current_byte.constraints:
+                        if constraint.enabled:
+                            enabled = True
+                            break
+                    if enabled:
+                        p.setPen(self.enabled_constraint_pen)
+                    else:
+                        p.setPen(self.disabled_constraint_pen)
+                    x = self.label_length + i * self.byte_width - 2
+                    y = (l) * self.line_height + 3
+                    p.drawLine(x, y, x, y+self.line_height)
 
     def number_of_lines_on_screen(self):
         # +1 to draw cutof lines as well

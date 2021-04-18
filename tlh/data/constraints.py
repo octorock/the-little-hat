@@ -2,7 +2,7 @@ from tlh.const import RomVariant
 from dataclasses import dataclass
 from sortedcontainers import SortedKeyList
 from bisect import bisect_left, bisect_right
-
+from intervaltree import Interval, IntervalTree
 
 @dataclass
 class Constraint:
@@ -500,3 +500,34 @@ TODO what other relations need to be affected?
   -> too complicated to detect all without keeping all constraints around?
 
 """
+
+
+
+@dataclass
+class RomConstraint:
+    addr: int
+    constraint: Constraint
+
+class ConstraintList:
+    '''
+    List of constraints for a single rom variant
+    '''
+    def __init__(self, constraints: list[Constraint], rom_variant: RomVariant) -> None:
+
+        self.constraints = SortedKeyList(key=lambda x:x.addr)
+
+        for constraint in constraints:
+
+            if constraint.romA == rom_variant:
+                self.constraints.add(RomConstraint(constraint.addressA, constraint))
+            elif constraint.romB == rom_variant:
+                self.constraints.add(RomConstraint(constraint.addressB, constraint))
+
+    def get_constraints_at(self, local_address: int) -> list[Constraint]:
+        constraints = []
+        index = self.constraints.bisect_key_left(local_address)
+
+        while index < len(self.constraints) and self.constraints[index].addr == local_address:
+            constraints.append(self.constraints[index].constraint)
+            index += 1
+        return constraints
