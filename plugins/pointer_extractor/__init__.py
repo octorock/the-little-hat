@@ -1,4 +1,3 @@
-from operator import add, le
 from tlh.data.pointer import Pointer
 from sortedcontainers.sortedlist import SortedKeyList
 from tlh.data.symbols import are_symbols_loaded, get_symbol_at
