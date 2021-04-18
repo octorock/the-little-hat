@@ -620,7 +620,9 @@ class HexViewerController(QObject):
         if self.selected_bytes > 0:
             virtual_address += self.selected_bytes
 
-        while not self.is_diffing_and_not_pointer(virtual_address):
+        while not self.is_diffing_and_not_pointer(virtual_address) and virtual_address < 0xfffffff:
+
+            # TODO end of file
             virtual_address += 1
 
         self.update_cursor(virtual_address)
