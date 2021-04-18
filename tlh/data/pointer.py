@@ -31,6 +31,9 @@ class PointerList:
     def append(self, pointer: Pointer) -> None:
         self.tree.add(Interval(pointer.address, pointer.address+4, pointer))
 
+    def remove(self, pointer: Pointer) -> None:
+        self.tree.remove(Interval(pointer.address, pointer.address+4, pointer))
+
     def __iter__(self):
         return map(lambda x: x.data, self.tree.__iter__())
 

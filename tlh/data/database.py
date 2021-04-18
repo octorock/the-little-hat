@@ -66,6 +66,19 @@ class ConstraintDatabase(QObject):
                 self.constraints_changed.emit()
                 break
 
+    def remove_constraints(self, constraints: list[Constraint]) -> None:
+        for constraint in constraints:
+            self.constraints.remove(constraint)
+        if settings.is_auto_save():
+            self._write_constraints()
+        else:
+            # TODO Mark as dirty?
+            pass
+        for constraint in constraints:
+            if constraint.enabled:  # Only emit change if one of the removed constraints was enabled
+                self.constraints_changed.emit()
+                break
+
     def _read_constraints(self) -> list[Constraint]:
         constraints = []
         try:
@@ -162,6 +175,17 @@ class PointerDatabase(QObject):
             # TODO Mark as dirty?
             pass
         self.pointers_changed.emit()
+
+    def remove_pointers(self, pointers: list[Pointer]) -> None:
+        for pointer in pointers:
+            self.pointers[pointer.rom_variant].remove(pointer)
+        if settings.is_auto_save():
+            self._write_pointers()
+        else:
+            # TODO Mark as dirty?
+            pass
+        self.pointers_changed.emit()
+
 
     def _read_pointers(self) -> list[Pointer]:
         pointers = []

@@ -1,17 +1,16 @@
 from dataclasses import dataclass
-from tlh import const
-from tlh.data.symbols import get_symbol_at
+from tlh.data.symbols import are_symbols_loaded, get_symbol_at
 from tlh.hexviewer.display_byte import DisplayByte
 from tlh.hexviewer.ui.hex_area import KeyType
-from tlh.data.rom import Rom, get_rom
+from tlh.data.rom import Rom
 from tlh.data.database import get_annotation_database, get_pointer_database, get_constraint_database
 from tlh.data.annotations import AnnotationList, Annotation
 from tlh.data.pointer import Pointer, PointerList
 from tlh.data.constraints import Constraint, ConstraintManager, InvalidConstraintError
 from tlh.hexviewer.diff_calculator import AbstractDiffCalculator, NoDiffCalculator
 from PySide6.QtCore import QObject, Signal, QPoint
-from PySide6.QtGui import QBrush, QColor, QKeySequence, QPainter, QShortcut, Qt
-from PySide6.QtWidgets import QInputDialog, QMessageBox, QWidget, QToolTip, QMenu, QApplication
+from PySide6.QtGui import QColor, QKeySequence, QShortcut, Qt
+from PySide6.QtWidgets import QInputDialog, QMessageBox, QToolTip, QMenu, QApplication
 from tlh.hexviewer.ui.dock import HexViewerDock
 from tlh.const import ROM_OFFSET, ROM_SIZE, RomVariant
 from tlh.hexviewer.address_resolver import AbstractAddressResolver, TrivialAddressResolver
@@ -19,8 +18,6 @@ from tlh import settings
 from tlh.hexviewer.edit_annotation_dialog import EditAnnotationDialog
 from tlh.hexviewer.edit_constraint_dialog import EditConstraintDialog
 from tlh.hexviewer.edit_pointer_dialog import EditPointerDialog
-
-import traceback
 
 class HexViewerController(QObject):
     '''
@@ -35,6 +32,7 @@ class HexViewerController(QObject):
     signal_pointer_discovered = Signal(Pointer)
     signal_multiple_pointers_discovered = Signal(int, int)
     signal_only_in_current_marked = Signal(int, int)
+    signal_remove_pointer = Signal(Pointer)
 
     def __init__(self, dock: HexViewerDock, rom_variant: RomVariant, rom: Rom) -> None:
         super().__init__(parent=dock)
@@ -99,6 +97,8 @@ class HexViewerController(QObject):
         QShortcut(QKeySequence(Qt.Key_8), self.dock, lambda:self.update_selected_bytes(8),
                   context=Qt.WidgetWithChildrenShortcut)
         QShortcut(QKeySequence(Qt.Key_F3), self.dock, self.slot_jump_to_next_diff,
+                  context=Qt.WidgetWithChildrenShortcut)
+        QShortcut(QKeySequence(Qt.Key_Delete), self.dock, self.slot_delete_current_pointer,
                   context=Qt.WidgetWithChildrenShortcut)
 
         # TODO tmp
@@ -228,8 +228,7 @@ class HexViewerController(QObject):
         return len(self.pointers.get_pointers_at(local_address)) > 0
 
     def get_pointers_at(self, virtual_address: int) -> list[Pointer]:
-        local_address = self.constraint_manager.to_local(
-            self.rom_variant, virtual_address)
+        local_address = self.address_resolver.to_local(virtual_address)
         if local_address == -1:
             return []
         return self.pointers.get_pointers_at(local_address)
@@ -347,7 +346,7 @@ class HexViewerController(QObject):
             if self.selected_bytes != 0:
                 text += f' Bytes selected: {self.selected_bytes}'
 
-            if self.rom_variant == RomVariant.USA:
+            if self.rom_variant == RomVariant.USA and are_symbols_loaded():
                 # Show symbol at cursor for USA if symbols are loaded from .map file
                 symbol = get_symbol_at(local_address)
                 if symbol is not None:
@@ -625,3 +624,17 @@ class HexViewerController(QObject):
             virtual_address += 1
 
         self.update_cursor(virtual_address)
+
+
+    def slot_delete_current_pointer(self) -> None:
+        if abs(self.selected_bytes) != 4:
+            return
+        address = self.cursor
+        if self.selected_bytes == -4:
+            address -= 3
+
+        pointers = self.get_pointers_at(address)
+        if len(pointers) != 1:
+            return
+
+        self.signal_remove_pointer.emit(pointers[0])

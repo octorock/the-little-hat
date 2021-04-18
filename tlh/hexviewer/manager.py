@@ -52,6 +52,7 @@ class HexViewerManager(QObject):
         controller.signal_multiple_pointers_discovered.connect(lambda a,b:self.slot_multiple_pointers_discovered(controller, a, b))
         controller.signal_only_in_current_marked.connect(
             lambda x, y: self.mark_only_in_one(controller, x, y))
+        controller.signal_remove_pointer.connect(self.slot_remove_pointer)
 
     def unregister_controller(self, controller: HexViewerController) -> None:
         if controller in self.linked_controllers:
@@ -158,8 +159,12 @@ class HexViewerManager(QObject):
         self.constraint_manager.reset()
         if len(self.linked_variants) > 1:
             print('Add constraints')
-            self.constraint_manager.add_all_constraints(
-                get_constraint_database().get_constraints())
+            try:
+                self.constraint_manager.add_all_constraints(
+                    get_constraint_database().get_constraints())
+            except InvalidConstraintError as e:
+                print(e)
+                QMessageBox.critical(self.parent(), 'Constraint Error', 'The current constraints are not valid.')
         for controller in self.linked_controllers:
             controller.request_repaint()
             controller.setup_scroll_bar()
@@ -336,3 +341,39 @@ class HexViewerManager(QObject):
         virtual_address = self.constraint_manager.to_virtual(local_address.rom_variant, local_address.local_address)
         for controller in self.linked_controllers:
             controller.update_cursor(virtual_address)
+
+    def slot_remove_pointer(self, pointer: Pointer) -> None:
+        pointer_addresses = {
+            pointer.rom_variant: pointer.points_to - ROM_OFFSET
+        }
+        virtual_address = self.constraint_manager.to_virtual(pointer.rom_variant, pointer.address)
+        
+        print(f'remove {pointer}')
+        remove_pointers = [pointer]
+        
+
+        for rom_variant in self.linked_variants:
+            if rom_variant == pointer.rom_variant:
+                continue
+            local_address = self.constraint_manager.to_local(rom_variant, virtual_address)
+            pointers = get_pointer_database().get_pointers(rom_variant).get_pointers_at(local_address)
+            if len(pointers) != 1:
+                continue
+                
+            pointer_addresses[rom_variant] = pointers[0].points_to - ROM_OFFSET
+            print(f'remove {pointers[0]}')
+            remove_pointers.append(pointers[0])
+
+        # Find the corresponding constraints to delete
+        remove_constraints = []
+        constraints = get_constraint_database().get_constraints()
+        for constraint in constraints:
+            if constraint.romA in pointer_addresses and constraint.addressA == pointer_addresses[constraint.romA]:
+                if constraint.romB in pointer_addresses and constraint.addressB == pointer_addresses[constraint.romB]:
+                    remove_constraints.append(constraint)
+                    print(f'Remove {constraint}')
+        
+
+        if QMessageBox.question(self.parent(), 'Remove Pointer', f'Remove {len(remove_pointers)} pointers and {len(remove_constraints)} constraints?') == QMessageBox.Yes:
+            get_pointer_database().remove_pointers(remove_pointers)
+            get_constraint_database().remove_constraints(remove_constraints)
