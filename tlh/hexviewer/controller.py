@@ -98,6 +98,8 @@ class HexViewerController(QObject):
                   context=Qt.WidgetWithChildrenShortcut)
         QShortcut(QKeySequence(Qt.Key_8), self.dock, lambda:self.update_selected_bytes(8),
                   context=Qt.WidgetWithChildrenShortcut)
+        QShortcut(QKeySequence(Qt.Key_F3), self.dock, self.slot_jump_to_next_diff,
+                  context=Qt.WidgetWithChildrenShortcut)
 
         # TODO tmp
         QShortcut(QKeySequence(Qt.Key_Tab), self.dock, lambda:(self.update_cursor(self.cursor+5), self.update_selected_bytes(4)),
@@ -604,3 +606,22 @@ class HexViewerController(QObject):
     def slot_on_resize(self) -> None:
         self.setup_scroll_bar()
         self.update_hex_area()
+
+
+    def is_diffing_and_not_pointer(self, virtual_address: int) -> None:
+        local_address = self.address_resolver.to_local(virtual_address)
+        if local_address == -1:
+            return False
+        if self.is_pointer(local_address):
+            return False
+        return self.diff_calculator.is_diffing(virtual_address)
+
+    def slot_jump_to_next_diff(self) -> None:
+        virtual_address = self.cursor
+        if self.selected_bytes > 0:
+            virtual_address += self.selected_bytes
+
+        while not self.is_diffing_and_not_pointer(virtual_address):
+            virtual_address += 1
+
+        self.update_cursor(virtual_address)
