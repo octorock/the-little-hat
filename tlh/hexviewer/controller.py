@@ -628,11 +628,12 @@ class HexViewerController(QObject):
             return False
         if self.is_pointer(local_address):
             return False
-        return self.diff_calculator.is_diffing(virtual_address)
+        #return self.diff_calculator.is_diffing(virtual_address)
 
-        #if self.diff_calculator.is_diffing(virtual_address):
+        if self.diff_calculator.is_diffing(virtual_address):
             # Also check that 3 bytes forward there is a 0x08
-         #   return self.rom.get_byte(local_address+3) == 8
+            return self.rom.get_byte(local_address+3) == 8
+        return False
 
     def slot_jump_to_next_diff(self) -> None:
         virtual_address = self.cursor

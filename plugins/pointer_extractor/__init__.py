@@ -176,7 +176,7 @@ class PointerExtractorPlugin:
                                     output_lines.append(incbin_line(prev_addr, prev_length))
                                 
                                 # Print the label
-                                label_addr = '{0:#010x}'.format(next_label.address).upper().replace('0X', '')
+                                label_addr = '{0:#010x}'.format(next_label.address + ROM_OFFSET).upper().replace('0X', '')
                                 output_lines.append(f'gUnk_{label_addr}:: @ {label_addr}\n')
 
                                 addr = after_addr
