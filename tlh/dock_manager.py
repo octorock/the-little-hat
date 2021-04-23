@@ -116,7 +116,7 @@ class DockManager:
             print(f'Opening {object_name}')
             rom_variant = to_spawn[object_name]['rom_variant']
             controller = self.add_hex_editor_dock(rom_variant, object_name)
-            if to_spawn[object_name]['linked']:
+            if controller is not None and to_spawn[object_name]['linked']:
                 linked_controllers.append(controller)
 
         self.hex_viewer_manager.link_multiple(linked_controllers)

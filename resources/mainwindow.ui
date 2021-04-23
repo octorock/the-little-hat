@@ -49,6 +49,9 @@
      <addaction name="actionDEMO"/>
      <addaction name="actionEU"/>
      <addaction name="actionJP"/>
+     <addaction name="separator"/>
+     <addaction name="actionCUSTOM"/>
+     <addaction name="actionReloadCUSTOM"/>
     </widget>
     <widget class="QMenu" name="menuPlugins">
      <property name="title">
@@ -145,6 +148,16 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionCUSTOM">
+   <property name="text">
+    <string>CUSTOM</string>
+   </property>
+  </action>
+  <action name="actionReloadCUSTOM">
+   <property name="text">
+    <string>Reload CUSTOM rom</string>
    </property>
   </action>
  </widget>

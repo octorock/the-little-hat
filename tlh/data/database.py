@@ -142,6 +142,7 @@ class PointerDatabase(QObject):
             RomVariant.DEMO: [],
             RomVariant.EU: [],
             RomVariant.JP: [],
+            RomVariant.CUSTOM: []
         }
 
         for pointer in self._read_pointers():
@@ -152,6 +153,7 @@ class PointerDatabase(QObject):
             RomVariant.DEMO: PointerList(pointers[RomVariant.DEMO], RomVariant.DEMO), 
             RomVariant.EU: PointerList(pointers[RomVariant.EU], RomVariant.EU), 
             RomVariant.JP: PointerList(pointers[RomVariant.JP], RomVariant.JP), 
+            RomVariant.CUSTOM: PointerList(pointers[RomVariant.CUSTOM], RomVariant.CUSTOM), 
         }
 
     def get_pointers(self, rom_variant: RomVariant) -> PointerList:
@@ -209,11 +211,12 @@ class PointerDatabase(QObject):
         return pointers
 
     def _write_pointers(self):
+        # TODO separate pointers into different files per variant
         with open(get_file_in_database('pointers.csv'), 'w', newline='') as file:
             writer = DictWriter(
                 file, fieldnames=['rom_variant', 'address', 'points_to', 'certainty', 'author', 'note'])
             writer.writeheader()
-            for variant in [RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP]: # Name all explicitely to keep the same order
+            for variant in [RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.CUSTOM]: # Name all explicitely to keep the same order
                 for pointer in self.pointers[variant].get_sorted_pointers():
                     writer.writerow({
                         'rom_variant': pointer.rom_variant,

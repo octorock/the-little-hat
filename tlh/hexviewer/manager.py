@@ -150,9 +150,9 @@ class HexViewerManager(QObject):
 
     def update_constraint_manager(self):
         self.linked_diff_calculator.set_variants(self.linked_variants)
+        self.constraint_manager.set_variants(self.linked_variants)
         # TODO this is a workaround for the missing calculation of transitive constraints (i.e. always use the virtual offsets given all variants were linked)
-        #self.constraint_manager.set_variants(self.linked_variants)
-        self.constraint_manager.set_variants({RomVariant.USA, RomVariant.DEMO, RomVariant.JP, RomVariant.EU})
+        #self.constraint_manager.set_variants({RomVariant.USA, RomVariant.DEMO, RomVariant.JP, RomVariant.EU})
         self.update_constraints()
 
     def update_constraints(self):
@@ -241,7 +241,7 @@ class HexViewerManager(QObject):
                 constraint.enabled = True
 
             # Check whether the new constraint is invalid
-            constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP})
+            constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.CUSTOM})
             constraint_manager.add_all_constraints(
                 get_constraint_database().get_constraints())
             try:
@@ -308,7 +308,7 @@ class HexViewerManager(QObject):
                 new_constraints.append(constraint)
 
         # Check whether the new constraint is invalid
-        constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP})
+        constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.CUSTOM})
         constraint_manager.add_all_constraints(
             get_constraint_database().get_constraints())
         try:

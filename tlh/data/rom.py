@@ -37,3 +37,8 @@ def get_rom(variant: RomVariant) -> Optional[Rom]:
         except:
             return None
     return roms[variant]
+
+def invalidate_rom(variant: RomVariant) -> None:
+    global roms
+    if variant in roms:
+        del roms[variant]

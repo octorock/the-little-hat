@@ -4,6 +4,8 @@ from PySide6.QtCore import QSettings, Signal
 from getpass import getuser
 import multiprocessing
 from typing import Optional
+import os
+
 settings = QSettings('octorock', 'the-little-hat')
 
 # TODO introduce caching of settings values
@@ -85,6 +87,8 @@ def get_rom(variant: RomVariant) -> Optional[str]:
         return get_rom_eu()
     elif variant == RomVariant.JP:
         return get_rom_jp()
+    elif variant == RomVariant.CUSTOM:
+        return os.path.join(get_repo_location(), 'tmc.gba')
     else:
         raise RuntimeError(f'Unknown rom variant {variant}')
 

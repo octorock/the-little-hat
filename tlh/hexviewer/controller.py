@@ -573,7 +573,7 @@ class HexViewerController(QObject):
 
     def add_new_constraint(self, constraint: Constraint) -> None:
         # Check that constraint is valid
-        constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP})
+        constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.CUSTOM})
         constraint_manager.add_all_constraints(
             get_constraint_database().get_constraints())
         try:

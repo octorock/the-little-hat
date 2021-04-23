@@ -14,6 +14,7 @@ class RomVariant(str, Enum):
     DEMO = 'DEMO'
     EU = 'EU'
     JP = 'JP'
+    CUSTOM = 'CUSTOM'
 
     def __repr__(self):
         return self.name

@@ -2,7 +2,7 @@ import signal
 import sys
 from tlh.data.symbols import load_symbols_from_map
 from tlh.common.ui.progress_dialog import ProgressDialog
-from tlh.data.rom import get_rom
+from tlh.data.rom import get_rom, invalidate_rom
 from tlh.common.ui.layout import Layout
 from tlh.dock_manager import DockManager
 
@@ -43,6 +43,10 @@ class MainWindow(QMainWindow):
             lambda: self.dock_manager.add_hex_editor(RomVariant.EU))
         self.ui.actionJP.triggered.connect(
             lambda: self.dock_manager.add_hex_editor(RomVariant.JP))
+        self.ui.actionCUSTOM.triggered.connect(
+            lambda: self.dock_manager.add_hex_editor(RomVariant.CUSTOM)
+        )
+        self.ui.actionReloadCUSTOM.triggered.connect(self.slot_reload_custom_rom)
         self.ui.actionLoadSymbols.triggered.connect(self.slot_load_symbols)
 
         self.build_layouts_toolbar()
@@ -159,6 +163,7 @@ class MainWindow(QMainWindow):
         self.ui.actionDEMO.setDisabled(get_rom(RomVariant.DEMO) is None)
         self.ui.actionJP.setDisabled(get_rom(RomVariant.JP) is None)
         self.ui.actionEU.setDisabled(get_rom(RomVariant.EU) is None)
+        self.ui.actionCUSTOM.setDisabled(get_rom(RomVariant.CUSTOM) is None)
 
     def slot_load_symbols(self):
         self.load_symbols(False)
@@ -193,6 +198,11 @@ class MainWindow(QMainWindow):
         timer.timeout.connect(timer.deleteLater)
         timer.start(500)
 
+    def slot_reload_custom_rom(self) -> None:
+        invalidate_rom(RomVariant.CUSTOM)
+
+        self.update_hex_viewer_actions()
+        QMessageBox.information(self, 'Reloaded CUSTOM rom', 'Invalidated CUSTOM rom. You need to close and reopen CUSTOM hex viewers to view the new data.')
 
 def run():
     # Be able to close with Ctrl+C in the terminal once Qt is started https://stackoverflow.com/a/5160720
