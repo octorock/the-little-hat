@@ -5,6 +5,7 @@ from typing import Optional
 from tlh import settings
 from tlh.plugin.api import PluginApi
 import inspect
+import traceback
 
 plugin_folder = './plugins'
 main_module = '__init__'
@@ -76,7 +77,7 @@ def enable_plugin(plugin: Plugin) -> bool:
         return True
     except Exception as e:
         print(f'Exception occurred during enabling plugin {plugin.get_settings_name()}:')
-        print(e)
+        traceback.print_exc()
         print('Plugin was disabled and has to be enabled again manually.')
         settings.set_plugin_enabled(plugin.get_settings_name(), False)
         return False
@@ -88,7 +89,7 @@ def disable_plugin(plugin: Plugin) -> None:
             plugin.instance.unload()
     except Exception as e:
         print(f'Exception occurred during unloading plugin {plugin.get_settings_name()}:')
-        print(e)
+        traceback.print_exc()
     plugin.instance = None
     plugin.enabled = False
 
