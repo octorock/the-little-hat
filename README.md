@@ -23,5 +23,7 @@ make test
 
 [First Steps](docs/first_steps.md)
 
+[Using the CExplore Bridge plugin](docs/cexplore_bridge.md)
+
 ## Advanced
 [Create Plugin](docs/create_plugin.md)

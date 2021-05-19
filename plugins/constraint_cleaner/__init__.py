@@ -13,14 +13,15 @@ class ConstraintCleanerPlugin:
         self.api = api
 
     def load(self) -> None:
-        self.action_remove_duplicate = self.api.register_menu_entry('Remove duplicate constraints', self.slot_remove_duplicate)
+        #self.action_remove_duplicate = self.api.register_menu_entry('Remove duplicate constraints', self.slot_remove_duplicate)
         self.action_remove_redundant = self.api.register_menu_entry('Remove redundant constraints', self.slot_remove_redundant)
 
     def unload(self) -> None:
-        self.api.remove_menu_entry(self.action_remove_duplicate)
+        #self.api.remove_menu_entry(self.action_remove_duplicate)
         self.api.remove_menu_entry(self.action_remove_redundant)
 
     def slot_remove_duplicate(self) -> None:
+        # TODO
         pass
 
     def slot_remove_redundant(self) -> None:

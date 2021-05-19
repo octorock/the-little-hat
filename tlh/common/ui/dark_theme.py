@@ -29,7 +29,8 @@ def apply_dark_theme(app):  # https://stackoverflow.com/a/56851493
     palette.setColor(QPalette.ToolTipBase, QColor(53, 53, 53))
     palette.setColor(QPalette.ToolTipText, QColor(180, 180, 180))
     palette.setColor(QPalette.LinkVisited, QColor(80, 80, 80))
-
+    palette.setColor(QPalette.PlaceholderText, QColor(127, 127, 127))
+    
     # disabled
     palette.setColor(QPalette.Disabled, QPalette.WindowText,
                      QColor(127, 127, 127))
