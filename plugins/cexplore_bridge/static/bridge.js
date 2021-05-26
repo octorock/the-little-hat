@@ -55,6 +55,14 @@ function startSocketIo() {
             error('c editor not yet found');
         }
     });
+    socket.on('add_c_code', (data) => {
+        if (cEditorModel != null) {
+            cEditorModel.setValue(cEditorModel.getValue() + data);
+            setStatus('Received code', color_green)
+        } else {
+            error('c editor not yet found');
+        }
+    });
     socket.on('request_c_code', () => {
         if (cEditorModel != null) {
             socket.emit('c_code', cEditorModel.getValue());

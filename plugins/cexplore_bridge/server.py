@@ -3,8 +3,11 @@ from flask import Flask, request
 from PySide6.QtCore import QObject, Signal
 import logging
 
-
 class ServerWorker(QObject):
+    '''
+    Server worker running in the background that starts a socket.io server on port 10241.
+    The JavaScript code that is injected into the CExplore instance can then connect to this port to exchange code and asm snippets.
+    '''
     signal_started = Signal()
     signal_connected = Signal()
     signal_disconnected = Signal()
@@ -57,6 +60,9 @@ class ServerWorker(QObject):
 
     def slot_send_c_code(self, code: str) -> None:
         self.sio.emit('c_code', code)
+
+    def slot_add_c_code(self, code: str) -> None:
+        self.sio.emit('add_c_code', code)
 
     def slot_request_c_code(self) -> None:
         self.sio.emit('request_c_code')

@@ -1,3 +1,4 @@
+from plugins.cexplore_bridge.ghidra import improve_decompilation
 from PySide6.QtGui import QClipboard
 from plugins.cexplore_bridge.code import get_code, split_code, store_code
 from PySide6.QtCore import QObject, QThread, Qt, Signal
@@ -8,6 +9,9 @@ from plugins.cexplore_bridge.server import ServerWorker
 import requests
 from tlh.ui.ui_plugin_cexplore_bridge_received_code_dialog import Ui_ReceivedCodeDialog
 
+
+# Set this to true if you know what you are doing and want to skip all confirm dialogs and confirmation messages
+NO_CONFIRMS = False
 
 class CExploreBridgePlugin:
     name = 'CExplore Bridge'
@@ -43,6 +47,8 @@ class BridgeDock(QDockWidget):
         self.ui.pushButtonUpload.clicked.connect(self.slot_upload_function)
         self.ui.pushButtonDownload.clicked.connect(self.slot_download_function)
         self.ui.pushButtonCopyJs.clicked.connect(self.slot_copy_js_code)
+        self.ui.pushButtonGoTo.clicked.connect(self.slot_goto)
+        self.ui.pushButtonDecompile.clicked.connect(self.slot_decompile)
 
         self.enable_function_group(False)
         self.ui.labelConnectionStatus.setText('Server not yet running.')
@@ -73,21 +79,31 @@ class BridgeDock(QDockWidget):
         self.ui.lineEditFunctionName.setEnabled(enabled)
         self.ui.pushButtonUpload.setEnabled(enabled)
         self.ui.pushButtonDownload.setEnabled(enabled)
+        self.ui.pushButtonGoTo.setEnabled(enabled)
+        self.ui.pushButtonDecompile.setEnabled(enabled)
 
     def slot_stop_server(self) -> None:
         # Shutdown needs to be triggered by the server thread, so send a request
         requests.get('http://localhost:10241/shutdown')
 
     def slot_upload_function(self) -> None:
+        # TODO try catch all of the slots?
+
         (err, asm, src) = get_code(self.ui.lineEditFunctionName.text())
         if err:
             self.api.show_error('CExplore Bridge', asm)
             return
 
-        self.server_worker.slot_send_asm_code(asm)
-        self.server_worker.slot_send_c_code(src)
-        self.api.show_message(
-            'CExplore Bridge', f'Uploaded code of {self.ui.lineEditFunctionName.text()}.')
+        if NO_CONFIRMS:
+            # For pros also directly go to the function in Ghidra
+            self.slot_goto()
+
+        if NO_CONFIRMS or self.api.show_question('CExplore Bridge', f'Replace code in CExplore with {self.ui.lineEditFunctionName.text()}?'):
+            self.server_worker.slot_send_asm_code(asm)
+            self.server_worker.slot_send_c_code(src)
+            if not NO_CONFIRMS:
+                self.api.show_message(
+                    'CExplore Bridge', f'Uploaded code of {self.ui.lineEditFunctionName.text()}.')
 
     def slot_download_function(self) -> None:
         self.enable_function_group(False)
@@ -114,8 +130,9 @@ class BridgeDock(QDockWidget):
         if err:
             self.api.show_error('CExplore Bridge', msg)
             return
-        self.api.show_message(
-            'CExplore Bridge', f'Sucessfully replaced code of {self.ui.lineEditFunctionName.text()}.')
+        if not NO_CONFIRMS:
+            self.api.show_message(
+                'CExplore Bridge', f'Sucessfully replaced code of {self.ui.lineEditFunctionName.text()}.')
 
     def slot_copy_js_code(self) -> None:
         QApplication.clipboard().setText(
@@ -153,6 +170,27 @@ class BridgeDock(QDockWidget):
         self.ui.pushButtonCopyJs.setVisible(True)
         self.api.show_error('CExplore Bridge', error)
 
+    def slot_goto(self) -> None:
+        try:
+            r = requests.get('http://localhost:10242/goto/' + self.ui.lineEditFunctionName.text())
+            if r.status_code != 200:
+                self.api.show_error('CExplore Bridge', r.text)
+                return
+        except requests.exceptions.RequestException as e:
+            self.api.show_error('CExplore Bridge', 'Could not reach Ghidra server. Did you start the script?')
+
+    def slot_decompile(self) -> None:
+        try:
+            r = requests.get('http://localhost:10242/decompile/' + self.ui.lineEditFunctionName.text())
+            if r.status_code != 200:
+                self.api.show_error('CExplore Bridge', r.text)
+                return
+            result = r.text
+            print('result', result)
+            code = improve_decompilation(result)
+            self.server_worker.slot_add_c_code(code)
+        except requests.exceptions.RequestException as e:
+            self.api.show_error('CExplore Bridge', 'Could not reach Ghidra server. Did you start the script?')
 
 class ReceivedDialog(QDialog):
     signal_matching = Signal(str, str)

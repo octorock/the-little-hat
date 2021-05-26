@@ -30,3 +30,6 @@ class PluginApi:
 
     def show_error(self, title: str, text: str) -> None:
         QMessageBox.critical(self.main_window, title, text)
+
+    def show_question(self, title: str, text: str) -> bool:
+        return QMessageBox.question(self.main_window, title, text) == QMessageBox.Yes

@@ -25,5 +25,7 @@ make test
 
 [Using the CExplore Bridge plugin](docs/cexplore_bridge.md)
 
+[Setup Ghidra](docs/ghidra.md)
+
 ## Advanced
 [Create Plugin](docs/create_plugin.md)

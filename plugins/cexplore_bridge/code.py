@@ -35,7 +35,7 @@ def extract_nonmatching_section(inc_path: str, src_file: str) -> Optional[str]:
         return ''.join(headers) + '// end of existing headers\n\n' + match.group(1) + ' {' + match.group(2)
 
     match = re.search(
-        r'ASM_FUNC\(\"'+inc_path+r'\", ?(.*?)\)', ''.join(data), re.MULTILINE)
+        r'ASM_FUNC\(\"'+inc_path+r'\", ?(.*?)\)', ''.join(data), re.MULTILINE | re.DOTALL)
     if match:
         return ''.join(headers) + '// end of existing headers\n\n' + match.group(1) + ') {\n\n}'
     return None
@@ -50,7 +50,7 @@ def prepare_asm(inc_file: str, name: str) -> str:
                 continue
             if l != '.text' and l != '.syntax unified' and l != '.syntax divided':
                 lines.append(line)
-    return 'thumb_func_start ' + name + '\n' + (''.join(lines))
+    return 'thumb_func_start ' + name + '\n' + name + ':\n' + (''.join(lines))
 
 
 def get_code(name: str) -> Tuple[bool, str, str]:
@@ -151,16 +151,16 @@ def store_code(name: str, header: str, src: str, matching: bool) -> Tuple[bool, 
                      inc_path + r'", \1) {', src, 1) + '\nEND_NONMATCH'
 
     match = re.search(
-        r'NONMATCH\(\"'+inc_path+r'\", ?(.*?)\) ?{(.*?)END_NONMATCH', ''.join(data), re.MULTILINE | re.DOTALL)
+        r'NONMATCH\(\"'+re.escape(inc_path)+r'\", ?(.*?)\) ?{(.*?)END_NONMATCH', ''.join(data), re.MULTILINE | re.DOTALL)
     if match:
         data = re.sub(
-            r'NONMATCH\(\"'+inc_path+r'\", ?(.*?)\) ?{(.*?)END_NONMATCH', src, ''.join(data), flags=re.MULTILINE | re.DOTALL)
+            r'NONMATCH\(\"'+re.escape(inc_path)+r'\", ?(.*?)\) ?{(.*?)END_NONMATCH', src, ''.join(data), flags=re.MULTILINE | re.DOTALL)
     else:
         match = re.search(
-            r'ASM_FUNC\(\"'+inc_path+r'\", ?(.*?)\)', ''.join(data), re.MULTILINE)
+            r'ASM_FUNC\(\"'+re.escape(inc_path)+r'\", ?(.*?)\)$', ''.join(data), re.MULTILINE | re.DOTALL)
         if match:
             data = re.sub(
-                r'ASM_FUNC\(\"'+inc_path+r'\", ?(.*)\)', src, ''.join(data), flags=re.MULTILINE)
+                r'ASM_FUNC\(\"'+re.escape(inc_path)+r'\", ?(.*?)\)$', src, ''.join(data), flags=re.MULTILINE | re.DOTALL)
         else:
             return (True, f'No NONMATCH or ASM_FUNC section found for {inc_path} in {src_file}.')
 
@@ -168,6 +168,10 @@ def store_code(name: str, header: str, src: str, matching: bool) -> Tuple[bool, 
         f.write(''.join(headers))
         f.write(data)
 
-    # 
+
+    if matching:
+        # Remove the .inc file as its no longer neede
+        os.remove(inc_file)
+        
 
     return (False, '')

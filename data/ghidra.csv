@@ -1,0 +1,46 @@
+source,replacement,dotall
+byte,u8,False
+char,u8,False
+ushort,u16,False
+short,s16,False
+uint,u32,False
+int([ _\)]),s32\1,False
+undefined2,u16,False
+undefined4,u32,False
+"\([u,s]32\)\*\([u,s]16 ?\*\)\(\([u,s]32\)&(\S*) \+ 2\)",\1.HALF.HI,False
+"\*\([u,s]16 ?\*\)\(\([u,s]32\)&(\S*) \+ 2\)",\1.HALF.HI,False
+"\*\([u,s]16\*\)\&this->(\S*)",this->\1.HALF.LO,False
+"(?:\(s32\))?\* ?\([s,u]16\* ?\)\(\(s32\) ?& ?this->(\S*) \+ 2\)",this->\1.HALF.HI,False
+\._2_2_,.HALF.HI,False
+(?:\(u32\) )?\* ?\(u8\*\)&this->(\w*),this->\1.HALF.LO,False
+(?:\([us](?:32|16)\))? ?\* ?\(u8\*\)\(\(s32\)&(\S*) \+ 1\),\1.HALF.HI,False
+\(s32\)\(u32\)\(u16\)([\w\->]*),\1.HWORD,False
+\(s32\)\(u32\) \* \(u16\*\)&([\w\->]*),\1.HALF.LO,False
+\)\n\n{,) {,False
+    return;\n},},False
+(- .* >> 4 & 0x3fU \|.* >> 4 & 0x3fU.*<< 6[^\n]*),\1 // TODO look at TILE macro,True
+gPlayerState\.flags ,gPlayerState.flags.all ,False
+(\w*)->frames ,\1->frames.all ,False
+(\w*)->spriteSettings = \1->spriteSettings & 0xfc \| 2;,\1->spriteSettings.b.draw = 2;,False
+(\w*)->spriteSettings = \1->spriteSettings & 0xfc \| 1;,\1->spriteSettings.b.draw = 1;,False
+(\w*)->spriteSettings = \1->spriteSettings \| 3;,\1->spriteSettings.b.draw = 3;,False
+(\w*)->spriteSettings = \1->spriteSettings & 0xfc;,\1->spriteSettings.b.draw = 0;,False
+(\w*)->spriteSettings = \1->spriteSettings \| 0x40;,\1->spriteSettings.b.flipX = 1;,False
+(\w*)->spriteOrientation = .*\1->spriteOrientation \| 0xc0\);,\1->spriteOrientation.flipY = 3;,False
+(\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f \| 0x80\);,\1->spriteOrientation.flipY = 2;,False
+(\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f \| 0x40\);,\1->spriteOrientation.flipY = 1;,False
+(\w*)->spritePriority =.*\1->spritePriority & 199 \| 8\);,\1->spritePriority.b1 = 1;,False
+(\w*)->spritePriority =.*\1->spritePriority & 199\);,\1->spritePriority.b1 = 0;,False
+(\w*)->spritePriority = .*\1->spritePriority & 0xf8 \| 6\);,this->spritePriority.b0 = 6;,False
+(\w*)->spritePriority = .*\1->spritePriority & 0xf8 \| 4\);,this->spritePriority.b0 = 4;,False
+(\w*)->spritePriority = .*\1->spritePriority & 0xf8\);,this->spritePriority.b0 = 0;,False
+(\w*)->spritePriority = .*\1->spritePriority \| 7\);,this->spritePriority.b0 = 7;,False
+(\w*)->spriteRendering = .*\1->spriteRendering & 0xf3 \| 4\);,this->spriteRendering.alphaBlend = 1;,False
+(\w*)->spriteRendering = .*\1->spriteRendering & 0x3f\);,this->spriteRendering.b3 = 0;,False
+(\w*)->spriteRendering = .*\1->spriteRendering \| 3\);,this->spriteRendering.b0 = 3;,False
+(\w*)->spriteRendering = .*\1->spriteRendering \| 0xc0\);,this->spriteRendering.b3 = 3;,False
+\((\w*)\*\)0x0,NULL,False
+"__divsi3\(([^,]*), ([^\)]*)\)",\1 / \2,False
+"__modsi3\(([^,]*), ([^\)]*)\)",\1 % \2,False
+"_call_via_r1\((\w*), \*\(u32\*\)\(&(\w*) \+ \(u32\)(\S*) \* 4\)\);",\2[\3](\1);,False
+\(s32\)\(-(\S*) \| \1\) >> 0x1f,BOOLCAST(\1),False
