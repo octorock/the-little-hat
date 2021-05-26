@@ -25,20 +25,20 @@ def find_source_file(name: str) -> Optional[str]:
         return None
 
 
-def extract_nonmatching_section(inc_path: str, src_file: str) -> Optional[str]:
+def extract_nonmatching_section(inc_path: str, src_file: str) -> Tuple[Optional[str], str]:
     (headers, data) = read_file_split_headers(src_file)
 
     # match nonmatching section
     match = re.search(
         r'NONMATCH\(\"'+inc_path+r'\", ?(.*?)\) ?{(.*?)END_NONMATCH', ''.join(data), re.MULTILINE | re.DOTALL)
     if match:
-        return ''.join(headers) + '// end of existing headers\n\n' + match.group(1) + ' {' + match.group(2)
+        return (''.join(headers) + '// end of existing headers\n\n' + match.group(1) + ' {' + match.group(2), match.group(1))
 
     match = re.search(
         r'ASM_FUNC\(\"'+inc_path+r'\", ?(.*?)\)', ''.join(data), re.MULTILINE | re.DOTALL)
     if match:
-        return ''.join(headers) + '// end of existing headers\n\n' + match.group(1) + ') {\n\n}'
-    return None
+        return (''.join(headers) + '// end of existing headers\n\n' + match.group(1) + ') {\n\n}', match.group(1) + ')')
+    return (None, None)
 
 
 def prepare_asm(inc_file: str, name: str) -> str:
@@ -53,29 +53,29 @@ def prepare_asm(inc_file: str, name: str) -> str:
     return 'thumb_func_start ' + name + '\n' + name + ':\n' + (''.join(lines))
 
 
-def get_code(name: str) -> Tuple[bool, str, str]:
+def get_code(name: str) -> Tuple[bool, str, str, str]:
     # Find the .inc file for the non matching function
     inc_file = find_inc_file(name)
     if inc_file is None:
-        return (True, f'No {name}.inc found in asm/non_matching folder.', '')
+        return (True, f'No {name}.inc found in asm/non_matching folder.', '', '')
 
     src_file = find_source_file(name)
     if src_file is None:
-        return (True, f'Source file for {name} not found in tmc.map.', '')
+        return (True, f'Source file for {name} not found in tmc.map.', '', '')
     src_file = os.path.join(get_repo_location(), src_file)
 
     if not os.path.isfile(src_file):
-        return(True, f'{src_file} is not a file.', '')
+        return(True, f'{src_file} is not a file.', '', '')
 
     inc_path = inc_file.replace(get_repo_location() + '/', '')
 
-    src = extract_nonmatching_section(inc_path, src_file)
+    (src, signature) = extract_nonmatching_section(inc_path, src_file)
     if src is None:
-        return(True, f'No NONMATCH or ASM_FUNC section found for {inc_path} in {src_file}.', '')
+        return(True, f'No NONMATCH or ASM_FUNC section found for {inc_path} in {src_file}.', '', '')
 
     asm = prepare_asm(inc_file, name)
 
-    return (False, asm, src)
+    return (False, asm, src, signature)
 
 
 def split_code(code: str) -> Tuple[str, str]:
@@ -175,3 +175,15 @@ def store_code(name: str, header: str, src: str, matching: bool) -> Tuple[bool, 
         
 
     return (False, '')
+
+
+def find_globals() -> List[Tuple[str, str]]:
+    globals = []
+    for (root, dirs, files) in os.walk(os.path.join(get_repo_location(), 'include')):
+        for file in files:
+            with open(os.path.join(root, file), 'r') as f:
+                for line in f:
+                    match = re.match(r'extern (\w*) (\w*);', line)
+                    if match is not None:
+                        globals.append((match.group(1), match.group(2)))
+    return globals

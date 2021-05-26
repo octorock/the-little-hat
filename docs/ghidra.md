@@ -39,3 +39,4 @@ Select `Java` script type.
 
 Copy contents of `the-little-hat/plugins/cexplore_bridge/CExploreBridge.java`.
 
+Or directly create a symlink from the `ghidra_scripts` directory.

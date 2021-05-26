@@ -1,7 +1,6 @@
 from plugins.cexplore_bridge.ghidra import improve_decompilation
-from PySide6.QtGui import QClipboard
-from plugins.cexplore_bridge.code import get_code, split_code, store_code
-from PySide6.QtCore import QObject, QThread, Qt, Signal
+from plugins.cexplore_bridge.code import find_globals, get_code, split_code, store_code
+from PySide6.QtCore import QThread, Qt, Signal
 from PySide6.QtWidgets import QApplication, QDialog, QDialogButtonBox, QDockWidget
 from tlh.plugin.api import PluginApi
 from tlh.ui.ui_plugin_cexplore_bridge_dock import Ui_BridgeDock
@@ -49,6 +48,7 @@ class BridgeDock(QDockWidget):
         self.ui.pushButtonCopyJs.clicked.connect(self.slot_copy_js_code)
         self.ui.pushButtonGoTo.clicked.connect(self.slot_goto)
         self.ui.pushButtonDecompile.clicked.connect(self.slot_decompile)
+        self.ui.pushButtonGlobalTypes.clicked.connect(self.slot_global_types)
 
         self.enable_function_group(False)
         self.ui.labelConnectionStatus.setText('Server not yet running.')
@@ -89,14 +89,15 @@ class BridgeDock(QDockWidget):
     def slot_upload_function(self) -> None:
         # TODO try catch all of the slots?
 
-        (err, asm, src) = get_code(self.ui.lineEditFunctionName.text())
+        (err, asm, src, signature) = get_code(self.ui.lineEditFunctionName.text())
         if err:
             self.api.show_error('CExplore Bridge', asm)
             return
 
         if NO_CONFIRMS:
-            # For pros also directly go to the function in Ghidra
+            # For pros also directly go to the function in Ghidra and apply the signature
             self.slot_goto()
+            self.apply_function_type(self.ui.lineEditFunctionName.text(), signature)
 
         if NO_CONFIRMS or self.api.show_question('CExplore Bridge', f'Replace code in CExplore with {self.ui.lineEditFunctionName.text()}?'):
             self.server_worker.slot_send_asm_code(asm)
@@ -191,6 +192,39 @@ class BridgeDock(QDockWidget):
             self.server_worker.slot_add_c_code(code)
         except requests.exceptions.RequestException as e:
             self.api.show_error('CExplore Bridge', 'Could not reach Ghidra server. Did you start the script?')
+
+    def slot_global_types(self) -> None:
+        globals = find_globals()
+        success = True
+        for (type, name) in globals:
+            if not self.apply_global_type(name, type):
+                success = False
+                break
+        if success:
+            self.api.show_message('CExplore Bridge', 'Applied all global types.')
+
+    def apply_global_type(self, name: str, type: str) -> bool:
+        try:
+            print('http://localhost:10242/globalType/' + name + '/' + type)
+            r = requests.get('http://localhost:10242/globalType/' + name + '/' + type)
+            if r.status_code != 200:
+                self.api.show_error('CExplore Bridge', r.text)
+                return False
+            return True
+        except requests.exceptions.RequestException as e:
+            self.api.show_error('CExplore Bridge', 'Could not reach Ghidra server. Did you start the script?')
+            return False
+
+    def apply_function_type(self, name: str, signature: str) -> bool:
+        try:
+            r = requests.get('http://localhost:10242/functionType/' + name + '/' + signature)
+            if r.status_code != 200:
+                self.api.show_error('CExplore Bridge', r.text)
+                return False
+            return True
+        except requests.exceptions.RequestException as e:
+            self.api.show_error('CExplore Bridge', 'Could not reach Ghidra server. Did you start the script?')
+            return False
 
 class ReceivedDialog(QDialog):
     signal_matching = Signal(str, str)
