@@ -52,7 +52,7 @@ def read_replacements_from_file() -> list[Replacement]:
     with open(get_file_in_database('ghidra.csv'), 'r') as f:
         reader = DictReader(f)
         for row in reader:
-            replacements.append(Replacement(row['source'], row['replacement'], row['dotall'] == True))
+            replacements.append(Replacement(row['source'], row['replacement'], row['dotall'] == 'True'))
     return replacements
 
 
