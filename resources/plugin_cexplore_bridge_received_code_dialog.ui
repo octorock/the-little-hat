@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>459</width>
-    <height>317</height>
+    <width>436</width>
+    <height>412</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,6 +20,16 @@
       <string>Received code from CExplore. Please make sure it was correctly split.</string>
      </property>
     </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>New includes:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPlainTextEdit" name="plainTextEditIncludes"/>
    </item>
    <item>
     <widget class="QLabel" name="label_3">

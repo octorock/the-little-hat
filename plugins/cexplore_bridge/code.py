@@ -78,13 +78,15 @@ def get_code(name: str) -> Tuple[bool, str, str, str]:
     return (False, asm, src, signature)
 
 
-def split_code(code: str) -> Tuple[str, str]:
+def split_code(code: str) -> Tuple[str, str, str]:
     if '// end of existing headers' in code:
         code = code.split('// end of existing headers')[1].strip()
 
+    includes = []
     headers = []
     data = []
     lines = code.split('\n')
+    in_includes = True
     in_headers = True
     for line in lines:
         if in_headers:
@@ -95,10 +97,17 @@ def split_code(code: str) -> Tuple[str, str]:
                 in_headers = False
                 data.append(line)
             else:
-                headers.append(line)
+                if in_includes:
+                    if line.strip() == '' or '#include' in line:
+                        includes.append(line)
+                    else:
+                        in_includes = False
+                        headers.append(line)
+                else:
+                    headers.append(line)
         else:
             data.append(line)
-    return ('\n'.join(headers).strip(), '\n'.join(data).strip())
+    return ('\n'.join(includes).strip(),'\n'.join(headers).strip(), '\n'.join(data).strip())
 
 
 def read_file_split_headers(src_file: str) -> Tuple[List[str], List[str]]:
@@ -123,7 +132,7 @@ def read_file_split_headers(src_file: str) -> Tuple[List[str], List[str]]:
     return (headers, data)
 
 
-def store_code(name: str, header: str, src: str, matching: bool) -> Tuple[bool, str]:
+def store_code(name: str, includes: str, header: str, src: str, matching: bool) -> Tuple[bool, str]:
     # Find the .inc file for the non matching function
     inc_file = find_inc_file(name)
     if inc_file is None:
@@ -140,6 +149,17 @@ def store_code(name: str, header: str, src: str, matching: bool) -> Tuple[bool, 
     inc_path = inc_file.replace(get_repo_location() + '/', '')
 
     (headers, data) = read_file_split_headers(src_file)
+
+    # https://stackoverflow.com/a/23146126
+    def find_last_containing(lst, sought_elt):
+        for r_idx, elt in enumerate(reversed(lst)):
+            if sought_elt in elt:
+                return len(lst) - 1 - r_idx
+
+    # Insert includes at the correct place
+    last_include_index = find_last_containing(headers, '#include')
+    print(last_include_index)
+    headers.insert(last_include_index + 1, includes.strip() + '\n')
 
     # Append headers
     if header.strip() != '':

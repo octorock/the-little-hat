@@ -113,21 +113,21 @@ class BridgeDock(QDockWidget):
     def slot_received_c_code(self, code: str) -> None:
 
         self.enable_function_group(True)
-        (header, src) = split_code(code)
+        (includes, header, src) = split_code(code)
         dialog = ReceivedDialog(self)
         dialog.signal_matching.connect(self.slot_store_matching)
         dialog.signal_nonmatching.connect(self.slot_store_nonmatching)
-        dialog.show_code(header, src)
+        dialog.show_code(includes, header, src)
 
-    def slot_store_matching(self, header: str, code: str) -> None:
-        self.store(header, code, True)
+    def slot_store_matching(self, includes: str, header: str, code: str) -> None:
+        self.store(includes, header, code, True)
 
-    def slot_store_nonmatching(self, header: str, code: str) -> None:
-        self.store(header, code, False)
+    def slot_store_nonmatching(self, includes: str,header: str, code: str) -> None:
+        self.store(includes, header, code, False)
 
-    def store(self, header: str, code: str, matching: bool) -> None:
+    def store(self, includes: str,header: str, code: str, matching: bool) -> None:
         (err, msg) = store_code(
-            self.ui.lineEditFunctionName.text(), header, code, matching)
+            self.ui.lineEditFunctionName.text(), includes, header, code, matching)
         if err:
             self.api.show_error('CExplore Bridge', msg)
             return
@@ -187,7 +187,6 @@ class BridgeDock(QDockWidget):
                 self.api.show_error('CExplore Bridge', r.text)
                 return
             result = r.text
-            print('result', result)
             code = improve_decompilation(result)
             self.server_worker.slot_add_c_code(code)
         except requests.exceptions.RequestException as e:
@@ -227,19 +226,24 @@ class BridgeDock(QDockWidget):
             return False
 
 class ReceivedDialog(QDialog):
-    signal_matching = Signal(str, str)
-    signal_nonmatching = Signal(str, str)
+    signal_matching = Signal(str, str, str)
+    signal_nonmatching = Signal(str, str, str)
 
     def __init__(self, parent) -> None:
         super().__init__(parent)
         self.ui = Ui_ReceivedCodeDialog()
         self.ui.setupUi(self)
         self.ui.buttonBox.button(QDialogButtonBox.Yes).clicked.connect(lambda: self.signal_matching.emit(
-            self.ui.plainTextEditHeaders.toPlainText(), self.ui.plainTextEditCode.toPlainText()))
+            self.ui.plainTextEditIncludes.toPlainText(),
+            self.ui.plainTextEditHeaders.toPlainText(),
+            self.ui.plainTextEditCode.toPlainText()))
         self.ui.buttonBox.button(QDialogButtonBox.No).clicked.connect(lambda: self.signal_nonmatching.emit(
-            self.ui.plainTextEditHeaders.toPlainText(), self.ui.plainTextEditCode.toPlainText()))
+            self.ui.plainTextEditIncludes.toPlainText(),
+            self.ui.plainTextEditHeaders.toPlainText(),
+            self.ui.plainTextEditCode.toPlainText()))
 
-    def show_code(self, header: str, code: str) -> None:
+    def show_code(self, includes: str, header: str, code: str) -> None:
+        self.ui.plainTextEditIncludes.setPlainText(includes)
         self.ui.plainTextEditHeaders.setPlainText(header)
         self.ui.plainTextEditCode.setPlainText(code)
         self.show()

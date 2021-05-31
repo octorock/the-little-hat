@@ -29,6 +29,7 @@ gPlayerState\.flags ,gPlayerState.flags.all ,False
 (\w*)->spriteOrientation = .*\1->spriteOrientation \| 0xc0\);,\1->spriteOrientation.flipY = 3;,False
 (\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f \| 0x80\);,\1->spriteOrientation.flipY = 2;,False
 (\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f \| 0x40\);,\1->spriteOrientation.flipY = 1;,False
+(\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f\);,\1->spriteOrientation.flipY = 0;,False
 (\w*)->spritePriority =.*\1->spritePriority & 199 \| 8\);,\1->spritePriority.b1 = 1;,False
 (\w*)->spritePriority =.*\1->spritePriority & 199\);,\1->spritePriority.b1 = 0;,False
 (\w*)->spritePriority = .*\1->spritePriority & 0xf8 \| (.)\);,\1->spritePriority.b0 = \2;,False
