@@ -19,13 +19,14 @@ Import using the format `Executable and Linking Format (ELF)`.
 
 Let it auto-analyze the file. (This takes a while).
 
+## Import data types
+Activate `Ghidra Bridge` plugin. Click on <kbd>Tools | Plugins | Export headers to Ghidra</kbd>.
 
-Run `modify_includes_for_ghidra.py`
-
-<kbd>File | Parse C Source...</kbd>
+Switch to Ghidra and click on
+<kbd>File | Parse C Source...</kbd>.
 
 Click on the <kbd>Clear profile</kbd> button in the top right.
-In `Source files to parse` click on the <kbd>Display file chooser to select files to add</kbd> button. Navigate to the `tmp/ghidra_types` folder and select all files and click <kbd>OK</kbd>. Do the same for the `tmp/ghidra_types/gba` folder.
+In `Source files to parse` click on the <kbd>Display file chooser to select files to add</kbd> button. Navigate to the `tmp/ghidra_types` folder and select all files and click <kbd>OK</kbd>.
 
 Click on <kbd>Parse to Program</kbd>.
 Click on <kbd>Continue?</kbd> in the `Use Open Archives?` dialog.

@@ -14,7 +14,7 @@ class Edge:
 
 class FunctionCallGraphPlugin:
     name = 'Function Call Graph'
-    description = 'Calculate a graph of which functions call which other functions'
+    description = 'Calculate a graph of which functions call which\nother functions'
 
     def __init__(self, api: PluginApi) -> None:
         self.api = api
@@ -69,41 +69,3 @@ class FunctionCallGraphPlugin:
                 f.write(']\n')
         
             f.write(']\n')
-"""
-graph [
-	comment "This is a sample graph"
-	directed 1
-	id 42
-	label "Hello, I am a graph"
-	node [
-		id 1
-		label "node 1"
-		thisIsASampleAttribute 42
-	]
-	node [
-		id 2
-		label "node 2"
-		thisIsASampleAttribute 43
-	]
-	node [
-		id 3
-		label "node 3"
-		thisIsASampleAttribute 44
-	]
-	edge [
-		source 1
-		target 2
-		label "Edge from node 1 to node 2"
-	]
-	edge [
-		source 2
-		target 3
-		label "Edge from node 2 to node 3"
-	]
-	edge [
-		source 3
-		target 1
-		label "Edge from node 3 to node 1"
-	]
-]
-"""

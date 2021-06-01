@@ -10,11 +10,11 @@ from tlh.ui.ui_plugin_cexplore_bridge_received_code_dialog import Ui_ReceivedCod
 
 
 # Set this to true if you know what you are doing and want to skip all confirm dialogs and confirmation messages
-NO_CONFIRMS = False
+NO_CONFIRMS = True
 
 class CExploreBridgePlugin:
     name = 'CExplore Bridge'
-    description = 'Connects to CExplore instance for simple transfer of source code'
+    description = 'Connects to CExplore instance for simple transfer\nof source code'
 
     def __init__(self, api: PluginApi) -> None:
         self.api = api

@@ -69,5 +69,4 @@ Thumbs.db
 
 venv/
 __pycache__
-tmp
 .qt_for_python
