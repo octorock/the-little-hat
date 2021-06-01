@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 import os
-from importlib import import_module
-from typing import Optional
+from importlib import import_module, reload
+from typing import List, Optional
 from tlh import settings
 from tlh.plugin.api import PluginApi
 import inspect
 import traceback
+import sys
 
 plugin_folder = './plugins'
 main_module = '__init__'
@@ -19,6 +20,7 @@ class Plugin:
     enabled: bool
     cls: any
     instance: any
+    mod: any
 
     def get_settings_name(self) -> str:
         return self.pkg_name + ':' + self.class_name
@@ -42,6 +44,12 @@ def load_plugins(main_window):
             continue
         mod = import_module('plugins.' + i)
 
+        initialize_plugin(i, mod, plugins)
+
+
+    #return plugins
+
+def initialize_plugin(i: str, mod: any, plugins: List[Plugin]) -> Optional[Plugin]:
         clsmembers = inspect.getmembers(mod, inspect.isclass)
 
         found = False
@@ -55,7 +63,7 @@ def load_plugins(main_window):
                     continue
                 
                 found = True
-                plugin = Plugin(cls.name, cls.description, name, i, False, cls, None)
+                plugin = Plugin(cls.name, cls.description, name, i, False, cls, None, mod)
                 plugins.append(plugin)
 
                 if settings.is_plugin_enabled(i + ':' + name):
@@ -65,8 +73,6 @@ def load_plugins(main_window):
         if not found:
             print(f'No class ending with "Plugin" found in plugin {i}')
         
-
-    #return plugins
 
 def enable_plugin(plugin: Plugin) -> bool:
     try:
@@ -95,3 +101,23 @@ def disable_plugin(plugin: Plugin) -> None:
 
 def get_plugins() -> list[Plugin]:
     return plugins
+
+def reload_plugins() -> None:
+    global plugins
+    # Disable all enabled plugins
+    for plugin in plugins:
+        if plugin.enabled:
+            disable_plugin(plugin)
+
+
+    old_modules = [] 
+
+    for plugin in plugins:
+        old_modules.append((plugin.pkg_name, plugin.mod))
+
+    plugins = []
+
+    # Reload all modules
+    for (pkg_name, mod) in old_modules:
+        mod = reload(mod)
+        initialize_plugin(pkg_name, mod, plugins)

@@ -1,5 +1,5 @@
 import hashlib
-from tlh.plugin.loader import disable_plugin, enable_plugin, get_plugins
+from tlh.plugin.loader import disable_plugin, enable_plugin, get_plugins, reload_plugins
 import typing
 
 import PySide6
@@ -194,7 +194,12 @@ class SettingsDialog(QDialog):
 
         # Add spacer to fill the remaining space
         self.ui.gridLayoutPlugins.addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
-        pass
+        self.ui.pushButtonReloadPlugins.clicked.connect(self.slot_reload_plugins)
+
+    def slot_reload_plugins(self):
+        reload_plugins()
+        self.close()
+
 
 
     def save_settings(self):

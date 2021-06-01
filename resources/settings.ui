@@ -20,7 +20,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="tabGeneral">
       <attribute name="title">
@@ -344,8 +344,8 @@ Use / to define submenus</string>
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>556</width>
-            <height>363</height>
+            <width>550</width>
+            <height>347</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayoutPlugins">
@@ -355,7 +355,6 @@ Use / to define submenus</string>
               <font>
                <family>Open Sans</family>
                <pointsize>10</pointsize>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -376,7 +375,6 @@ Use / to define submenus</string>
               <font>
                <family>Open Sans</family>
                <pointsize>10</pointsize>
-               <weight>75</weight>
                <italic>false</italic>
                <bold>true</bold>
               </font>
@@ -398,7 +396,6 @@ Use / to define submenus</string>
               <font>
                <family>Open Sans</family>
                <pointsize>10</pointsize>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -409,6 +406,19 @@ Use / to define submenus</string>
            </item>
           </layout>
          </widget>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButtonReloadPlugins">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Reload Plugins</string>
+         </property>
         </widget>
        </item>
       </layout>
