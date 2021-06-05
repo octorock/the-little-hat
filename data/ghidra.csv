@@ -26,6 +26,9 @@ gPlayerState\.flags ,gPlayerState.flags.all ,False
 (\w*)->spriteSettings = \1->spriteSettings \| 3;,\1->spriteSettings.b.draw = 3;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xfc;,\1->spriteSettings.b.draw = 0;,False
 (\w*)->spriteSettings = \1->spriteSettings \| 0x40;,\1->spriteSettings.b.flipX = 1;,False
+(\w*)->spriteSettings = \1->spriteSettings & 0xfc \| this->spriteSettings & 3 \^ 1;,\1->spriteSettings.b.draw ^= 1;,False
+(\w*)->spriteSettings = \1->spriteSettings & 0xcf \| 0x10;,\1->spriteSettings.b.shadow = 1;,False
+\((\w*)->spriteSettings \& 3\) ==,\1->spriteSettings.b.draw ==,False
 (\w*)->spriteOrientation = .*\1->spriteOrientation \| 0xc0\);,\1->spriteOrientation.flipY = 3;,False
 (\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f \| 0x80\);,\1->spriteOrientation.flipY = 2;,False
 (\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f \| 0x40\);,\1->spriteOrientation.flipY = 1;,False
@@ -43,5 +46,7 @@ gPlayerState\.flags ,gPlayerState.flags.all ,False
 \((\w*)\*\)0x0,NULL,False
 "__divsi3\(([^,]*), ([^\)]*)\)",\1 / \2,False
 "__modsi3\(([^,]*), ([^\)]*)\)",\1 % \2,False
-"_call_via_r1\((\w*), \*\(u32\*\)\(&(\w*) \+ \(u32\)(\S*) \* 4\)\);",\2[\3](\1);,False
+"_call_via_r1\((\w*), \*\(u32\*\)\(&(\w*) \+ (?:\(u32\))?(\S*) \* 4\)\);",\2[\3](\1);,False
+"_call_via_r1\((\w*), \(&(\w*)\)\[(\S*)\]\);",\2[\3](\1);,False
 \(s32\)\(-(\S*) \| \1\) >> 0x1f,BOOLCAST(\1),False
+(\S*) \= \1 (\S) (\S*);,\1 \2= \3;,False

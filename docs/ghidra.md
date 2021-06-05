@@ -14,7 +14,7 @@ Compiler: default
 ```
 ![Select Language and Compiler Specification dialog](img/language.png)
 
-Import using the format `Executable and Linking Format (ELF)`.
+Import using the format `Executable and Linking Format (ELF)`.  
 ![Import dialog](img/import.png)
 
 Let it auto-analyze the file. (This takes a while).

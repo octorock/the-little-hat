@@ -157,9 +157,9 @@ def store_code(name: str, includes: str, header: str, src: str, matching: bool) 
                 return len(lst) - 1 - r_idx
 
     # Insert includes at the correct place
-    last_include_index = find_last_containing(headers, '#include')
-    print(last_include_index)
-    headers.insert(last_include_index + 1, includes.strip() + '\n')
+    if includes.strip() != '':
+        last_include_index = find_last_containing(headers, '#include')
+        headers.insert(last_include_index + 1, includes.strip() + '\n')
 
     # Append headers
     if header.strip() != '':
