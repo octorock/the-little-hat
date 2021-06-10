@@ -49,7 +49,6 @@ general_patches = [
 def export_headers():
     INCLUDE_FOLDER = settings.get_repo_location()+'/include'
     OUTPUT_FOLDER = 'tmp/ghidra_types'
-    Path(OUTPUT_FOLDER).mkdir(parents=True, exist_ok=True)
 
     for (dirpath, dirnames, filenames) in walk(INCLUDE_FOLDER):
         for filepath in filenames:
@@ -57,6 +56,8 @@ def export_headers():
             abs_path = path.join(dirpath, filepath)
             rel_path = path.join(rel_dirpath, filepath)
             lines = open(abs_path, 'r').readlines()
+
+            Path(path.join(OUTPUT_FOLDER, rel_dirpath)).mkdir(parents=True, exist_ok=True)
 
             # Apply general patches
             for patch in general_patches:
@@ -66,5 +67,5 @@ def export_headers():
             if rel_path in file_specific_patches:
                 lines = file_specific_patches[rel_path](lines)
 
-            with open(OUTPUT_FOLDER+'/'+rel_path.replace('/', '_'), 'w') as file:
+            with open(path.join(OUTPUT_FOLDER, rel_path), 'w') as file:
                 file.writelines(lines)
