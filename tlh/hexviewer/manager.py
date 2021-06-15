@@ -59,6 +59,13 @@ class HexViewerManager(QObject):
             self.unlink(controller)
         self.controllers.remove(controller)
 
+    def get_controllers_for_variant(self, rom_variant: RomVariant) -> list[HexViewerController]:
+        result = []
+        for controller in self.controllers:
+            if controller.rom_variant == rom_variant:
+                result.append(controller)
+        return result
+
     def unlink_all(self) -> None:
         '''
         Unlinks all currently linked controllers

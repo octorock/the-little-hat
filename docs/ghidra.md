@@ -43,3 +43,8 @@ Copy contents of `the-little-hat/plugins/cexplore_bridge/CExploreBridge.java`.
 Or directly create a symlink from the `ghidra_scripts` directory.
 
 After starting the script, press `No` to keep it running in the background. It starts a webserver on port `10242` that can be used by the CExplore Bridge in *The Little Hat* to fetch the decompilation for a function and transfer it to CExplore.
+
+## Apply types to global vars
+Set up the CExplore Bridge in *The Little Hat* as described in [Using the CExplore Bridge plugin](cexplore_bridge.md). Start the CExplore Bridge webserver in Ghidra.
+
+Click the <kbd>Set Ghidra global types</kbd> button in the CExplore Bridge dock.

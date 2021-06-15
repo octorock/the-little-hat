@@ -25,28 +25,59 @@ gPlayerState\.flags ,gPlayerState.flags.all ,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xfc \| 1;,\1->spriteSettings.b.draw = 1;,False
 (\w*)->spriteSettings = \1->spriteSettings \| 3;,\1->spriteSettings.b.draw = 3;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xfc;,\1->spriteSettings.b.draw = 0;,False
+(\S*)->spriteSettings = \1->spriteSettings & 0xfc \| 1;,\1->spriteSettings.b.draw = 1;,False
 (\w*)->spriteSettings = \1->spriteSettings \| 0x40;,\1->spriteSettings.b.flipX = 1;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xfc \| this->spriteSettings & 3 \^ 1;,\1->spriteSettings.b.draw ^= 1;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xcf \| 0x10;,\1->spriteSettings.b.shadow = 1;,False
+(\w*)->spriteSettings = \1->spriteSettings & 0xbf;,\1->spriteSettings.b.flipX = 0;,False
 \((\w*)->spriteSettings \& 3\) ==,\1->spriteSettings.b.draw ==,False
 (\w*)->spriteOrientation = .*\1->spriteOrientation \| 0xc0\);,\1->spriteOrientation.flipY = 3;,False
 (\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f \| 0x80\);,\1->spriteOrientation.flipY = 2;,False
 (\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f \| 0x40\);,\1->spriteOrientation.flipY = 1;,False
 (\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f\);,\1->spriteOrientation.flipY = 0;,False
-(\w*)->spritePriority =.*\1->spritePriority & 199 \| 8\);,\1->spritePriority.b1 = 1;,False
 (\w*)->spritePriority =.*\1->spritePriority & 199\);,\1->spritePriority.b1 = 0;,False
-(\w*)->spritePriority = .*\1->spritePriority & 0xf8 \| (.)\);,\1->spritePriority.b0 = \2;,False
+(\w*)->spritePriority =.*\1->spritePriority & 199 \| 8\);,\1->spritePriority.b1 = 1;,False
+(\w*)->spritePriority =.*\1->spritePriority & 199 \| 0x10\);,\1->spritePriority.b1 = 2;,False
+(\w*)->spritePriority =.*\1->spritePriority & 199 \| 0x18\);,\1->spritePriority.b1 = 3;,False
 (\w*)->spritePriority = .*\1->spritePriority & 0xf8\);,\1->spritePriority.b0 = 0;,False
+(\w*)->spritePriority = .*\1->spritePriority & 0xf8 \| (.)\);,\1->spritePriority.b0 = \2;,False
 (\w*)->spritePriority = .*\1->spritePriority \| 7\);,\1->spritePriority.b0 = 7;,False
 (\w*)->spriteRendering = .*\1->spriteRendering & 0xf3 \| 4\);,\1->spriteRendering.alphaBlend = 1;,False
 (\w*)->spriteRendering = .*\1->spriteRendering & 0x3f\);,\1->spriteRendering.b3 = 0;,False
 (\w*)->spriteRendering = .*\1->spriteRendering & 0x3f \| 0x40\);,\1->spriteRendering.b3 = 1;,False
 (\w*)->spriteRendering = .*\1->spriteRendering \| 3\);,\1->spriteRendering.b0 = 3;,False
 (\w*)->spriteRendering = .*\1->spriteRendering \| 0xc0\);,\1->spriteRendering.b3 = 3;,False
+(\w*)->palette = \1->palette & 0xf0;,\1->palette.b.b0 = 0;,False
+(\w*)->palette = \1->palette & 0xf0 \| (.);,\1->palette.b.b0 = \2;,False
+
 \((\w*)\*\)0x0,NULL,False
 "__divsi3\(([^,]*), ([^\)]*)\)",\1 / \2,False
 "__modsi3\(([^,]*), ([^\)]*)\)",\1 % \2,False
 "_call_via_r1\((\w*), \*\(u32\*\)\(&(\w*) \+ (?:\(u32\))?(\S*) \* 4\)\);",\2[\3](\1);,False
 "_call_via_r1\((\w*), \(&(\w*)\)\[(\S*)\]\);",\2[\3](\1);,False
+"_call_via_r2\((\w*), (\w*), \*\(u32\*\)\(&(\w*) \+ (?:\(u32\))?(\S*) \* 4\)\);","\3[\4](\1, \2);",False
 \(s32\)\(-(\S*) \| \1\) >> 0x1f,BOOLCAST(\1),False
 (\S*) \= \1 (\S) (\S*);,\1 \2= \3;,False
+'\\a',7,False
+'\\b',8,False
+'\\0',0,False
+'\\x([0-9a-f]+)',0x\1,False
+'\\r',0xd,False
+'!',0x21,False
+'P',0x50,False
+'<',0x3c,False
+0x01,1,False
+0x02,2,False
+0x03,3,False
+0x04,4,False
+0x05,5,False
+0x06,6,False
+0x07,7,False
+0x08,8,False
+0x09,9,False
+'}',0x7d,False
+'\\v,0xb,False
+' ',0x20,False
+'&',0x26,False
+'\(',0x28,False
+'\\'',0x27,False

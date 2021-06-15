@@ -201,8 +201,16 @@ class MainWindow(QMainWindow):
     def slot_reload_custom_rom(self) -> None:
         invalidate_rom(RomVariant.CUSTOM)
 
+        # Reload all hex viewers for the CUSTOM variant
+                
+        controllers = self.dock_manager.hex_viewer_manager.get_controllers_for_variant(RomVariant.CUSTOM)
+        for controller in controllers:
+            controller.invalidate()
+
+        # TODO also reload all linked viewers?
+
         self.update_hex_viewer_actions()
-        QMessageBox.information(self, 'Reloaded CUSTOM rom', 'Invalidated CUSTOM rom. You need to close and reopen CUSTOM hex viewers to view the new data.')
+        # QMessageBox.information(self, 'Reloaded CUSTOM rom', 'Invalidated CUSTOM rom. You need to close and reopen CUSTOM hex viewers to view the new data.')
 
 def run():
     # Be able to close with Ctrl+C in the terminal once Qt is started https://stackoverflow.com/a/5160720

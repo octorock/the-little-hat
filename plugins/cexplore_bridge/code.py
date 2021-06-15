@@ -20,7 +20,7 @@ def find_source_file(name: str) -> Optional[str]:
         for line in f:
             if line.startswith(' .text'):
                 current_file = line.split()[3]
-            elif line.strip().endswith(name):
+            elif line.strip().endswith(' ' + name):
                 return current_file[0:-2] + '.c'
         return None
 

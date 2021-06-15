@@ -163,6 +163,13 @@ class HexViewerController(QObject):
         if linked != self.is_linked:
             self.signal_toggle_linked.emit(linked)
 
+    def invalidate(self) -> None:
+        '''
+        Invalidates all assumptions about the underlying data and requests a full repaint.
+        Call this if the underlying rom changed.
+        '''
+        self.request_repaint()
+
     def request_repaint(self) -> None:
         '''
         Invalidates the display byte cache and repaints
