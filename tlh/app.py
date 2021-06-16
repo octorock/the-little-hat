@@ -1,6 +1,5 @@
 import signal
 import sys
-from tlh.data.symbols import load_symbols_from_map
 from tlh.common.ui.progress_dialog import ProgressDialog
 from tlh.data.rom import get_rom, invalidate_rom
 from tlh.common.ui.layout import Layout
@@ -14,7 +13,7 @@ from PySide6.QtWidgets import (QApplication, QInputDialog,
 from tlh import settings
 from tlh.common.ui.dark_theme import apply_dark_theme
 from tlh.const import RomVariant
-from tlh.data.database import initialize_databases, save_all_databases
+from tlh.data.database import get_symbol_database, initialize_databases, save_all_databases
 from tlh.plugin.loader import load_plugins
 from tlh.settings.ui import SettingsDialog
 from tlh.ui.ui_mainwindow import Ui_MainWindow
@@ -70,7 +69,7 @@ class MainWindow(QMainWindow):
 
 
         if settings.is_always_load_symbols():
-            self.load_symbols(True)
+            self.load_symbols(RomVariant.CUSTOM, True)
 
     def closeEvent(self, event):
         layout = Layout('', self.saveState(), self.saveGeometry(),
@@ -166,9 +165,9 @@ class MainWindow(QMainWindow):
         self.ui.actionCUSTOM.setDisabled(get_rom(RomVariant.CUSTOM) is None)
 
     def slot_load_symbols(self):
-        self.load_symbols(False)
+        self.load_symbols(RomVariant.CUSTOM, False)
 
-    def load_symbols(self, silent: bool) -> None:
+    def load_symbols(self, rom_variant: RomVariant, silent: bool) -> None:
         map_file = path.join(settings.get_repo_location(), 'tmc.map')
         if not path.isfile(map_file):
             if silent:
@@ -176,9 +175,10 @@ class MainWindow(QMainWindow):
             else:
                 QMessageBox.critical(self, 'Load symbols from .map file', f'Could not find tmc.map file at {map_file}.')
             return
-        load_symbols_from_map(map_file)
+
+        get_symbol_database().load_symbols_from_map(rom_variant, map_file)
         if not silent:
-            QMessageBox.information(self, 'Load symbols', 'Successfully loaded symbols for USA rom from tmc.map file.')
+            QMessageBox.information(self, 'Load symbols', f'Successfully loaded symbols for {rom_variant} rom from tmc.map file.')
 
 
     def slot_save(self) -> None:

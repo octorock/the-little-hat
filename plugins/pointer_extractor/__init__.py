@@ -1,8 +1,7 @@
 from tlh.data.pointer import Pointer
 from sortedcontainers.sortedlist import SortedKeyList
-from tlh.data.symbols import are_symbols_loaded, get_symbol_at
 from tlh.const import ROM_OFFSET, RomVariant
-from tlh.data.database import get_pointer_database
+from tlh.data.database import get_pointer_database, get_symbol_database
 from tlh.plugin.api import PluginApi
 import os
 from tlh import settings
@@ -78,9 +77,13 @@ class PointerExtractorPlugin:
             #return
             self.slot_parse_incbins()
 
-        if not are_symbols_loaded():
+        symbol_database = get_symbol_database()
+
+        if not symbol_database.are_symbols_loaded(RomVariant.USA):
             self.api.show_error('Pointer Extractor', 'Symbols for USA rom need to be loaded first')
             return
+
+        symbols = symbol_database.get_symbols(RomVariant.USA)
 
         pointers = get_pointer_database().get_pointers(RomVariant.USA)
 
@@ -117,7 +120,7 @@ class PointerExtractorPlugin:
         for file in to_extract:
             for pointer in to_extract[file]:
 
-                symbol = get_symbol_at(pointer.points_to - ROM_OFFSET)
+                symbol = symbols.get_symbol_at(pointer.points_to - ROM_OFFSET)
                 offset = pointer.points_to - ROM_OFFSET - symbol.address
                 if offset > 1: # Offset 1 is ok for function pointers
                     print(pointer)
@@ -229,7 +232,7 @@ class PointerExtractorPlugin:
 
                             while next_pointer.address >= addr and next_pointer.address < addr+length:
                                 # Pointer is in this incbin
-                                symbol = get_symbol_at(next_pointer.points_to - ROM_OFFSET)
+                                symbol = symbols.get_symbol_at(next_pointer.points_to - ROM_OFFSET)
                                 offset = next_pointer.points_to - ROM_OFFSET - symbol.address
                                 if offset > 1:
                                     # Missing label

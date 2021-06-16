@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from tlh.const import ROM_OFFSET
+from tlh.const import ROM_OFFSET, RomVariant
 from tlh import settings
 from sortedcontainers import SortedKeyList
 from sortedcontainers.sortedlist import SortedList
@@ -13,16 +13,28 @@ class Symbol:
     file: str = None
     length: int = 0
 
-symbols: SortedKeyList[Symbol] = None
+symbols: dict[RomVariant, SortedKeyList[Symbol]] = {}
 
-def are_symbols_loaded() -> bool:
-    return symbols is not None
+def are_symbols_loaded(rom_variant: RomVariant) -> bool:
+    return rom_variant in symbols
 
-def get_symbol_at(local_address: int) -> Optional[Symbol]:
-    if len(symbols) == 0:
-        return None
-    index = symbols.bisect_key_right(local_address)
-    return symbols[index-1]
+class SymbolList:
+    symbols: SortedKeyList[Symbol]
+
+    def __init__(self, symbols: SortedKeyList[Symbol]) -> None:
+        self.symbols = symbols
+
+    def get_symbol_at(self, local_address: int) -> Optional[Symbol]:
+        if len(self.symbols) == 0:
+            return None
+        index = self.symbols.bisect_key_right(local_address)
+        return self.symbols[index-1]
+
+    def get_symbol_after(self, local_address: int) -> Optional[Symbol]:
+        if len(self.symbols) == 0:
+            return None
+        index = self.symbols.bisect_key_right(local_address)
+        return self.symbols[index]
 
 
 def load_symbols_from_map(path: str) -> None:

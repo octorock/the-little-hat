@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from tlh.data.symbols import are_symbols_loaded, get_symbol_at
 from tlh.const import ROM_OFFSET, RomVariant
 from tlh.plugin.api import PluginApi
-from tlh.data.database import get_pointer_database
+from tlh.data.database import get_pointer_database, get_symbol_database
 
 
 @dataclass
@@ -11,6 +10,8 @@ class Edge:
     from_offset: int
     to_symbol: str
     to_offset: int
+
+rom_variant = RomVariant.USA
 
 class FunctionCallGraphPlugin:
     name = 'Function Call Graph'
@@ -27,18 +28,22 @@ class FunctionCallGraphPlugin:
 
     def slot_call_graph(self) -> None:
 
-        pointers = get_pointer_database().get_pointers(RomVariant.USA)
-        if not are_symbols_loaded():
-            self.api.show_error(self.name, 'Symbols for USA rom are not loaded')
-            return
+        symbol_database = get_symbol_database()
         
+
+        pointers = get_pointer_database().get_pointers(rom_variant)
+        if not symbol_database.are_symbols_loaded(rom_variant):
+            self.api.show_error(self.name, f'Symbols for {rom_variant} rom are not loaded')
+            return
+
+        symbols = symbol_database.get_symbols(rom_variant)
 
         nodes = set()
         edges: list[Edge] = []
 
         for pointer in pointers.get_sorted_pointers():
-            symbol_from = get_symbol_at(pointer.address)
-            symbol_to = get_symbol_at(pointer.points_to-ROM_OFFSET)
+            symbol_from = symbols.get_symbol_at(pointer.address)
+            symbol_to = symbols.get_symbol_at(pointer.points_to-ROM_OFFSET)
             offset_from = pointer.address - symbol_from.address
             offset_to = pointer.points_to-ROM_OFFSET - symbol_to.address
 

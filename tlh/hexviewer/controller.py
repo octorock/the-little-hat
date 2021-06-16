@@ -1,9 +1,9 @@
 from dataclasses import dataclass
-from tlh.data.symbols import are_symbols_loaded, get_symbol_at
+from tlh.data.symbols import Symbol, SymbolList
 from tlh.hexviewer.display_byte import DisplayByte
 from tlh.hexviewer.ui.hex_area import KeyType
 from tlh.data.rom import Rom
-from tlh.data.database import get_annotation_database, get_pointer_database, get_constraint_database
+from tlh.data.database import get_annotation_database, get_pointer_database, get_constraint_database, get_symbol_database
 from tlh.data.annotations import AnnotationList, Annotation
 from tlh.data.pointer import Pointer, PointerList
 from tlh.data.constraints import Constraint, ConstraintList, ConstraintManager, InvalidConstraintError
@@ -110,6 +110,7 @@ class HexViewerController(QObject):
         self.pointers: PointerList = None
         self.annotations: AnnotationList = None
         self.constraints: ConstraintList = None
+        self.symbols: SymbolList = None
 
         self.update_pointers()
         get_pointer_database().pointers_changed.connect(self.slot_update_pointers)
@@ -119,6 +120,9 @@ class HexViewerController(QObject):
 
         self.update_constraints()
         get_constraint_database().constraints_changed.connect(self.slot_update_constraints)
+
+        self.update_symbols()
+        get_symbol_database().symbols_changed.connect(self.slot_update_symbols)
 
         self.update_hex_area()
 
@@ -149,6 +153,18 @@ class HexViewerController(QObject):
     def slot_update_constraints(self) -> None:
         self.update_constraints()
         self.request_repaint()
+
+    def update_symbols(self):
+        symbol_database = get_symbol_database()
+        if symbol_database.are_symbols_loaded(self.rom_variant):
+            self.symbols = symbol_database.get_symbols(self.rom_variant)
+        else:
+            self.symbols = None
+
+    def slot_update_symbols(self) -> None:
+        self.update_symbols()
+        self.request_repaint()
+
 
     def set_linked(self, linked: bool) -> None:
         self.is_linked = linked
@@ -368,9 +384,9 @@ class HexViewerController(QObject):
             if self.selected_bytes != 0:
                 text += f' Bytes selected: {self.selected_bytes}'
 
-            if self.rom_variant == RomVariant.USA and are_symbols_loaded():
+            if self.symbols is not None:
                 # Show symbol at cursor for USA if symbols are loaded from .map file
-                symbol = get_symbol_at(local_address)
+                symbol = self.symbols.get_symbol_at(local_address)
                 if symbol is not None:
                     offset = local_address - symbol.address
                     text += f'\n{symbol.name} (+{offset}|{symbol.length}) [{symbol.file}] '
@@ -607,9 +623,9 @@ class HexViewerController(QObject):
             QToolTip.hideText()
             return True
         text = f'Pointer to {hex(pointers[0].points_to)}'
-        if self.rom_variant == RomVariant.USA:
+        if self.symbols is not None:
             points_to = pointers[0].points_to-ROM_OFFSET
-            symbol = get_symbol_at(points_to)
+            symbol = self.symbols.get_symbol_at(points_to)
             if symbol is not None:
                 offset = points_to - symbol.address
                 text += f'\n{symbol.name} (+{offset}) [{symbol.file}]'

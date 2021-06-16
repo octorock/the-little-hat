@@ -18,3 +18,5 @@ class RomVariant(str, Enum):
 
     def __repr__(self):
         return self.name
+
+ALL_ROM_VARIANTS = [RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.CUSTOM]
