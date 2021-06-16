@@ -36,6 +36,12 @@ class SymbolList:
         index = self.symbols.bisect_key_right(local_address)
         return self.symbols[index]
 
+    def find_symbol_by_name(self, name: str) -> Optional[Symbol]:
+        for symbol in self.symbols:
+            if symbol.name == name:
+                return symbol
+        return None
+
 
 def load_symbols_from_map(path: str) -> None:
     global symbols

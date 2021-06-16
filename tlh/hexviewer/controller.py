@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from tlh.data.symbols import Symbol, SymbolList
 from tlh.hexviewer.display_byte import DisplayByte
 from tlh.hexviewer.ui.hex_area import KeyType
-from tlh.data.rom import Rom
+from tlh.data.rom import Rom, get_rom
 from tlh.data.database import get_annotation_database, get_pointer_database, get_constraint_database, get_symbol_database
 from tlh.data.annotations import AnnotationList, Annotation
 from tlh.data.pointer import Pointer, PointerList
@@ -86,7 +86,7 @@ class HexViewerController(QObject):
             self.slot_go_to_pointer_at)
 
         # Keyboard shortcuts
-        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_G), self.dock,
+        QShortcut(QKeySequence(Qt.Key_G), self.dock,
                   self.slot_show_goto_dialog, context=Qt.WidgetWithChildrenShortcut)
         QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), self.dock,
                   self.copy_selected_bytes, context=Qt.WidgetWithChildrenShortcut)
@@ -184,6 +184,8 @@ class HexViewerController(QObject):
         Invalidates all assumptions about the underlying data and requests a full repaint.
         Call this if the underlying rom changed.
         '''
+        self.rom = get_rom(self.rom_variant)
+
         self.request_repaint()
 
     def request_repaint(self) -> None:
@@ -285,12 +287,25 @@ class HexViewerController(QObject):
             return virtual_address >= self.cursor and virtual_address < self.cursor + self.selected_bytes
 
     def slot_show_goto_dialog(self):
-        (local_address, res) = QInputDialog.getText(
+        (input_str, res) = QInputDialog.getText(
             self.dock, 'Goto', 'Enter local address to jump to')
         if res:
-            # Parse as hex (TODO maybe as decimal, if no 0x and no)
+            # Parse as hex (TODO maybe as decimal, if no 0x and no ABCDEF)
             # TODO handle errors
-            local_address = int(local_address, 16)
+            try:
+                local_address = int(input_str, 16)
+            except ValueError:
+                # maybe it is a symbol?
+                if self.symbols is not None:
+                    symbol = self.symbols.find_symbol_by_name(input_str)
+                    if symbol is not None:
+                        local_address = symbol.address
+                    else:
+                        QMessageBox.critical(self.parent(), 'Goto', f'{input_str} is not an address or symbol.')
+                        return
+                else:
+                    QMessageBox.critical(self.parent(), 'Goto', f'{input_str} is not an address and symbols are not loaded for {self.rom_variant}.')
+                    return
 
             if local_address > ROM_OFFSET:
                 local_address -= ROM_OFFSET
