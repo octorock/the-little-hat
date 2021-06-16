@@ -482,6 +482,9 @@ class HexViewerController(QObject):
         menu.addAction('Copy cursor address', self.copy_cursor_address)
         menu.addAction('Copy selected bytes', self.copy_selected_bytes)
 
+        if self.symbols is not None:
+            menu.addAction('Copy symbol at or before cursor address', self.slot_copy_symbol)
+
         if abs(self.selected_bytes) == 4:
             menu.addAction('Copy selected as pointer address',
                            self.copy_selected_pointer_address)
@@ -515,6 +518,12 @@ class HexViewerController(QObject):
 
     def get_local_address(self, virtual_address: int) -> int:
         return self.address_resolver.to_local(virtual_address)
+
+    def slot_copy_symbol(self):
+        symbol = self.symbols.get_symbol_at(self.address_resolver.to_local(self.cursor))
+        if symbol is not None:
+            QApplication.clipboard().setText(symbol.name)
+        
 
     def get_bytes_str(self, range: range) -> str:
         results = []
@@ -673,12 +682,16 @@ class HexViewerController(QObject):
             return self.rom.get_byte(local_address+3) == 8
         return False
 
+    def is_diffing(self, virtual_address: int) -> None:
+        return self.diff_calculator.is_diffing(virtual_address)
+
     def slot_jump_to_next_diff(self) -> None:
         virtual_address = self.cursor
         if self.selected_bytes > 0:
             virtual_address += self.selected_bytes
 
-        while not self.is_diffing_and_not_pointer(virtual_address) and virtual_address < 0xfffffff:
+        #while not self.is_diffing_and_not_pointer(virtual_address) and virtual_address < 0xfffffff:
+        while not self.is_diffing(virtual_address) and virtual_address < 0xfffffff:
 
             # TODO end of file
             virtual_address += 1
