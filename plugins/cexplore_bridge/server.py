@@ -22,7 +22,7 @@ class ServerWorker(QObject):
             log.setLevel(logging.ERROR)
 
             sio = socketio.Server(async_mode='threading', cors_allowed_origins=[
-                                  'http://cexplore.henny022.de', 'http://localhost:10240'])
+                                  'https://cexplore.henny022.eu.ngrok.io', 'http://localhost:10240'])
             self.sio = sio
             app = Flask(__name__)
             app.wsgi_app = socketio.WSGIApp(sio, app.wsgi_app)

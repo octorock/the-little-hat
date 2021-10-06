@@ -49,6 +49,7 @@ class BridgeDock(QDockWidget):
         self.ui.pushButtonGoTo.clicked.connect(self.slot_goto)
         self.ui.pushButtonDecompile.clicked.connect(self.slot_decompile)
         self.ui.pushButtonGlobalTypes.clicked.connect(self.slot_global_types)
+        self.ui.pushButtonUploadAndDecompile.clicked.connect(self.slot_upload_and_decompile)
 
         self.enable_function_group(False)
         self.ui.labelConnectionStatus.setText('Server not yet running.')
@@ -81,15 +82,19 @@ class BridgeDock(QDockWidget):
         self.ui.pushButtonDownload.setEnabled(enabled)
         self.ui.pushButtonGoTo.setEnabled(enabled)
         self.ui.pushButtonDecompile.setEnabled(enabled)
+        self.ui.pushButtonUploadAndDecompile.setEnabled(enabled)
 
     def slot_stop_server(self) -> None:
         # Shutdown needs to be triggered by the server thread, so send a request
         requests.get('http://localhost:10241/shutdown')
 
     def slot_upload_function(self) -> None:
-        # TODO try catch all of the slots?
+        self.upload_function(True)
 
-        (err, asm, src, signature) = get_code(self.ui.lineEditFunctionName.text())
+    # Returns true if the user accepted the uploading
+    def upload_function(self, include_function: bool) -> bool:
+        # TODO try catch all of the slots?
+        (err, asm, src, signature) = get_code(self.ui.lineEditFunctionName.text(), include_function)
         if err:
             self.api.show_error('CExplore Bridge', asm)
             return
@@ -105,6 +110,8 @@ class BridgeDock(QDockWidget):
             if not NO_CONFIRMS:
                 self.api.show_message(
                     'CExplore Bridge', f'Uploaded code of {self.ui.lineEditFunctionName.text()}.')
+            return True
+        return False
 
     def slot_download_function(self) -> None:
         self.enable_function_group(False)
@@ -191,6 +198,12 @@ class BridgeDock(QDockWidget):
             self.server_worker.slot_add_c_code(code)
         except requests.exceptions.RequestException as e:
             self.api.show_error('CExplore Bridge', 'Could not reach Ghidra server. Did you start the script?')
+
+    def slot_upload_and_decompile(self) -> None:
+        # Upload, but don't include the function.
+        if self.upload_function(False):
+            # Now add the decompiled function.
+            self.slot_decompile()
 
     def slot_global_types(self) -> None:
         globals = find_globals()

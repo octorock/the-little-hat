@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>330</width>
-    <height>273</height>
+    <width>321</width>
+    <height>301</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,10 +15,31 @@
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QGridLayout" name="gridLayout_2">
+    <item row="6" column="1">
+     <widget class="QPushButton" name="pushButtonUploadAndDecompile">
+      <property name="text">
+       <string>Upload and Decompile</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0" colspan="2">
+     <widget class="QLabel" name="labelConnectionStatus">
+      <property name="text">
+       <string>Connection Status: unknown</string>
+      </property>
+     </widget>
+    </item>
     <item row="5" column="0" colspan="2">
      <widget class="QLineEdit" name="lineEditFunctionName">
       <property name="placeholderText">
        <string>Function name</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="2">
+     <widget class="QPushButton" name="pushButtonStopServer">
+      <property name="text">
+       <string>Stop Server</string>
       </property>
      </widget>
     </item>
@@ -29,14 +50,28 @@
       </property>
      </widget>
     </item>
-    <item row="6" column="1">
-     <widget class="QPushButton" name="pushButtonDownload">
+    <item row="1" column="0" colspan="2">
+     <widget class="QPushButton" name="pushButtonStartServer">
       <property name="text">
-       <string>Download to file</string>
+       <string>Start Server</string>
       </property>
      </widget>
     </item>
-    <item row="13" column="0">
+    <item row="11" column="0">
+     <widget class="QPushButton" name="pushButtonGlobalTypes">
+      <property name="text">
+       <string>Set Ghidra global types</string>
+      </property>
+     </widget>
+    </item>
+    <item row="10" column="0">
+     <widget class="QPushButton" name="pushButtonGoTo">
+      <property name="text">
+       <string>Go to function in Ghidra</string>
+      </property>
+     </widget>
+    </item>
+    <item row="16" column="0">
      <spacer name="verticalSpacer">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
@@ -48,13 +83,6 @@
        </size>
       </property>
      </spacer>
-    </item>
-    <item row="7" column="0">
-     <widget class="QPushButton" name="pushButtonGoTo">
-      <property name="text">
-       <string>Go to function in Ghidra</string>
-      </property>
-     </widget>
     </item>
     <item row="4" column="0" colspan="2">
      <widget class="QLabel" name="label">
@@ -70,38 +98,17 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="0" colspan="2">
-     <widget class="QPushButton" name="pushButtonStartServer">
+    <item row="7" column="0">
+     <widget class="QPushButton" name="pushButtonDownload">
       <property name="text">
-       <string>Start Server</string>
+       <string>Download to file</string>
       </property>
      </widget>
     </item>
-    <item row="2" column="0" colspan="2">
-     <widget class="QPushButton" name="pushButtonStopServer">
-      <property name="text">
-       <string>Stop Server</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="0" colspan="2">
-     <widget class="QLabel" name="labelConnectionStatus">
-      <property name="text">
-       <string>Connection Status: unknown</string>
-      </property>
-     </widget>
-    </item>
-    <item row="8" column="0" colspan="2">
+    <item row="10" column="1">
      <widget class="QPushButton" name="pushButtonDecompile">
       <property name="text">
-       <string>Fetch decompilation from Ghidra</string>
-      </property>
-     </widget>
-    </item>
-    <item row="7" column="1">
-     <widget class="QPushButton" name="pushButtonGlobalTypes">
-      <property name="text">
-       <string>Set Ghidra global types</string>
+       <string>Fetch decompilation</string>
       </property>
      </widget>
     </item>

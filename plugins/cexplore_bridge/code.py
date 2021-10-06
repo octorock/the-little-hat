@@ -25,19 +25,19 @@ def find_source_file(name: str) -> Optional[str]:
         return None
 
 
-def extract_nonmatching_section(inc_path: str, src_file: str) -> Tuple[Optional[str], str]:
+def extract_nonmatching_section(inc_path: str, src_file: str, include_function: bool) -> Tuple[Optional[str], str]:
     (headers, data) = read_file_split_headers(src_file)
 
     # match nonmatching section
     match = re.search(
         r'NONMATCH\(\"'+inc_path+r'\", ?(.*?)\) ?{(.*?)END_NONMATCH', ''.join(data), re.MULTILINE | re.DOTALL)
     if match:
-        return (''.join(headers) + '// end of existing headers\n\n' + match.group(1) + ' {' + match.group(2), match.group(1))
+        return (''.join(headers) + '// end of existing headers\n\n' + ( (match.group(1) + ' {' + match.group(2)) if include_function else ''), match.group(1))
 
     match = re.search(
         r'ASM_FUNC\(\"'+inc_path+r'\", ?(.*?)\)', ''.join(data), re.MULTILINE | re.DOTALL)
     if match:
-        return (''.join(headers) + '// end of existing headers\n\n' + match.group(1) + ') {\n\n}', match.group(1) + ')')
+        return (''.join(headers) + '// end of existing headers\n\n' + ((match.group(1) + ') {\n\n})') if include_function else ''), match.group(1) + ')')
     return (None, None)
 
 
@@ -53,7 +53,7 @@ def prepare_asm(inc_file: str, name: str) -> str:
     return 'thumb_func_start ' + name + '\n' + name + ':\n' + (''.join(lines))
 
 
-def get_code(name: str) -> Tuple[bool, str, str, str]:
+def get_code(name: str, include_function: bool) -> Tuple[bool, str, str, str]:
     # Find the .inc file for the non matching function
     inc_file = find_inc_file(name)
     if inc_file is None:
@@ -69,7 +69,7 @@ def get_code(name: str) -> Tuple[bool, str, str, str]:
 
     inc_path = inc_file.replace(get_repo_location() + '/', '')
 
-    (src, signature) = extract_nonmatching_section(inc_path, src_file)
+    (src, signature) = extract_nonmatching_section(inc_path, src_file, include_function)
     if src is None:
         return(True, f'No NONMATCH or ASM_FUNC section found for {inc_path} in {src_file}.', '', '')
 
