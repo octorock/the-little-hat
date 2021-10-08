@@ -1,0 +1,13 @@
+To use this:
+- Start mGBA and start its GDB server on port 2345
+- Edit `test.py` and change paths to the gdb of devkitARM and the `tmc.elf` file
+- Run `test.py` and make sure it sucessfully connects
+    - might need to install pyperclip with `pip install pyperclip`
+- Play the game in mGBA
+- Type `list` into the `test.py` command line
+- Paste the contents of the clipboard into `data.js`
+- Press <kbd>F12</kbd> in mGBA to take a screenshot
+- Copy that screenshot to this folder
+- Edit `index.html` and edit the path to the screenshot (and of the data if you want to store multiple datas)
+- Open `index.html` in a browser
+- Enter `c` into the `test.py` command line to continue playing (anything that is not `list` and `end` will be forwarded as gdb commands)
