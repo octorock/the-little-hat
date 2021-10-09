@@ -162,7 +162,7 @@ class BridgeDock(QDockWidget):
     def slot_server_started(self) -> None:
         self.slot_server_running(True)
         self.ui.labelConnectionStatus.setText(
-            'Server running. Place connect CExplore instance.')
+            'Server running. Please connect CExplore instance.')
 
     def slot_server_stopped(self) -> None:
         self.slot_server_running(False)

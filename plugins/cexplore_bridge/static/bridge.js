@@ -83,7 +83,6 @@ cEditorModel = null;
 
 function findMonacoEditors() {
     placeholders = document.getElementsByClassName('monaco-placeholder');
-
     let cEditorUri = null;
     let asmEditorUri = null;
 
@@ -106,7 +105,7 @@ function findMonacoEditors() {
             asmEditorUri = placeholder.children[0].dataset.uri;
             ignoreNextAsm = true;
         } else if (mode == 'nc') {
-            if (asmEditorUri != null) {
+            if (cEditorUri != null) {
                 error('Found more than one c editor.');
                 return;
             }
