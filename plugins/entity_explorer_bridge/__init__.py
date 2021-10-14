@@ -17,6 +17,7 @@ class EntityExplorerPlugin:
 
     def __init__(self, api: PluginApi) -> None:
         self.api = api
+        self.dock = None
 
     def load(self) -> None:
         self.action_show_bridge = self.api.register_menu_entry(
@@ -24,10 +25,12 @@ class EntityExplorerPlugin:
 
     def unload(self) -> None:
         self.api.remove_menu_entry(self.action_show_bridge)
+        if self.dock is not None:
+            self.dock.close()
 
     def slot_show_bridge(self) -> None:
-        dock = BridgeDock(self.api.main_window, self.api)
-        self.api.main_window.addDockWidget(Qt.LeftDockWidgetArea, dock)
+        self.dock = BridgeDock(self.api.main_window, self.api)
+        self.api.main_window.addDockWidget(Qt.LeftDockWidgetArea, self.dock)
 
 
 class BridgeDock(QDockWidget):
@@ -37,6 +40,7 @@ class BridgeDock(QDockWidget):
         self.api = api
         self.ui = Ui_BridgeDock()
         self.ui.setupUi(self)
+        self.server_thread = None
 
         self.observer = None
         self.modified_timer = None
@@ -51,6 +55,12 @@ class BridgeDock(QDockWidget):
 
         # Initially load from repo folder
         self.ui.lineEditLoadFolder.setText(settings.get_repo_location())
+
+        self.visibilityChanged.connect(self.slot_visibility_changed)
+
+    def slot_visibility_changed(self, visible: bool) -> None:
+        if not visible and self.server_thread is not None:
+            self.slot_stop_server()
 
     def slot_server_running(self, running: bool) -> None:
         if running:

@@ -1,6 +1,5 @@
 import signal
 import sys
-from tlh.common.ui.progress_dialog import ProgressDialog
 from tlh.data.rom import get_rom, invalidate_rom
 from tlh.common.ui.layout import Layout
 from tlh.dock_manager import DockManager
@@ -14,7 +13,7 @@ from tlh import settings
 from tlh.common.ui.dark_theme import apply_dark_theme
 from tlh.const import RomVariant
 from tlh.data.database import get_symbol_database, initialize_databases, save_all_databases
-from tlh.plugin.loader import load_plugins
+from tlh.plugin.loader import load_plugins, reload_plugins
 from tlh.settings.ui import SettingsDialog
 from tlh.ui.ui_mainwindow import Ui_MainWindow
 from os import path
@@ -63,6 +62,7 @@ class MainWindow(QMainWindow):
 
         # Load plugins
         load_plugins(self)
+        self.ui.actionReloadPlugins.triggered.connect(reload_plugins)
 
         # Restore layout
         self.load_layout(settings.get_session_layout())
@@ -171,7 +171,7 @@ class MainWindow(QMainWindow):
         map_file = path.join(settings.get_repo_location(), 'tmc.map')
         if not path.isfile(map_file):
             if silent:
-                print(f'Could not find tmc.map file at {map_file}.')    
+                print(f'Could not find tmc.map file at {map_file}.')
             else:
                 QMessageBox.critical(self, 'Load symbols from .map file', f'Could not find tmc.map file at {map_file}.')
             return
@@ -202,7 +202,7 @@ class MainWindow(QMainWindow):
         invalidate_rom(RomVariant.CUSTOM)
 
         # Reload all hex viewers for the CUSTOM variant
-                
+
         controllers = self.dock_manager.hex_viewer_manager.get_controllers_for_variant(RomVariant.CUSTOM)
         for controller in controllers:
             controller.invalidate()

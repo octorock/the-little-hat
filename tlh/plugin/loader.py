@@ -6,7 +6,6 @@ from tlh import settings
 from tlh.plugin.api import PluginApi
 import inspect
 import traceback
-import sys
 
 plugin_folder = './plugins'
 main_module = '__init__'
@@ -61,7 +60,7 @@ def initialize_plugin(i: str, mod: any, plugins: List[Plugin]) -> Optional[Plugi
                 if not hasattr(cls, 'description'):
                     print(f'Plugin class {name} is missing attribute "description"')
                     continue
-                
+
                 found = True
                 plugin = Plugin(cls.name, cls.description, name, i, False, cls, None, mod)
                 plugins.append(plugin)
@@ -72,7 +71,7 @@ def initialize_plugin(i: str, mod: any, plugins: List[Plugin]) -> Optional[Plugi
                 break
         if not found:
             print(f'No class ending with "Plugin" found in plugin {i}')
-        
+
 
 def enable_plugin(plugin: Plugin) -> bool:
     try:
@@ -110,7 +109,7 @@ def reload_plugins() -> None:
             disable_plugin(plugin)
 
 
-    old_modules = [] 
+    old_modules = []
 
     for plugin in plugins:
         old_modules.append((plugin.pkg_name, plugin.mod))

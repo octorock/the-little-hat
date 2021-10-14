@@ -25,4 +25,5 @@ shiboken6==6.0.2
 sortedcontainers==2.3.0
 toml==0.10.2
 urllib3==1.26.5
+watchdog==2.1.6
 Werkzeug==2.0.1

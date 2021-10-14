@@ -5,7 +5,7 @@ from tlh.plugin.api import PluginApi
 
 class CountDiffBytesPlugin:
     name = 'Count Diff Bytes'
-    description = 'Count the bytes that are different between the linked hex viewers'
+    description = 'Count the bytes that are different between the\nlinked hex viewers'
 
     def __init__(self, api: PluginApi) -> None:
         self.api = api
