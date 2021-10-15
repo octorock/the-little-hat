@@ -60,6 +60,8 @@ class HexViewerController(QObject):
         self.default_selection_size = settings.get_default_selection_size()
         self.highlight_8_bytes = settings.is_highlight_8_bytes()
 
+        self.contextmenu_handlers = []
+
         self.setup_scroll_bar()
         self.scroll_bar.valueChanged.connect(self.slot_scroll_bar_changed)
 
@@ -505,6 +507,11 @@ class HexViewerController(QObject):
                            self.mark_only_in_current)
 
         menu.addAction('Goto', self.slot_show_goto_dialog)
+
+        # Allow plugins to add context menu entries by registering a context menu handler
+        for handler in self.contextmenu_handlers:
+            handler(self, menu)
+
         menu.exec_(pos)
 
     def copy_cursor_address(self):
@@ -711,3 +718,6 @@ class HexViewerController(QObject):
             return
 
         self.signal_remove_pointer.emit(pointers[0])
+
+    def set_contextmenu_handlers(self, handlers) -> None:
+        self.contextmenu_handlers = handlers

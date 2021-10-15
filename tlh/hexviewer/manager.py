@@ -31,6 +31,8 @@ class HexViewerManager(QObject):
         self.linked_controllers: list[HexViewerController] = []
         self.linked_variants: list[RomVariant] = []
 
+        self.contextmenu_handlers = []
+
         self.constraint_manager = ConstraintManager({})
         get_constraint_database().constraints_changed.connect(self.update_constraints)
 
@@ -53,6 +55,7 @@ class HexViewerManager(QObject):
         controller.signal_only_in_current_marked.connect(
             lambda x, y: self.mark_only_in_one(controller, x, y))
         controller.signal_remove_pointer.connect(self.slot_remove_pointer)
+        controller.set_contextmenu_handlers(self.contextmenu_handlers)
 
     def unregister_controller(self, controller: HexViewerController) -> None:
         if controller in self.linked_controllers:
@@ -248,7 +251,7 @@ class HexViewerManager(QObject):
                 constraint.enabled = True
 
             # Check whether the new constraint is invalid
-            constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.CUSTOM})
+            constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.DEMO_JP, RomVariant.CUSTOM})
             constraint_manager.add_all_constraints(
                 get_constraint_database().get_constraints())
             try:
@@ -315,7 +318,7 @@ class HexViewerManager(QObject):
                 new_constraints.append(constraint)
 
         # Check whether the new constraint is invalid
-        constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.CUSTOM})
+        constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.DEMO_JP, RomVariant.CUSTOM})
         constraint_manager.add_all_constraints(
             get_constraint_database().get_constraints())
         try:
@@ -386,3 +389,13 @@ class HexViewerManager(QObject):
         if QMessageBox.question(self.parent(), 'Remove Pointer', f'Remove {len(remove_pointers)} pointers and {len(remove_constraints)} constraints?') == QMessageBox.Yes:
             get_pointer_database().remove_pointers(remove_pointers)
             get_constraint_database().remove_constraints(remove_constraints)
+    
+    def add_contextmenu_handler(self, handler) -> None:
+        self.contextmenu_handlers.append(handler)
+        for controller in self.controllers:
+            controller.set_contextmenu_handlers(self.contextmenu_handlers)
+
+    def remove_contextmenu_handler(self, handler) -> None:
+        self.contextmenu_handlers.remove(handler)
+        for controller in self.controllers:
+            controller.set_contextmenu_handlers(self.contextmenu_handlers)

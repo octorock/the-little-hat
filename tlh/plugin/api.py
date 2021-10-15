@@ -51,3 +51,16 @@ class PluginApi:
         Returns the calculator to ask for whether the linked hex views are differing for a certain byte
         '''
         return self.main_window.dock_manager.hex_viewer_manager.linked_diff_calculator
+
+    def register_hexview_contextmenu_handler(self, handler) -> None:
+        '''
+        Register a handler that can add new context menu entries for hex viewers.
+        The handler is called when the context menu is about to be opened and will receive the arguments controller: HexViewerController, menu: QMenu and cann add new actions to the QMenu.
+        '''
+        self.main_window.dock_manager.hex_viewer_manager.add_contextmenu_handler(handler)
+
+    def remove_hexview_contextmenu_handler(self, handler) -> None:
+        '''
+        Unregister a hexview context menu handler.
+        '''
+        self.main_window.dock_manager.hex_viewer_manager.remove_contextmenu_handler(handler)

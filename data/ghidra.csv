@@ -81,3 +81,4 @@ gPlayerState\.flags ,gPlayerState.flags.all ,False
 '&',0x26,False
 '\(',0x28,False
 '\\'',0x27,False
+\(this->manager\),this->manager,False
