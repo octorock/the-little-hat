@@ -49,6 +49,7 @@
      <addaction name="actionDEMO"/>
      <addaction name="actionEU"/>
      <addaction name="actionJP"/>
+     <addaction name="actionDEMO_JP"/>
      <addaction name="separator"/>
      <addaction name="actionCUSTOM"/>
      <addaction name="actionReloadCUSTOM"/>
@@ -125,7 +126,7 @@
   </action>
   <action name="actionDEMO">
    <property name="text">
-    <string>DEMO</string>
+    <string>DEMO (USA)</string>
    </property>
   </action>
   <action name="actionEU">
@@ -136,6 +137,11 @@
   <action name="actionJP">
    <property name="text">
     <string>JP</string>
+   </property>
+  </action>
+  <action name="actionDEMO_JP">
+   <property name="text">
+    <string>DEMO (JP)</string>
    </property>
   </action>
   <action name="actionLoadSymbols">

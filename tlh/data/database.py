@@ -146,6 +146,7 @@ class PointerDatabase(QObject):
             RomVariant.DEMO: [],
             RomVariant.EU: [],
             RomVariant.JP: [],
+            RomVariant.DEMO_JP: [],
             RomVariant.CUSTOM: []
         }
 
@@ -157,6 +158,7 @@ class PointerDatabase(QObject):
             RomVariant.DEMO: PointerList(pointers[RomVariant.DEMO], RomVariant.DEMO), 
             RomVariant.EU: PointerList(pointers[RomVariant.EU], RomVariant.EU), 
             RomVariant.JP: PointerList(pointers[RomVariant.JP], RomVariant.JP), 
+            RomVariant.DEMO_JP: PointerList(pointers[RomVariant.DEMO_JP], RomVariant.DEMO_JP), 
             RomVariant.CUSTOM: PointerList(pointers[RomVariant.CUSTOM], RomVariant.CUSTOM), 
         }
 

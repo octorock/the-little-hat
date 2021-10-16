@@ -65,7 +65,7 @@ class RemoveRedundantWorker(QObject):
 
         # Test using a constraint manager with all variations
         manager = ConstraintManager(
-            {RomVariant.USA, RomVariant.JP, RomVariant.EU, RomVariant.DEMO})
+            {RomVariant.USA, RomVariant.JP, RomVariant.EU, RomVariant.DEMO, RomVariant.DEMO_JP})
         constraint_database = get_constraint_database()
         constraints = constraint_database.get_constraints()
 

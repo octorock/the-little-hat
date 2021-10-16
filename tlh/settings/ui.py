@@ -8,7 +8,7 @@ from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (QCheckBox, QDialog, QDialogButtonBox, QFileDialog, QLabel,
                                QListView, QMessageBox, QSizePolicy, QSpacerItem, QTableWidgetItem)
 from tlh import settings
-from tlh.const import SHA1_DEMO, SHA1_EU, SHA1_JP, SHA1_USA
+from tlh.const import SHA1_DEMO, SHA1_EU, SHA1_JP, SHA1_USA, SHA1_DEMO_JP
 from tlh.ui.ui_settings import Ui_dialogSettings
 
 
@@ -125,6 +125,8 @@ class SettingsDialog(QDialog):
         self.ui.toolButtonEu.clicked.connect(self.edit_rom_eu)
         self.ui.lineEditRomJp.setText(settings.get_rom_jp())
         self.ui.toolButtonJp.clicked.connect(self.edit_rom_jp)
+        self.ui.lineEditRomDemoJp.setText(settings.get_rom_demo_jp())
+        self.ui.toolButtonDemoJp.clicked.connect(self.edit_rom_demo_jp)
 
     def edit_rom_usa(self):
         self.edit_rom('USA', self.ui.lineEditRomUsa, SHA1_USA)
@@ -137,6 +139,9 @@ class SettingsDialog(QDialog):
 
     def edit_rom_jp(self):
         self.edit_rom('JP', self.ui.lineEditRomJp, SHA1_JP)
+
+    def edit_rom_demo_jp(self):
+        self.edit_rom('JP (DEMO)', self.ui.lineEditRomDemoJp, SHA1_DEMO_JP)
 
     def edit_rom(self, name, lineEdit, expected_sha1):
         (rom, _) = QFileDialog.getOpenFileName(
@@ -219,6 +224,7 @@ class SettingsDialog(QDialog):
         settings.set_rom_demo(self.ui.lineEditRomDemo.text())
         settings.set_rom_eu(self.ui.lineEditRomEu.text())
         settings.set_rom_jp(self.ui.lineEditRomJp.text())
+        settings.set_rom_demo_jp(self.ui.lineEditRomDemoJp.text())
 
         # Layouts
         settings.set_layouts(self.layouts_model.layouts)

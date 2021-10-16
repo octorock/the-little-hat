@@ -41,6 +41,8 @@ class MainWindow(QMainWindow):
             lambda: self.dock_manager.add_hex_editor(RomVariant.EU))
         self.ui.actionJP.triggered.connect(
             lambda: self.dock_manager.add_hex_editor(RomVariant.JP))
+        self.ui.actionDEMO_JP.triggered.connect(
+            lambda: self.dock_manager.add_hex_editor(RomVariant.DEMO_JP))
         self.ui.actionCUSTOM.triggered.connect(
             lambda: self.dock_manager.add_hex_editor(RomVariant.CUSTOM)
         )
@@ -162,6 +164,7 @@ class MainWindow(QMainWindow):
         self.ui.actionDEMO.setDisabled(get_rom(RomVariant.DEMO) is None)
         self.ui.actionJP.setDisabled(get_rom(RomVariant.JP) is None)
         self.ui.actionEU.setDisabled(get_rom(RomVariant.EU) is None)
+        self.ui.actionDEMO_JP.setDisabled(get_rom(RomVariant.DEMO_JP) is None)
         self.ui.actionCUSTOM.setDisabled(get_rom(RomVariant.CUSTOM) is None)
 
     def slot_load_symbols(self):
@@ -200,6 +203,9 @@ class MainWindow(QMainWindow):
 
     def slot_reload_custom_rom(self) -> None:
         invalidate_rom(RomVariant.CUSTOM)
+
+        if settings.is_always_load_symbols():
+            self.load_symbols(RomVariant.CUSTOM, True)
 
         # Reload all hex viewers for the CUSTOM variant
 

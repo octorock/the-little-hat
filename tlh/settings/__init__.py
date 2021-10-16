@@ -87,6 +87,8 @@ def get_rom(variant: RomVariant) -> Optional[str]:
         return get_rom_eu()
     elif variant == RomVariant.JP:
         return get_rom_jp()
+    elif variant == RomVariant.DEMO_JP:
+        return get_rom_demo_jp()
     elif variant == RomVariant.CUSTOM:
         return os.path.join(get_repo_location(), 'tmc.gba')
     else:
@@ -123,6 +125,13 @@ def get_rom_jp():
 
 def set_rom_jp(rom):
     settings.setValue('rom_jp', rom)
+
+
+def get_rom_demo_jp():
+    return settings.value('rom_demo_jp')
+
+def set_rom_demo_jp(rom):
+    settings.setValue('rom_demo_jp', rom)
 
 # Layouts
 
