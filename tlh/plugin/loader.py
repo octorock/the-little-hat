@@ -6,6 +6,7 @@ from tlh import settings
 from tlh.plugin.api import PluginApi
 import inspect
 import traceback
+import sys
 
 plugin_folder = './plugins'
 main_module = '__init__'
@@ -118,5 +119,17 @@ def reload_plugins() -> None:
 
     # Reload all modules
     for (pkg_name, mod) in old_modules:
+        # Reload any children of this module first
+        children = []
+
+        # TODO correctly bring the 
+        for module_name in sys.modules.keys():
+            if module_name != mod.__name__ and module_name.startswith(mod.__name__):
+                children.append(module_name)
+
+        for child in children:
+            print(f'Reloading child {child}')
+            reload(sys.modules[child])
+        print(f'Reloading {mod.__name__}')
         mod = reload(mod)
         initialize_plugin(pkg_name, mod, plugins)
