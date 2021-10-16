@@ -1,0 +1,42 @@
+// Single data
+// (extern )?(const )?(?P<type>\S+) (?P<name>\w+);
+extern Entity* gUnk_020000B0;
+extern Hitbox gUnk_08132B28;
+
+// Arrays of data
+// (extern )?(const )?(?P<type>\S+) (const )?(?P<name>\w+)\[(?P<count>\w+)?\];
+extern u8 gUnk_081293B8[];
+extern Hitbox* gUnk_081293F0[];
+extern Hitbox** gUnk_081293E0[];
+extern const s16 gSineTable[64];
+extern const s16 gCosineTable[256];
+extern const u16 gUnk_080CD728[];
+extern const u16 gUnk_080CD730[];
+extern const s8 gUnk_080CD740[];
+extern ScreenTransitionData* gUnk_0813AB1C[];
+extern const int gUnk_08133368[];
+extern const u8 gUnk_08121D10[];
+extern const u8 gUnk_08121D48[];
+extern const struct_08121D54 gUnk_08121D54[];
+extern Dialog gUnk_081126F0[0x10];
+extern const Hitbox* const gUnk_08129460[];
+
+// Arrays of arrays of data
+// (extern )?(const )?(?P<type>\S+) (?P<name>\w+)\[(?P<count>\w+)?\]\[(?P<count2>\w+)?\];
+extern const struct_08121CD4 gUnk_08121CD4[][4];
+extern const u8 gUnk_08121D38[][8];
+extern const u16 gUnk_08121D18[][8];
+
+// Arrays of function pointers
+// (extern )?(const )?void \(\*(const )?(?P<name>\w+)\[(?P<count>\w+)?\]\)\((?P<params>.*)\);
+extern void (*const gUnk_081293CC[])(Entity*);
+extern void (*const GreatFairy_DropletBehaviors[])(Entity*);
+extern void (*const GreatFairy_RippleBehaviors[])(Entity*);
+extern void (*const gManagerFunctions[58])();
+extern void (*gUnk_081126E8[])();
+extern void (*gUnk_08112BF0[])(Entity*, ScriptExecutionContext*);
+
+// Arrays of arrays of puncion pointers
+// (extern )?(const )?void \(\*(const )?(?P<name>\w+)\[(?P<count>\w+)?\]\[(?P<count2>\w+)\]\)\((?P<params>.*)\);
+extern void (*const gNPCFunctions[128][3])(Entity*);
+

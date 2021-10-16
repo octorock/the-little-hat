@@ -1,0 +1,24 @@
+{
+    "Hitbox": {
+        "offset_x": "s8",
+        "offset_y": "s8",
+        "unk2": "u8[4]",
+        "width": "u8",
+        "height": "u8"
+    },
+    "HitboxChange": {
+        "offsetX": "s8",
+        "offsetY": "s8",
+        "width": "u8",
+        "height": "u8"
+    },
+    "Hitbox3D": {
+        "offset_x": "s8",
+        "offset_y": "s8",
+        "unknown": "u8[4]",
+        "width": "u8",
+        "height": "u8",
+        "depth": "u8",
+        "unknown2": "u8[3]"
+    }
+}

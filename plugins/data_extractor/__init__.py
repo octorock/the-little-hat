@@ -1,11 +1,33 @@
+from dataclasses import dataclass
+from enum import Enum
 import os
+from plugins.data_extractor.read_data import Reader, load_json_files, read_var
 from tlh.const import ROM_OFFSET, RomVariant
 from tlh.settings import get_repo_location
 from PySide6.QtWidgets import QApplication, QMenu
 from tlh.hexviewer.controller import HexViewerController
 from tlh.plugin.api import PluginApi
-from tlh.data.database import get_symbol_database
+from tlh.data.database import get_file_in_database, get_symbol_database
 from plugins.data_extractor.incbins import export_incbins
+import re
+import traceback
+
+@dataclass
+class DataType:
+    '''
+    0: Single data
+    1: Arrays of data
+    2: Arrays of arrays of data
+    3: Arrays of function pointers
+    4: Arrays of arrays of puncion pointers
+    '''
+    regex: int
+    name: str
+    type: str
+    count: int
+    count2: int
+    params: str
+
 
 class DataExtractorPlugin:
     name = 'Data Extractor'
@@ -13,6 +35,8 @@ class DataExtractorPlugin:
 
     def __init__(self, api: PluginApi) -> None:
         self.api = api
+        self.structs = None
+        self.unions = None
 
     def load(self) -> None:
         self.api.register_hexview_contextmenu_handler(self.contextmenu_handler)
@@ -24,6 +48,8 @@ class DataExtractorPlugin:
         #self.action_disasm = self.api.register_menu_entry('Export list for disasm', self.slot_disasm)
 
         self.action_export_incbins = self.api.register_menu_entry('Export Incbins', self.slot_export_incbins)
+
+        load_json_files()
 
     def unload(self) -> None:
         self.api.remove_hexview_contextmenu_handler(self.contextmenu_handler)
@@ -37,6 +63,8 @@ class DataExtractorPlugin:
 
         if abs(controller.selected_bytes) % 4 == 0:
             menu.addAction('Copy as pointer list', self.slot_copy_as_pointerlist)
+
+        menu.addAction('Extract data for symbol', self.slot_extract_data)
 
 
     def slot_copy_as_incbin(self) -> None:
@@ -130,3 +158,132 @@ class DataExtractorPlugin:
 
     def slot_export_incbins(self) -> None:
         export_incbins(self.api)
+
+    def slot_extract_data(self) -> None:
+        if self.current_controller.symbols is None:
+            self.api.show_error(self.name, f'No symbols loaded for current editor')
+            return
+        # symbol = self.current_controller.symbols.get_symbol_at(self.current_controller.address_resolver.to_local(self.current_controller.cursor))
+
+
+        (type_str, ok) = self.api.show_text_input(self.name, 'Enter data type')
+        if not ok:
+            return
+        print(type_str)
+
+        type = self.parse_type(type_str)
+
+        symbol = self.current_controller.symbols.find_symbol_by_name(type.name)
+        if symbol is None:
+            self.api.show_error(self.name, f'Could not find symbol {type.name}')
+            return
+
+        text = ''
+
+        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
+        reader = Reader(data)
+
+        if type.regex == 0:
+            try:
+                res = read_var(reader, type.type)
+                text = 'const ' + type.type + ' ' + type.name + ' = ' + self.get_struct_init(res) + ';';
+            except Exception as e:
+                print(e)
+                self.api.show_error(self.name, str(e))
+        elif type.regex == 1:
+            if type.type == 'u8':
+                text = 'const ' + type.type + ' ' + type.name + '[] = {'
+                for i in range(symbol.address, symbol.address+symbol.length):
+                    text += str(self.current_controller.rom.get_byte(i)) + ', '
+                text += '};'
+            elif '*' in type.type: # pointers
+                if symbol.length % 4 != 0:
+                    self.api.show_error(self.name, 'Incorrect data length')
+
+                text = 'const ' + type.type + ' ' + type.name + '[] = {'
+                for i in range(symbol.address, symbol.address+symbol.length, 4):
+                    pointer = self.current_controller.get_as_pointer(i)
+                    pointer_symbol = self.current_controller.symbols.get_symbol_at(pointer - ROM_OFFSET)
+                    text += '&' + pointer_symbol.name + ', '
+                text += '};'
+            else:
+                try:
+                    res = read_var(reader, type.type + '[]')
+                    text = 'const ' + type.type + ' ' + type.name + '[] = ' + self.get_struct_init(res) + ';';
+                except Exception as e:
+                    traceback.print_exc()
+                    self.api.show_error(self.name, str(e))
+        elif type.regex == 3:
+            if symbol.length % 4 != 0:
+                self.api.show_error(self.name, 'Incorrect data length')
+
+            text = 'void (*const ' + type.name + '[])(' + type.params + ') = {'
+            for i in range(symbol.address, symbol.address+symbol.length, 4):
+                pointer = self.current_controller.get_as_pointer(i)
+                pointer_symbol = self.current_controller.symbols.get_symbol_at(pointer - ROM_OFFSET)
+                text += pointer_symbol.name + ', '
+            text += '};'
+        else:
+            self.api.show_error(self.name, f'Unimplemented type for regex {type.regex}')
+            return
+
+
+        QApplication.clipboard().setText(text)
+        print(text)
+
+
+    def parse_type(self, type: str) -> DataType:
+        match = re.search('(extern )?(const )?(?P<type>\S+) (?P<name>\w+);', type)
+        if match is not None:
+            return DataType(0, match.group('name'), match.group('type'), 0, 0, '')
+
+        match = re.search('(extern )?(const )?(?P<type>\S+) (const )?(?P<name>\w+)\[(?P<count>\w+)?\];', type)
+        if match is not None:
+            return DataType(1, match.group('name'), match.group('type'), match.group('count'), 0, '')
+
+        match = re.search('(extern )?(const )?(?P<type>\S+) (?P<name>\w+)\[(?P<count>\w+)?\]\[(?P<count2>\w+)?\];', type)
+        if match is not None:
+            return DataType(2, match.group('name'), match.group('type'), match.group('count'), match.group('count2'), '')
+
+        match = re.search('(extern )?(const )?void \(\*(const )?(?P<name>\w+)\[(?P<count>\w+)?\]\)\((?P<params>.*)\);', type)
+        if match is not None:
+            return DataType(3, match.group('name'), '', match.group('count'), 0, match.group('params'))
+
+        match = re.search('(extern )?(const )?void \(\*(const )?(?P<name>\w+)\[(?P<count>\w+)?\]\[(?P<count2>\w+)\]\)\((?P<params>.*)\);', type)
+        if match is not None:
+            return DataType(4, match.group('name'), '', match.group('count'), match.group('count2'), match.group('params'))
+
+        return None
+
+
+
+    def get_struct_init(self, obj: any) -> str:
+        text = '{ '
+        trailing_comma = False
+        if trailing_comma:
+            for key in obj:
+                if type(obj) is list:
+                    if type(key) is list or type(key) is dict:
+                        text += self.get_struct_init(key) + ', '
+                    else:
+                        text += str(key) + ', '
+                elif type(obj[key]) is list:
+                    text += self.get_struct_init(obj[key]) + ', '
+                else:
+                    text += str(obj[key]) + ', '
+            text += ' }'
+        else:
+            separator = ''
+            for key in obj:
+                if type(obj) is list:
+                    if type(key) is list or type(key) is dict:
+                        text += self.get_struct_init(key) + ', '
+                    else:
+                        text += separator + str(key)
+                elif type(obj[key]) is list:
+                    text += separator + self.get_struct_init(obj[key])
+                else:
+                    text += separator + str(obj[key])
+                separator = ', '
+            text += ' }'
+        return text

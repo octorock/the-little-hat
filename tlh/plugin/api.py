@@ -7,7 +7,7 @@ from typing import List, Optional
 from tlh.const import RomVariant
 from tlh.common.ui.progress_dialog import ProgressDialog
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMainWindow, QMessageBox
+from PySide6.QtWidgets import QInputDialog, QMainWindow, QMessageBox
 
 
 class PluginApi:
@@ -38,6 +38,8 @@ class PluginApi:
     def show_question(self, title: str, text: str) -> bool:
         return QMessageBox.question(self.main_window, title, text) == QMessageBox.Yes
 
+    def show_text_input(self, title: str, text: str) -> (str, bool):
+        return QInputDialog.getText(self.main_window, title, text)
 
     # Hex Viewer
     def get_hexviewer_controllers(self, rom_variant: RomVariant) -> List[HexViewerController]:
