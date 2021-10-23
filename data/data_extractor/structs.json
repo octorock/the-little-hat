@@ -20,5 +20,30 @@
         "height": "u8",
         "depth": "u8",
         "unknown2": "u8[3]"
-    }
+    },
+    "struct_081299F8": {
+        "flipX": "u8",
+        "flipY": "u8",
+        "animIndex": "u8",
+        "unk": "u8",
+        "hitbox": "Hitbox*"
+    },
+    "struct_08129B20": {
+        "unk_0": "s8",
+        "unk_1": "s8",
+        "unk_2": "s8"
+    },
+    "SpritePtr": {
+        "animationList": "void*",
+        "frameGfxDataList": "void*",
+        "gfxPointer": "void*",
+        "none": "void*"
+    },
+
+
+
+    "comments": [
+        "extern SpritePtr gSpritePtrs[];",
+        "extern u32 gUnk_082F3D74[];"
+    ]
 }

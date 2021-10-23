@@ -1,6 +1,9 @@
+from tlh.const import ROM_OFFSET
 from tlh.data.database import get_file_in_database
 import json
 import os
+
+from tlh.data.symbols import SymbolList
 
 def conv_addr(addr: int) -> int:
     if addr > 0x08000000:
@@ -8,11 +11,12 @@ def conv_addr(addr: int) -> int:
     return addr
 
 class Reader:
-    def __init__(self, data: bytearray) -> None:
+    def __init__(self, data: bytearray, symbols: SymbolList) -> None:
         self.data = data
         self.cursor = 0
         self.bitfield = 0
         self.bitfield_remaining = 0
+        self.symbols = symbols
 
     def read_u8(self) -> int:
         val = self.data[self.cursor]
@@ -26,6 +30,23 @@ class Reader:
             return val-256
         else:
             return val
+
+    def read_u16(self) -> int:
+        val = self.data[self.cursor:self.cursor+2]
+        self.cursor += 2
+        return int.from_bytes(val, 'little')
+
+    def read_s16(self) -> int:
+        val = self.read_u16()
+        if val > 32768:
+            return val - 65536
+        else:
+            return val
+
+    def read_u32(self) -> int:
+        val = self.data[self.cursor:self.cursor+4]
+        self.cursor += 4
+        return int.from_bytes(val, 'little')
 
 structs = None
 unions = None
@@ -58,8 +79,14 @@ def read_array(reader: Reader, type: str, length: int) -> any:
 def read_union(reader: Reader, union: any) -> any:
     assert(False)
 
-def read_pointer(reader: Reader) -> any:
-    assert(False)
+def read_pointer(reader: Reader, type: str) -> any:
+    pointer = reader.read_u32()
+    if pointer == 0:
+        return 'NULL'
+    symbol = reader.symbols.get_symbol_at(pointer - ROM_OFFSET)
+    if symbol is None:
+        raise Exception(f'Could not find symbol at {hex(pointer)}')
+    return '&' + symbol.name
 
 def read_var(reader: Reader, type: str) -> any:
     if '*' in type:
@@ -75,6 +102,12 @@ def read_var(reader: Reader, type: str) -> any:
         return reader.read_u8()
     elif type == 's8':
         return reader.read_s8()
+    elif type == 'u16':
+        return reader.read_u16()
+    elif type == 's16':
+        return reader.read_s16()
+    elif type == 'u32':
+        return reader.read_u32()
     elif type in structs:
         return read_struct(reader, structs[type])
     else:
