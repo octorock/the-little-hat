@@ -91,6 +91,14 @@ def get_rom(variant: RomVariant) -> Optional[str]:
         return get_rom_demo_jp()
     elif variant == RomVariant.CUSTOM:
         return os.path.join(get_repo_location(), 'tmc.gba')
+    elif variant == RomVariant.CUSTOM_EU:
+        return os.path.join(get_repo_location(), 'tmc_eu.gba')
+    elif variant == RomVariant.CUSTOM_JP:
+        return os.path.join(get_repo_location(), 'tmc_jp.gba')
+    elif variant == RomVariant.CUSTOM_DEMO_USA:
+        return os.path.join(get_repo_location(), 'tmc_demo_usa.gba')
+    elif variant == RomVariant.CUSTOM_DEMO_JP:
+        return os.path.join(get_repo_location(), 'tmc_demo_jp.gba')
     else:
         raise RuntimeError(f'Unknown rom variant {variant}')
 

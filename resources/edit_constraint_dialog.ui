@@ -82,6 +82,26 @@
          <string>CUSTOM</string>
         </property>
        </item>
+       <item>
+        <property name="text">
+         <string>CUSTOM_EU</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>CUSTOM_JP</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>CUSTOM_DEMO_USA</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>CUSTOM_DEMO_JP</string>
+        </property>
+       </item>
       </widget>
      </item>
      <item row="5" column="0">
@@ -166,7 +186,22 @@
        </item>
        <item>
         <property name="text">
-         <string>CUSTOM</string>
+         <string>CUSTOM_EU</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>CUSTOM_JP</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>CUSTOM_DEMO_USA</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>CUSTOM_DEMO_JP</string>
         </property>
        </item>
       </widget>

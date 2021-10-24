@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 import os
+from plugins.data_extractor.assets import read_assets, write_assets
 from plugins.data_extractor.gba_lz77 import GBALZ77, DecompressionError
 from plugins.data_extractor.read_data import Reader, load_json_files, read_var
 from tlh.const import ROM_OFFSET, RomVariant
@@ -29,7 +30,6 @@ class DataType:
     count: int
     count2: int
     params: str
-
 @dataclass
 class Asset:
     name: str
@@ -38,6 +38,10 @@ class Asset:
     size: int
     compressed: bool
 
+def opt_param(name: str, default: str, value: str) -> str:
+    if value != default:
+        return f', {name}={value}'
+    return ''
 
 class DataExtractorPlugin:
     name = 'Data Extractor'
@@ -75,6 +79,8 @@ class DataExtractorPlugin:
 
         menu.addAction('Extract data for symbol', self.slot_extract_data)
         menu.addAction('Test', self.slot_test)
+        menu.addAction('Test modify asset list', self.test_asset_list_modification)
+        menu.addAction('Extract current entity list', self.slot_extract_current_entity_list)
 
 
     def slot_copy_as_incbin(self) -> None:
@@ -171,10 +177,16 @@ class DataExtractorPlugin:
 
 
     def slot_test(self) -> None:
+        #self.extract_figurine_data()
         #self.extract_areas()
-        #self.extract_area_table()
+        self.extract_area_table()
         #self.extract_gfx_groups()
-        self.extract_sprites()
+        #self.extract_sprites()
+        #self.extract_frame_obj_lists()
+        #self.extract_extra_frame_offsets()
+
+
+        #self.test_asset_list_modification()
         return
         '''
         symbol_name = 'gUnk_0811EE64'
@@ -237,8 +249,8 @@ class DataExtractorPlugin:
                 print()
 
 
-    def extract_gUnk_082F3D74(self) -> None:
-        symbol_name = 'gUnk_082F3D74'
+    def extract_frame_obj_lists(self) -> None:
+        symbol_name = 'gFrameObjLists'
 
         symbol = self.current_controller.symbols.find_symbol_by_name(symbol_name)
         if symbol is None:
@@ -252,7 +264,7 @@ class DataExtractorPlugin:
         second_level = []
 
         lines = []
-        lines.append('gUnk_082F3D74::\n')
+        lines.append('gFrameObjLists::\n')
         lines.append('@ First level of offsets\n')
         while True:
             if reader.cursor in first_level:
@@ -341,8 +353,8 @@ class DataExtractorPlugin:
         with open(os.path.join(get_repo_location(), 'build', 'tmc', 'assets', 'sprites', 'frameObjLists.s'), 'w') as file:
             file.writelines(lines)
 
-    def extract_gUnk_089FB770(self) -> None:
-        symbol_name = 'gUnk_089FB770'
+    def extract_extra_frame_offsets(self) -> None:
+        symbol_name = 'gExtraFrameOffsets'
 
         symbol = self.current_controller.symbols.find_symbol_by_name(symbol_name)
         if symbol is None:
@@ -356,7 +368,7 @@ class DataExtractorPlugin:
         second_level = []
 
         lines = []
-        lines.append('gUnk_089FB770::\n')
+        lines.append('gExtraFrameOffsets::\n')
         bytes = []
         for i in range(0x10):
             bytes.append(reader.read_u8())
@@ -468,6 +480,11 @@ class DataExtractorPlugin:
         palette_pointers: set[int] = set()
         palette_offsets: list[int] = []
 
+
+        i = 0
+
+        replacements = []
+
         while reader.cursor < symbol.length:
             pointer = reader.read_u32()
             if pointer == 0:
@@ -476,6 +493,10 @@ class DataExtractorPlugin:
             group_symbol = self.current_controller.symbols.get_symbol_at(pointer - ROM_OFFSET)
             palette_pointers.add(pointer)
             lines.append(f'\t.4byte {group_symbol.name}\n')
+            replacements.append(f'{group_symbol.name},gPaletteGroup_{i}\n')
+            i += 1
+        with open('/tmp/replacements.s', 'w') as file:
+            file.writelines(replacements)
 
         # Make sure to have them in the correct order as they don't necessary have to be in gPaletteGroups
         for pointer in sorted(list(palette_pointers)):
@@ -602,6 +623,7 @@ class DataExtractorPlugin:
         self.area_names = []
         self.room_names = []
         area_index = 0
+        self.replacements = []
         while reader.cursor < symbol.length:
             self.room_names.append([])
             area_symbol = self.read_symbol(reader)
@@ -615,6 +637,19 @@ class DataExtractorPlugin:
             area_index += 1
         print(self.area_names)
         print(self.room_names)
+        # Not used in gAreaTable, but in other tables
+        self.area_names[0x61] = '61'
+        self.room_names[0x61] = ['61_0']
+        self.room_names[0x70].append('PalaceOfWinds_51')
+        self.room_names[0x70].append('PalaceOfWinds_52')
+        for i in range(len(self.room_names[0x88]), 65):
+            self.room_names[0x88].append(f'DarkHyruleCastle_{i}')
+
+
+        # self.extract_room_exit_lists()
+        with open('/tmp/replacements.s', 'w') as file:
+            file.writelines(self.replacements)
+        return
 
         # Now extract all assets belonging to areas
         self.assets:list[Asset] = []
@@ -682,10 +717,12 @@ class DataExtractorPlugin:
         while reader.cursor < symbol.length:
             room_symbol = self.read_symbol(reader)
             if room_symbol:
+                if room_symbol.name.startswith('gUnk_'):
+                    self.replacements.append(f'{room_symbol.name},{self.area_names[area_index]}_{room_index}\n')
                 self.room_names[area_index].append(room_symbol.name[5:])
-                print(room_symbol.name)
+                self.extract_room_properties(room_symbol.name)
             else:
-                self.room_names[area_index].append('NULL')
+                self.room_names[area_index].append(f'{self.area_names[area_index]}_{room_index}')
                 print('.4byte 0')
             room_index += 1
 
@@ -786,7 +823,7 @@ class DataExtractorPlugin:
             self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
             return
 
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length + 0x100)
+        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
         reader = Reader(data, self.current_controller.symbols)
 
         entity_list_1 = self.read_symbol(reader)
@@ -798,6 +835,25 @@ class DataExtractorPlugin:
         unknown_func_3 = self.read_symbol(reader)
         state_changing_func = self.read_symbol(reader)
 
+
+        room_name = symbol_name[5:]
+        if entity_list_1:
+            self.replacements.append(f'{entity_list_1.name},Entities_{room_name}_0\n')
+        if entity_list_2:
+            self.replacements.append(f'{entity_list_2.name},Entities_{room_name}_1\n')
+        if enemy_list:
+            self.replacements.append(f'{enemy_list.name},Enemies_{room_name}\n')
+        if tile_entity_list:
+            self.replacements.append(f'{tile_entity_list.name},TileEntities_{room_name}\n')
+
+        if unknown_func_1:
+            self.replacements.append(f'{unknown_func_1.name},sub_unk1_{room_name}\n')
+        if unknown_func_2:
+            self.replacements.append(f'{unknown_func_2.name},sub_unk2_{room_name}\n')
+        if unknown_func_3:
+            self.replacements.append(f'{unknown_func_3.name},sub_unk3_{room_name}\n')
+        if state_changing_func:
+            self.replacements.append(f'{state_changing_func.name},sub_StateChange_{room_name}\n')
         print('ETTTT')
         self.extract_entity_list(entity_list_1)
         self.extract_entity_list(entity_list_2)
@@ -806,42 +862,116 @@ class DataExtractorPlugin:
         self.extract_tile_entity_list(tile_entity_list)
 
         print(entity_list_1, entity_list_2, enemy_list, tile_entity_list, unknown_func_1, unknown_func_2, unknown_func_3, state_changing_func)
+        add_cnt = 0
         while reader.cursor < symbol.length:
             additional_entity_list = self.read_symbol(reader)
             print(additional_entity_list)
+            if additional_entity_list:
+                self.replacements.append(f'{additional_entity_list.name},gUnk_additional{add_cnt}_{room_name}\n')
             # TODO detect delayed entity lists
             # TODO also detect other non-list pointers?
             # self.extract_entity_list(additional_entity_list)
+            add_cnt += 1
 
-    def extract_entity_list(self, symbol: Symbol) -> None:
+    def slot_extract_current_entity_list(self) -> None:
+        symbol = self.current_controller.symbols.get_symbol_at(self.current_controller.address_resolver.to_local(self.current_controller.cursor))
+        try:
+            self.extract_entity_list(symbol)
+        except Exception:
+            traceback.print_exc()
+            self.api.show_error(self.name, 'Error in extracting entity list')
+
+    def extract_entity_list(self, symbol: Symbol) -> list[str]:
         if symbol is None:
             return
         print('entity list ', symbol)
         data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length + 0x100)
         reader = Reader(data, self.current_controller.symbols)
+        lines = []
         while True:
             type_and_unknowns = reader.read_u8()
 
             type = type_and_unknowns & 0x0F
-            unknown_1 = (type_and_unknowns & 0xF0) >> 4
+            collision = (type_and_unknowns & 0xF0) >> 4
             unknowns = reader.read_u8()
             unknown_2 = unknowns & 0x0F
             unknown_3 = (unknowns & 0xF0) >> 4
             subtype = reader.read_u8()
             params_a = reader.read_u8()
             params_b = reader.read_u32()
+            x = reader.read_u16()
+            y = reader.read_u16()
             params_c = reader.read_u32()
-            params_d = reader.read_u32()
             if type_and_unknowns == 0xff: # End of list
+                lines.append('\tentity_list_end\n')
                 break
-            print(type, hex(subtype))
-            print(params_a,hex(params_b), hex(params_c), hex(params_d))
 
+            line = ''
+
+            if type == 9: # manager
+                line = f'\tmanager subtype={hex(subtype)}'
+                line += opt_param('x', '0x0', hex(x))
+                line += opt_param('y', '0x0', hex(y))
+                line += opt_param('unknown', '0xf', hex(unknowns))
+                line += opt_param('collision', '0', str(collision))
+                line += opt_param('paramA', '0x0', hex(params_a))
+                line += opt_param('paramB', '0x0', hex(params_b))
+                line += opt_param('paramC', '0x0', hex(params_c))
+            elif type == 6: # object
+                line = f'\tobject_raw subtype={hex(subtype)}'
+                line += opt_param('x', '0x0', hex(x))
+                line += opt_param('y', '0x0', hex(y))
+                line += opt_param('unknown', '0xf', hex(unknowns))
+                line += opt_param('collision', '0', str(collision))
+                line += opt_param('paramA', '0x0', hex(params_a))
+                line += opt_param('paramB', '0x0', hex(params_b))
+
+
+                script_symbol = self.current_controller.symbols.get_symbol_at(params_c-ROM_OFFSET)
+                if script_symbol and script_symbol.address+ROM_OFFSET == params_c:
+                    line += f', paramC={script_symbol.name}' # script pointer in object 0x6A
+                else:
+                    line += opt_param('paramC', '0x0', hex(params_c))
+            elif type == 3: # enemy
+                line = f'\tenemy_raw subtype={hex(subtype)}'
+                line += opt_param('x', '0x0', hex(x))
+                line += opt_param('y', '0x0', hex(y))
+                line += opt_param('unknown', '0xf', hex(unknowns))
+                line += opt_param('collision', '0', str(collision))
+                line += opt_param('paramA', '0x0', hex(params_a))
+                line += opt_param('paramB', '0x0', hex(params_b))
+                line += opt_param('paramC', '0x0', hex(params_c))
+            elif type == 7: # npc
+                assert(unknowns == 0x4f)
+                script = hex(params_c)
+                script_symbol = self.current_controller.symbols.get_symbol_at(params_c-ROM_OFFSET)
+                if script_symbol:
+                    script = script_symbol.name
+                line = f'\tnpc_raw subtype={hex(subtype)}'
+                line += opt_param('x', '0x0', hex(x))
+                line += opt_param('y', '0x0', hex(y))
+                line += opt_param('collision', '0', str(collision))
+                line += opt_param('paramA', '0x0', hex(params_a))
+                line += opt_param('paramB', '0x0', hex(params_b))
+                line += f', script={script}'
+            else:
+                line = f'\tentity_raw type={hex(type)}, subtype={hex(subtype)}'
+                line += opt_param('x', '0x0', hex(x))
+                line += opt_param('y', '0x0', hex(y))
+                line += opt_param('collision', '0', str(collision))
+                line += opt_param('paramA', '0x0', hex(params_a))
+                line += opt_param('paramB', '0x0', hex(params_b))
+                line += opt_param('paramC', '0x0', hex(params_c))
+
+            lines.append(line + '\n')
 
         if reader.cursor < symbol.length:
-            print('@ unaccounted bytes')
+            lines.append('@ unaccounted bytes\n')
             while reader.cursor < symbol.length:
-                print(reader.read_u8())
+                lines.append(f'\t.byte {reader.read_u8()}\n')
+        print()
+        print (''.join(lines))
+        QApplication.clipboard().setText(''.join(lines))
 
     def extract_tile_entity_list(self, symbol: Symbol) -> None:
         if symbol is None:
@@ -859,6 +989,34 @@ class DataExtractorPlugin:
                 break
             print(hex(type), hex(params_a), hex(params_b), hex(params_c), hex(params_d))
 
+
+    def extract_room_exit_lists(self) -> None:
+        symbol_name = 'gExitLists'
+        symbol = self.current_controller.symbols.find_symbol_by_name(symbol_name)
+        if symbol is None:
+            self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
+            return
+
+        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
+        reader = Reader(data, self.current_controller.symbols)
+        area_index = 0
+
+        while reader.cursor < symbol.length:
+            room_list = self.read_symbol(reader)
+            if room_list.name != 'gExitLists_NoExit':
+                self.replacements.append(f'{room_list.name},gExitLists_{self.area_names[area_index]}\n')
+
+                room_index = 0
+                data2 = self.current_controller.rom.get_bytes(room_list.address, room_list.address+room_list.length)
+                reader2 = Reader(data2, self.current_controller.symbols)
+                while reader2.cursor < room_list.length:
+                    exit_list = self.read_symbol(reader2)
+                    if exit_list and exit_list.name != 'gExitLists_NoExitList':
+                        print(area_index, room_index)
+                        print(self.room_names[area_index][room_index], exit_list)
+                        self.replacements.append(f'{exit_list.name},gExitList_{self.room_names[area_index][room_index]}\n')
+                    room_index += 1
+            area_index += 1
 
     def extract_room_exit_list(self, symbol: Symbol) -> None:
         if symbol is None:
@@ -990,6 +1148,9 @@ class DataExtractorPlugin:
 
         data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
         reader = Reader(data, self.current_controller.symbols)
+
+        self.replacements = []
+
         i = 0
         while reader.cursor < symbol.length:
             animation_ptr = self.read_symbol(reader)
@@ -1002,6 +1163,9 @@ class DataExtractorPlugin:
             if animation_ptr:
                 self.extract_animation_list(animation_ptr)
             i += 1
+
+        with open('/tmp/replacements.s', 'w') as file:
+            file.writelines(self.replacements)
 
     def extract_sprite_frame(self, symbol: Symbol) -> None:
         data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
@@ -1029,13 +1193,14 @@ class DataExtractorPlugin:
             if animation_ptr:
                 lines.append(f'\t.4byte {symbol.name}_{i}\n')
                 animation_lines += self.extract_animation(animation_ptr, f'{symbol.name}_{i}')
+                self.replacements.append(f'{animation_ptr.name},{symbol.name}_{i}\n')
             else:
                 lines.append(f'\t.4byte 0\n')
             i += 1
 
-        with open(os.path.join(get_repo_location(), 'build', 'tmc', 'assets', 'animations', symbol.name+'.s'), 'w') as file:
-            file.writelines(animation_lines)
-            file.writelines(lines)
+        # with open(os.path.join(get_repo_location(), 'build', 'tmc', 'assets', 'animations', symbol.name+'.s'), 'w') as file:
+        #     file.writelines(animation_lines)
+        #     file.writelines(lines)
 
     def extract_animation(self, symbol: Symbol, new_name: str) -> list[str]:
         data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
@@ -1198,3 +1363,40 @@ class DataExtractorPlugin:
                 separator = ', '
             text += ' }'
         return text
+
+
+    def test_asset_list_modification(self) -> None:
+        assets = read_assets()
+
+
+        for asset in assets.assets:
+            if 'path' in asset:
+                if 'entity_lists/' in asset['path']:
+                    asset['type'] = 'entity_list'
+
+        write_assets(assets)
+        # symbol = self.current_controller.symbols.find_symbol_by_name('gPaletteGroups')
+
+        # asset = {
+        #     'path': 'palettes/paletteGroups.s',
+        #     'start': symbol.address,
+        #     'size': symbol.length,
+        #     'type': 'palette_groups'
+        # }
+        # next_asset = assets.get_asset_at_of_after(symbol.address, RomVariant.USA)
+
+        # replacements = []
+        # for asset in assets.assets:
+        #     if 'path' in asset:
+        #         if 'gSpriteAnimations' in asset['path']:
+        #             arr = asset['path'].split('gSpriteAnimations_')
+        #             new_path = f'animations/gSpriteAnimations_{arr[1]}'
+        #             replacements.append(asset['path'] + ',' + new_path + '\n')
+        #             asset['path'] = new_path
+        #             asset['type'] = 'animation'
+        
+        # with open('/tmp/replacements.s', 'w') as file:
+        #     file.writelines(replacements)
+        # #assets.insert_before(asset, next_asset)
+        # write_assets(assets)
+        # #print(assets)

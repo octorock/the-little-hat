@@ -46,6 +46,18 @@ class MainWindow(QMainWindow):
         self.ui.actionCUSTOM.triggered.connect(
             lambda: self.dock_manager.add_hex_editor(RomVariant.CUSTOM)
         )
+        self.ui.actionCUSTOM_EU.triggered.connect(
+            lambda: self.dock_manager.add_hex_editor(RomVariant.CUSTOM_EU)
+        )
+        self.ui.actionCUSTOM_JP.triggered.connect(
+            lambda: self.dock_manager.add_hex_editor(RomVariant.CUSTOM_JP)
+        )
+        self.ui.actionCUSTOM_DEMO_USA.triggered.connect(
+            lambda: self.dock_manager.add_hex_editor(RomVariant.CUSTOM_DEMO_USA)
+        )
+        self.ui.actionCUSTOM_DEMO_JP.triggered.connect(
+            lambda: self.dock_manager.add_hex_editor(RomVariant.CUSTOM_DEMO_JP)
+        )
         self.ui.actionReloadCUSTOM.triggered.connect(self.slot_reload_custom_rom)
         self.ui.actionLoadSymbols.triggered.connect(self.slot_load_symbols)
 
@@ -72,6 +84,10 @@ class MainWindow(QMainWindow):
 
         if settings.is_always_load_symbols():
             self.load_symbols(RomVariant.CUSTOM, True)
+            self.load_symbols(RomVariant.CUSTOM_EU, True)
+            self.load_symbols(RomVariant.CUSTOM_JP, True)
+            self.load_symbols(RomVariant.CUSTOM_DEMO_USA, True)
+            self.load_symbols(RomVariant.CUSTOM_DEMO_JP, True)
 
     def closeEvent(self, event):
         layout = Layout('', self.saveState(), self.saveGeometry(),
@@ -166,12 +182,29 @@ class MainWindow(QMainWindow):
         self.ui.actionEU.setDisabled(get_rom(RomVariant.EU) is None)
         self.ui.actionDEMO_JP.setDisabled(get_rom(RomVariant.DEMO_JP) is None)
         self.ui.actionCUSTOM.setDisabled(get_rom(RomVariant.CUSTOM) is None)
+        self.ui.actionCUSTOM_EU.setDisabled(get_rom(RomVariant.CUSTOM_EU) is None)
+        self.ui.actionCUSTOM_JP.setDisabled(get_rom(RomVariant.CUSTOM_JP) is None)
+        self.ui.actionCUSTOM_DEMO_USA.setDisabled(get_rom(RomVariant.CUSTOM_DEMO_USA) is None)
+        self.ui.actionCUSTOM_DEMO_JP.setDisabled(get_rom(RomVariant.CUSTOM_DEMO_JP) is None)
 
     def slot_load_symbols(self):
         self.load_symbols(RomVariant.CUSTOM, False)
+        self.load_symbols(RomVariant.CUSTOM_EU, False)
+        self.load_symbols(RomVariant.CUSTOM_JP, False)
+        self.load_symbols(RomVariant.CUSTOM_DEMO_USA, False)
+        self.load_symbols(RomVariant.CUSTOM_DEMO_JP, False)
 
     def load_symbols(self, rom_variant: RomVariant, silent: bool) -> None:
-        map_file = path.join(settings.get_repo_location(), 'tmc.map')
+
+        maps = {
+            RomVariant.CUSTOM: 'tmc.map',
+            RomVariant.CUSTOM_EU: 'tmc_eu.map',
+            RomVariant.CUSTOM_JP: 'tmc_jp.map',
+            RomVariant.CUSTOM_DEMO_USA: 'tmc_demo_usa.map',
+            RomVariant.CUSTOM_DEMO_JP: 'tmc_demo_jp.map',
+        }
+
+        map_file = path.join(settings.get_repo_location(), maps[rom_variant])
         if not path.isfile(map_file):
             if silent:
                 print(f'Could not find tmc.map file at {map_file}.')
@@ -203,16 +236,35 @@ class MainWindow(QMainWindow):
 
     def slot_reload_custom_rom(self) -> None:
         invalidate_rom(RomVariant.CUSTOM)
+        invalidate_rom(RomVariant.CUSTOM_EU)
+        invalidate_rom(RomVariant.CUSTOM_JP)
+        invalidate_rom(RomVariant.CUSTOM_DEMO_USA)
+        invalidate_rom(RomVariant.CUSTOM_DEMO_JP)
 
         if settings.is_always_load_symbols():
             self.load_symbols(RomVariant.CUSTOM, True)
+            self.load_symbols(RomVariant.CUSTOM_EU, True)
+            self.load_symbols(RomVariant.CUSTOM_JP, True)
+            self.load_symbols(RomVariant.CUSTOM_DEMO_USA, True)
+            self.load_symbols(RomVariant.CUSTOM_DEMO_USA, True)
 
         # Reload all hex viewers for the CUSTOM variant
 
         controllers = self.dock_manager.hex_viewer_manager.get_controllers_for_variant(RomVariant.CUSTOM)
         for controller in controllers:
             controller.invalidate()
-
+        controllers = self.dock_manager.hex_viewer_manager.get_controllers_for_variant(RomVariant.CUSTOM_EU)
+        for controller in controllers:
+            controller.invalidate()
+        controllers = self.dock_manager.hex_viewer_manager.get_controllers_for_variant(RomVariant.CUSTOM_JP)
+        for controller in controllers:
+            controller.invalidate()
+        controllers = self.dock_manager.hex_viewer_manager.get_controllers_for_variant(RomVariant.CUSTOM_DEMO_USA)
+        for controller in controllers:
+            controller.invalidate()
+        controllers = self.dock_manager.hex_viewer_manager.get_controllers_for_variant(RomVariant.CUSTOM_DEMO_JP)
+        for controller in controllers:
+            controller.invalidate()
         # TODO also reload all linked viewers?
 
         self.update_hex_viewer_actions()

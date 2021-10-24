@@ -40,6 +40,14 @@ class EditConstraintDialog(QDialog):
             return 4
         elif variant == RomVariant.CUSTOM:
             return 5
+        elif variant == RomVariant.CUSTOM_EU:
+            return 6
+        elif variant == RomVariant.CUSTOM_JP:
+            return 7
+        elif variant == RomVariant.CUSTOM_DEMO_USA:
+            return 8
+        elif variant == RomVariant.CUSTOM_DEMO_JP:
+            return 9
 
         return -1
 

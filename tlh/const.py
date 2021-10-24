@@ -17,8 +17,13 @@ class RomVariant(str, Enum):
     JP = 'JP'
     DEMO_JP = 'DEMO_JP'
     CUSTOM = 'CUSTOM'
+    CUSTOM_EU = 'CUSTOM_EU'
+    CUSTOM_JP = 'CUSTOM_JP'
+    CUSTOM_DEMO_USA = 'CUSTOM_DEMO_USA'
+    CUSTOM_DEMO_JP = 'CUSTOM_DEMO_JP'
 
     def __repr__(self):
         return self.name
 
-ALL_ROM_VARIANTS = [RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.DEMO_JP, RomVariant.CUSTOM]
+ALL_ROM_VARIANTS = [RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.DEMO_JP, RomVariant.CUSTOM, RomVariant.CUSTOM_EU, RomVariant.CUSTOM_JP, RomVariant.CUSTOM_DEMO_USA, RomVariant.CUSTOM_DEMO_JP]
+CUSTOM_ROM_VARIANTS= [RomVariant.CUSTOM, RomVariant.CUSTOM_EU, RomVariant.CUSTOM_JP, RomVariant.CUSTOM_DEMO_USA, RomVariant.CUSTOM_DEMO_JP]

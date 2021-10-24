@@ -11,7 +11,7 @@ from tlh.data.annotations import Annotation
 from PySide6.QtCore import QObject, Signal
 from tlh.data.pointer import Pointer, PointerList
 
-from tlh.const import ALL_ROM_VARIANTS, ROM_OFFSET, RomVariant
+from tlh.const import ALL_ROM_VARIANTS, CUSTOM_ROM_VARIANTS, ROM_OFFSET, RomVariant
 from tlh.data.constraints import Constraint, ConstraintManager
 
 
@@ -147,19 +147,27 @@ class PointerDatabase(QObject):
             RomVariant.EU: [],
             RomVariant.JP: [],
             RomVariant.DEMO_JP: [],
-            RomVariant.CUSTOM: []
+            RomVariant.CUSTOM: [],
+            RomVariant.CUSTOM_EU: [],
+            RomVariant.CUSTOM_JP: [],
+            RomVariant.CUSTOM_DEMO_USA: [],
+            RomVariant.CUSTOM_DEMO_JP: [],
         }
 
         for pointer in self._read_pointers():
             pointers[pointer.rom_variant].append(pointer)
 
         self.pointers = {
-            RomVariant.USA: PointerList(pointers[RomVariant.USA], RomVariant.USA), 
-            RomVariant.DEMO: PointerList(pointers[RomVariant.DEMO], RomVariant.DEMO), 
-            RomVariant.EU: PointerList(pointers[RomVariant.EU], RomVariant.EU), 
-            RomVariant.JP: PointerList(pointers[RomVariant.JP], RomVariant.JP), 
-            RomVariant.DEMO_JP: PointerList(pointers[RomVariant.DEMO_JP], RomVariant.DEMO_JP), 
-            RomVariant.CUSTOM: PointerList(pointers[RomVariant.CUSTOM], RomVariant.CUSTOM), 
+            RomVariant.USA: PointerList(pointers[RomVariant.USA], RomVariant.USA),
+            RomVariant.DEMO: PointerList(pointers[RomVariant.DEMO], RomVariant.DEMO),
+            RomVariant.EU: PointerList(pointers[RomVariant.EU], RomVariant.EU),
+            RomVariant.JP: PointerList(pointers[RomVariant.JP], RomVariant.JP),
+            RomVariant.DEMO_JP: PointerList(pointers[RomVariant.DEMO_JP], RomVariant.DEMO_JP),
+            RomVariant.CUSTOM: PointerList(pointers[RomVariant.CUSTOM], RomVariant.CUSTOM),
+            RomVariant.CUSTOM_EU: PointerList(pointers[RomVariant.CUSTOM_EU], RomVariant.CUSTOM_EU),
+            RomVariant.CUSTOM_JP: PointerList(pointers[RomVariant.CUSTOM_JP], RomVariant.CUSTOM_JP),
+            RomVariant.CUSTOM_DEMO_USA: PointerList(pointers[RomVariant.CUSTOM_DEMO_USA], RomVariant.CUSTOM_DEMO_USA),
+            RomVariant.CUSTOM_DEMO_JP: PointerList(pointers[RomVariant.CUSTOM_DEMO_JP], RomVariant.CUSTOM_DEMO_JP),
         }
 
     def get_pointers(self, rom_variant: RomVariant) -> PointerList:
@@ -222,7 +230,7 @@ class PointerDatabase(QObject):
             writer = DictWriter(
                 file, fieldnames=['rom_variant', 'address', 'points_to', 'certainty', 'author', 'note'])
             writer.writeheader()
-            for variant in [RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.CUSTOM]: # Name all explicitely to keep the same order
+            for variant in [RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.CUSTOM, RomVariant.CUSTOM_EU, RomVariant.CUSTOM_JP, RomVariant.CUSTOM_DEMO_USA, RomVariant.CUSTOM_DEMO_JP]: # Name all explicitely to keep the same order
                 for pointer in self.pointers[variant].get_sorted_pointers():
                     writer.writerow({
                         'rom_variant': pointer.rom_variant,
@@ -344,9 +352,9 @@ class SymbolDatabase(QObject):
                     reader = DictReader(file)
                     for row in reader:
                         symbols.add(Symbol(
-                            int(row['address'], 16), 
-                            row['name'], 
-                            row['file'], 
+                            int(row['address'], 16),
+                            row['name'],
+                            row['file'],
                             int(row['length'], 16)
                         ))
                 symbol_dict[rom_variant] = SymbolList(symbols)
@@ -357,7 +365,7 @@ class SymbolDatabase(QObject):
         for rom_variant in self.symbols:
 
             # Don't save the symbols for the custom rom as it is always changing
-            if rom_variant == RomVariant.CUSTOM:
+            if rom_variant in CUSTOM_ROM_VARIANTS:
                 continue
 
             with open(get_file_in_database(f'symbols_{rom_variant}.csv'), 'w') as file:
@@ -400,7 +408,7 @@ class SymbolDatabase(QObject):
                         symbol = Symbol(addr, parts[1], current_file)
                         symbols.add(symbol)
                         prev_symbol = symbol
-                        
+
                 elif not line.startswith(' *'):
                     # this defines the name
                     current_file = line.split('(')[0].strip()
@@ -408,7 +416,7 @@ class SymbolDatabase(QObject):
         self.symbols_changed.emit()
 
 
-                
+
 def get_symbol_database() -> SymbolDatabase:
     return symbol_database_instance
 

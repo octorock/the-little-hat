@@ -251,7 +251,7 @@ class HexViewerManager(QObject):
                 constraint.enabled = True
 
             # Check whether the new constraint is invalid
-            constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.DEMO_JP, RomVariant.CUSTOM})
+            constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.DEMO_JP, RomVariant.CUSTOM, RomVariant.CUSTOM_EU, RomVariant.CUSTOM_JP, RomVariant.CUSTOM_DEMO_USA, RomVariant.CUSTOM_DEMO_JP})
             constraint_manager.add_all_constraints(
                 get_constraint_database().get_constraints())
             try:
@@ -318,7 +318,7 @@ class HexViewerManager(QObject):
                 new_constraints.append(constraint)
 
         # Check whether the new constraint is invalid
-        constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.DEMO_JP, RomVariant.CUSTOM})
+        constraint_manager = ConstraintManager({RomVariant.USA, RomVariant.DEMO, RomVariant.EU, RomVariant.JP, RomVariant.DEMO_JP, RomVariant.CUSTOM, RomVariant.CUSTOM_EU, RomVariant.CUSTOM_JP, RomVariant.CUSTOM_DEMO_USA, RomVariant.CUSTOM_DEMO_JP})
         constraint_manager.add_all_constraints(
             get_constraint_database().get_constraints())
         try:

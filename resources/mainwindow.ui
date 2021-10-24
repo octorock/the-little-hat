@@ -52,6 +52,10 @@
      <addaction name="actionDEMO_JP"/>
      <addaction name="separator"/>
      <addaction name="actionCUSTOM"/>
+     <addaction name="actionCUSTOM_EU"/>
+     <addaction name="actionCUSTOM_JP"/>
+     <addaction name="actionCUSTOM_DEMO_USA"/>
+     <addaction name="actionCUSTOM_DEMO_JP"/>
      <addaction name="actionReloadCUSTOM"/>
     </widget>
     <widget class="QMenu" name="menuPlugins">
@@ -160,6 +164,26 @@
   <action name="actionCUSTOM">
    <property name="text">
     <string>CUSTOM</string>
+   </property>
+  </action>
+  <action name="actionCUSTOM_EU">
+   <property name="text">
+    <string>CUSTOM_EU</string>
+   </property>
+  </action>
+  <action name="actionCUSTOM_JP">
+   <property name="text">
+    <string>CUSTOM_JP</string>
+   </property>
+  </action>
+  <action name="actionCUSTOM_DEMO_USA">
+   <property name="text">
+    <string>CUSTOM_DEMO_USA</string>
+   </property>
+  </action>
+  <action name="actionCUSTOM_DEMO_JP">
+   <property name="text">
+    <string>CUSTOM_DEMO_JP</string>
    </property>
   </action>
   <action name="actionReloadCUSTOM">
