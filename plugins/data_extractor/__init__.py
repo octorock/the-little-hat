@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum
 import os
+from pprint import pprint
+
+from PySide6.QtGui import QKeySequence
 from plugins.data_extractor.assets import read_assets, write_assets
 from plugins.data_extractor.gba_lz77 import GBALZ77, DecompressionError
 from plugins.data_extractor.read_data import Reader, load_json_files, read_var
@@ -62,12 +65,14 @@ class DataExtractorPlugin:
         #self.action_disasm = self.api.register_menu_entry('Export list for disasm', self.slot_disasm)
 
         self.action_export_incbins = self.api.register_menu_entry('Export Incbins', self.slot_export_incbins)
+        self.action_remove_unused = self.api.register_menu_entry('Remove unused asset entries', self.slot_remove_unused_assets)
         load_json_files()
 
     def unload(self) -> None:
         self.api.remove_hexview_contextmenu_handler(self.contextmenu_handler)
         self.api.remove_menu_entry(self.action_incbin)
         self.api.remove_menu_entry(self.action_export_incbins)
+        self.api.remove_menu_entry(self.action_remove_unused)
 
     def contextmenu_handler(self, controller: HexViewerController, menu: QMenu) -> None:
         menu.addSeparator()
@@ -80,7 +85,13 @@ class DataExtractorPlugin:
         menu.addAction('Extract data for symbol', self.slot_extract_data)
         menu.addAction('Test', self.slot_test)
         menu.addAction('Test modify asset list', self.test_asset_list_modification)
+        menu.addAction('Tmp', self.slot_tmp)
         menu.addAction('Extract current entity list', self.slot_extract_current_entity_list)
+        menu.addAction('Extract current tile entity list', self.slot_extract_current_tile_entity_list)
+        menu.addAction('Extract current delayed entity list', self.slot_extract_current_delayed_entity_list)
+        menu.addAction('Extract current exit region list', self.slot_extract_current_exit_region_list)
+        menu.addAction('Extract current exit', self.slot_extract_current_exit)
+        menu.addAction('Extract room property by symbol name', self.slot_extract_room_prop_by_symbol)
 
 
     def slot_copy_as_incbin(self) -> None:
@@ -298,7 +309,7 @@ class DataExtractorPlugin:
                 print(f'No longer in second level: {reader.cursor}')
                 break
             if reader.cursor not in second_level:
-                print(f'{reader.cursor} not in second_level {num_objects}')
+                print(f'{reader.cursor} not in second_level')
                 next = -1
                 for i in second_level:
                     if i > reader.cursor:
@@ -874,7 +885,9 @@ class DataExtractorPlugin:
             add_cnt += 1
 
     def slot_extract_current_entity_list(self) -> None:
-        symbol = self.current_controller.symbols.get_symbol_at(self.current_controller.address_resolver.to_local(self.current_controller.cursor))
+        symbol_name = QApplication.clipboard().text()
+        symbol = self.current_controller.symbols.find_symbol_by_name(symbol_name)
+        #symbol = self.current_controller.symbols.get_symbol_at(self.current_controller.address_resolver.to_local(self.current_controller.cursor))
         try:
             self.extract_entity_list(symbol)
         except Exception:
@@ -888,7 +901,7 @@ class DataExtractorPlugin:
         data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length + 0x100)
         reader = Reader(data, self.current_controller.symbols)
         lines = []
-        while True:
+        while reader.cursor + 15 < symbol.length:
             type_and_unknowns = reader.read_u8()
 
             type = type_and_unknowns & 0x0F
@@ -903,8 +916,12 @@ class DataExtractorPlugin:
             y = reader.read_u16()
             params_c = reader.read_u32()
             if type_and_unknowns == 0xff: # End of list
-                lines.append('\tentity_list_end\n')
-                break
+                lines.append('\tentity_list_end')
+                if reader.cursor == symbol.length:
+                    break
+                else:
+                    lines.append('\n')
+                    continue
 
             line = ''
 
@@ -942,14 +959,14 @@ class DataExtractorPlugin:
                 line += opt_param('paramB', '0x0', hex(params_b))
                 line += opt_param('paramC', '0x0', hex(params_c))
             elif type == 7: # npc
-                assert(unknowns == 0x4f)
                 script = hex(params_c)
                 script_symbol = self.current_controller.symbols.get_symbol_at(params_c-ROM_OFFSET)
-                if script_symbol:
+                if script_symbol and script_symbol.address+ROM_OFFSET == params_c:
                     script = script_symbol.name
                 line = f'\tnpc_raw subtype={hex(subtype)}'
                 line += opt_param('x', '0x0', hex(x))
                 line += opt_param('y', '0x0', hex(y))
+                line += opt_param('unknown', '0x4f', hex(unknowns))
                 line += opt_param('collision', '0', str(collision))
                 line += opt_param('paramA', '0x0', hex(params_a))
                 line += opt_param('paramB', '0x0', hex(params_b))
@@ -958,6 +975,7 @@ class DataExtractorPlugin:
                 line = f'\tentity_raw type={hex(type)}, subtype={hex(subtype)}'
                 line += opt_param('x', '0x0', hex(x))
                 line += opt_param('y', '0x0', hex(y))
+                line += f', unknown={hex(unknowns)}'
                 line += opt_param('collision', '0', str(collision))
                 line += opt_param('paramA', '0x0', hex(params_a))
                 line += opt_param('paramB', '0x0', hex(params_b))
@@ -972,23 +990,240 @@ class DataExtractorPlugin:
         print()
         print (''.join(lines))
         QApplication.clipboard().setText(''.join(lines))
+        return lines
 
-    def extract_tile_entity_list(self, symbol: Symbol) -> None:
+    def slot_extract_current_tile_entity_list(self) -> None:
+        symbol = self.current_controller.symbols.get_symbol_at(self.current_controller.address_resolver.to_local(self.current_controller.cursor))
+        try:
+            self.extract_tile_entity_list(symbol)
+        except Exception:
+            traceback.print_exc()
+            self.api.show_error(self.name, 'Error in extracting tile entity list')
+
+    def extract_tile_entity_list(self, symbol: Symbol) -> list[str]:
         if symbol is None:
             return
         print('tile entity list ', symbol)
         data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length + 0x100)
         reader = Reader(data, self.current_controller.symbols)
-        while True:
+        lines = []
+        while reader.cursor < symbol.length:
             type = reader.read_u8()
             params_a = reader.read_u8()
             params_b = reader.read_u16()
             params_c = reader.read_u16()
             params_d = reader.read_u16()
             if type == 0:
+                lines.append('\ttile_entity_list_end')
                 break
-            print(hex(type), hex(params_a), hex(params_b), hex(params_c), hex(params_d))
+            line = f'\ttile_entity type={hex(type)}'
+            line += opt_param('paramA', '0x0', hex(params_a))
+            line += opt_param('paramB', '0x0', hex(params_b))
+            line += opt_param('paramC', '0x0', hex(params_c))
+            line += opt_param('paramD', '0x0', hex(params_d))
+            lines.append(line + '\n')
 
+        if reader.cursor < symbol.length:
+            lines.append('@ unaccounted bytes\n')
+            while reader.cursor < symbol.length:
+                lines.append(f'\t.byte {reader.read_u8()}\n')
+        print()
+        print (''.join(lines))
+        QApplication.clipboard().setText(''.join(lines))
+        return lines
+
+    def slot_extract_current_delayed_entity_list(self) -> None:
+        symbol = self.current_controller.symbols.get_symbol_at(self.current_controller.address_resolver.to_local(self.current_controller.cursor))
+        try:
+            self.extract_delayed_entity_list(symbol)
+        except Exception:
+            traceback.print_exc()
+            self.api.show_error(self.name, 'Error in extracting delayed entity list')
+
+    def extract_delayed_entity_list(self, symbol: Symbol) -> list[str]:
+        if symbol is None:
+            return
+        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length + 0x100)
+        reader = Reader(data, self.current_controller.symbols)
+        lines = []
+        while reader.cursor + 15 < symbol.length:
+
+            subtype = reader.read_u8()
+            params_a = reader.read_u8()
+            params_b = reader.read_u8()
+            layer = reader.read_u8()
+            x = reader.read_u16()
+            y = reader.read_u16()
+            params_c = reader.read_u32()
+            params_d = reader.read_u16()
+            conditions = reader.read_u16()
+
+            if subtype == 0xff: # End of list
+                lines.append('\tentity_list_end')
+                if reader.cursor == symbol.length:
+                    break
+                else:
+                    lines.append('\n')
+                    continue
+
+            line = f'\tdelayed_entity_raw subtype={hex(subtype)}'
+            line += opt_param('x', '0x0', hex(x))
+            line += opt_param('y', '0x0', hex(y))
+            line += opt_param('layer', '0', str(layer))
+            line += opt_param('paramA', '0x0', hex(params_a))
+            line += opt_param('paramB', '0x0', hex(params_b))
+            script_symbol = self.current_controller.symbols.get_symbol_at(params_c-ROM_OFFSET)
+            if script_symbol and script_symbol.address+ROM_OFFSET == params_c:
+                line += f', paramC={script_symbol.name}' # script pointer in object 0x6A
+            else:
+                line += opt_param('paramC', '0x0', hex(params_c))
+            line += opt_param('paramD', '0x0', hex(params_d))
+            line += opt_param('conditions', '0x0', hex(conditions))
+
+            lines.append(line + '\n')
+
+        if reader.cursor < symbol.length:
+            lines.append('@ unaccounted bytes\n')
+            while reader.cursor < symbol.length:
+                lines.append(f'\t.byte {reader.read_u8()}\n')
+        print()
+        print (''.join(lines))
+        QApplication.clipboard().setText(''.join(lines))
+        return lines
+
+    def slot_extract_current_exit_region_list(self) -> None:
+        symbol_name = QApplication.clipboard().text()
+        symbol = self.current_controller.symbols.find_symbol_by_name(symbol_name)
+        #symbol = self.current_controller.symbols.get_symbol_at(self.current_controller.address_resolver.to_local(self.current_controller.cursor))
+        try:
+            self.extract_exit_region_list(symbol)
+        except Exception:
+            traceback.print_exc()
+            self.api.show_error(self.name, 'Error in extracting exit region list')
+
+    def extract_exit_region_list(self, symbol: Symbol) -> list[str]:
+        if symbol is None:
+            return
+        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length + 0x100)
+        reader = Reader(data, self.current_controller.symbols)
+        lines = []
+        while reader.cursor + 7 < symbol.length:
+
+            # minish entrance list just exists once
+            # x = reader.read_u16()
+            # y = reader.read_u16()
+            # unknown = reader.read_u16()
+            # actionDelay = reader.read_u16()
+
+            # line = f'\tminish_entrance x={hex(x)}, y={hex(y)}'
+            # line += opt_param('unknown', '0x0', hex(unknown))
+            # line += opt_param('actionDelay', '0x0', hex(actionDelay))
+
+
+            center_x = reader.read_u16()
+            center_y = reader.read_u16()
+            half_width = reader.read_u8()
+            half_height = reader.read_u8()
+            exit_pointer_property_index = reader.read_u8()
+            bitfield = reader.read_u8()
+
+            if center_x == 0xffff: # End of list
+                lines.append('\texit_region_list_end')
+                if reader.cursor == symbol.length:
+                    break
+                else:
+                    lines.append('\n')
+                    continue
+
+            line = f'\texit_region_raw centerX={hex(center_x)}, centerY={hex(center_y)}'
+            line += opt_param('halfWidth', '0x0', hex(half_width))
+            line += opt_param('halfHeight', '0x0', hex(half_height))
+            line += opt_param('exitIndex', '0x0', hex(exit_pointer_property_index))
+            line += opt_param('bitfield', '0x0', hex(bitfield))
+
+            lines.append(line + '\n')
+
+        if reader.cursor < symbol.length:
+            lines.append('@ unaccounted bytes\n')
+            while reader.cursor < symbol.length:
+                lines.append(f'\t.byte {reader.read_u8()}\n')
+        print()
+        print (''.join(lines))
+        QApplication.clipboard().setText(''.join(lines))
+        return lines
+
+    def slot_extract_current_exit(self) -> None:
+        symbol_name = QApplication.clipboard().text()
+        symbol = self.current_controller.symbols.find_symbol_by_name(symbol_name)
+        #symbol = self.current_controller.symbols.get_symbol_at(self.current_controller.address_resolver.to_local(self.current_controller.cursor))
+        try:
+            self.extract_exit(symbol)
+        except Exception:
+            traceback.print_exc()
+            self.api.show_error(self.name, 'Error in extracting exit region list')
+
+    def extract_exit(self, symbol: Symbol) -> list[str]:
+        if symbol is None:
+            return
+        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length + 0x100)
+        reader = Reader(data, self.current_controller.symbols)
+        lines = []
+        transition_type = reader.read_u16()
+        x_pos = reader.read_u16()
+        y_pos = reader.read_u16()
+        dest_x = reader.read_u16()
+        dest_y = reader.read_u16()
+        screen_edge = reader.read_u8()
+        dest_area = reader.read_u8()
+        dest_room = reader.read_u8()
+        unknown_2 = reader.read_u8()
+        unknown_3 = reader.read_u8()
+        unknown_4 = reader.read_u8()
+        unknown_5 = reader.read_u16()
+        padding_1 = reader.read_u16()
+
+        assert(padding_1 == 0)
+
+        line = f'\texit_raw transition={hex(transition_type)}'
+        line += opt_param('x', '0x0', hex(x_pos))
+        line += opt_param('y', '0x0', hex(y_pos))
+        line += opt_param('destX', '0x0', hex(dest_x))
+        line += opt_param('destY', '0x0', hex(dest_y))
+        line += opt_param('screenEdge', '0x0', hex(screen_edge))
+        line += opt_param('destArea', '0x0', hex(dest_area))
+        line += opt_param('destRoom', '0x0', hex(dest_room))
+        line += opt_param('unknownA', '0x0', hex(unknown_2))
+        line += opt_param('unknownB', '0x0', hex(unknown_3))
+        line += opt_param('unknownC', '0x0', hex(unknown_4))
+        line += opt_param('unknownD', '0x0', hex(unknown_5))
+
+        lines.append(line)
+
+        if reader.cursor < symbol.length:
+            lines.append('@ unaccounted bytes\n')
+            while reader.cursor < symbol.length:
+                lines.append(f'\t.byte {reader.read_u8()}\n')
+        print()
+        print (''.join(lines))
+        QApplication.clipboard().setText(''.join(lines))
+        return lines
+
+
+    def slot_extract_room_prop_by_symbol(self) -> None:
+        # (symbol_name, ok) = self.api.show_text_input(self.name, 'Enter symbol')
+        # if not ok:
+        #     return
+        symbol_name = QApplication.clipboard().text()
+        symbol = self.current_controller.symbols.find_symbol_by_name(symbol_name)
+        if symbol is None:
+            self.api.show_error(self.name, f'Symbol {symbol_name} not found.')
+            return
+        if symbol_name.startswith('Entities_') or symbol_name.startswith('Enemies_'):
+            self.extract_entity_list(symbol)
+        elif symbol_name.startswith('TileEntities_'):
+            self.extract_tile_entity_list(symbol)
+        else:
+            self.api.show_error(self.name, f'Do not know what type {symbol_name} is.')
 
     def extract_room_exit_lists(self) -> None:
         symbol_name = 'gExitLists'
@@ -1307,6 +1542,128 @@ class DataExtractorPlugin:
         QApplication.clipboard().setText(text)
         print(text)
 
+    def read_str(self, symbol):
+        res = ''
+        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
+        reader = Reader(data, self.current_controller.symbols)
+        while reader.cursor < symbol.length:
+            byte = reader.read_u8()
+            if byte == 0:
+                break
+            res += chr(byte)
+        return res
+
+    def slot_tmp(self) -> None:
+        #ENUM_12AED0
+        # USA
+        """
+        ENUM_STARTS = [
+            0x812aaec,
+            0x812b20c,
+            0x812c600,
+            0x812e60c,
+            0x812f4a4,
+            0x812fa3c,
+            0x812feac,
+            0x8130378,
+            0x8130e0c,
+            0x81316ac
+        ]"""
+        ENUM_STARTS = [
+            # 0x812b20c #usa
+            #0x812AED0 # jp
+            0x812bd8c # demo_jp
+        ]
+
+        symbol_name = 'ENUM_12'
+
+        symbol = self.current_controller.symbols.find_symbol_by_name(symbol_name)
+        if symbol is None:
+            self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
+            return
+        ptr = symbol.address
+        prefix = 'ENUM_' + hex(ptr)[2:].upper()
+        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
+        reader = Reader(data, self.current_controller.symbols)
+
+        values=[]
+        while reader.cursor < symbol.length:
+            entry = self.read_symbol(reader)
+            if entry and entry.length > 0:
+                print(entry)
+                values.append(self.read_str(entry))
+            # entry = bytes_to_u32(baserom_data[ptr:ptr+4])
+            # if entry < ROM_START or entry-ROM_START > len(baserom_data):
+            #     break
+            # values.append(read_str(baserom_data, entry-ROM_START))
+            # ptr += 4
+
+        lines = []
+        lines.append(f'{prefix}:\n')
+        for value in values:
+            lines.append(f'\t.4byte {prefix}_{value}\n')
+
+        for value in reversed(values):
+            lines.append(f'{prefix}_{value}:\n')
+            pad = ''
+            count = (4 - ((len(value) + 1) % 4)) % 4
+            for i in range(count):
+                pad += '\\0'
+            lines.append(f'\t.ascii "{value}\\0{pad}"\n')
+
+        print (''.join(lines))
+        QApplication.clipboard().setText(''.join(lines))
+
+
+
+        # entity_datas = []
+        # # Find all EntityData in room.c
+        # with open(os.path.join(get_repo_location(), 'src', 'room.c'), 'r') as file:
+        #     for line in file:
+        #         match = re.search('EntityData (.*);', line)
+        #         if match:
+        #             entity_datas.append(match.group(1))
+        # in_lines = []
+        # with open(os.path.join(get_repo_location(), 'data', 'map', 'entity_headers.s'), 'r') as file:
+        #     in_lines = file.readlines()
+
+        # out_lines = []
+        # current_symbol = None
+        # ignoring = False
+        # for line in in_lines:
+        #     if '.ifdef' in line or '.else' in line or '.endif' in line:
+        #         if ignoring:
+        #             out_lines.append('@ FIXME ')
+        #         ignoring = False
+        #     if ':: @' in line:
+        #         arr = line.split(':')
+        #         current_symbol = arr[0]
+        #         ignoring = False
+        #     if ignoring:
+        #         continue
+        #     if '.incbin' in line:
+        #         if current_symbol in entity_datas:
+        #             symbol = self.current_controller.symbols.find_symbol_by_name(current_symbol)
+        #             out_lines += self.extract_entity_list(symbol)
+        #             out_lines.append('\n\n')
+        #             ignoring = True
+        #             continue
+        #         # if 'entity_lists/' in line:
+        #         #     symbol = self.current_controller.symbols.find_symbol_by_name(current_symbol)
+        #         #     if current_symbol.startswith('Entities_') or current_symbol.startswith('Enemies_'):
+        #         #         out_lines += self.extract_entity_list(symbol)
+        #         #         out_lines.append('\n\n')
+        #         #         ignoring = True
+        #         #     elif current_symbol.startswith('TileEntities_'):
+        #         #         out_lines += self.extract_tile_entity_list(symbol)
+        #         #         out_lines.append('\n\n')
+        #         #         ignoring = True
+        #         #     else:
+        #         #         self.api.show_error(self.name, f'Do not know what type {current_symbol} is.')
+        #         #     continue
+        #     out_lines.append(line)
+        # with open('/tmp/teset.s', 'w') as file:
+        #     file.writelines(out_lines)
 
     def parse_type(self, type: str) -> DataType:
         match = re.search('(extern )?(const )?(?P<type>\S+) (?P<name>\w+);', type)
@@ -1368,13 +1725,44 @@ class DataExtractorPlugin:
     def test_asset_list_modification(self) -> None:
         assets = read_assets()
 
+        stats = {}
 
         for asset in assets.assets:
             if 'path' in asset:
-                if 'entity_lists/' in asset['path']:
-                    asset['type'] = 'entity_list'
+                folder = asset['path'][0:asset['path'].index('/')]
+                if not folder in stats:
+                    stats[folder] = {
+                        'count': 0,
+                        'size': 0
+                    }
+                stats[folder]['count'] += 1
+                if 'size' in asset:
+                    stats[folder]['size'] += asset['size']
 
-        write_assets(assets)
+        lists = []
+        for key in stats:
+            stat = stats[key]
+            lists.append({
+                'folder': key,
+                'count': stat['count'],
+                'size': stat['size']
+            })
+
+        lists.sort(key=lambda x:x['count'])
+        #lists.sort(key=lambda x:x['size'])
+        for entry in lists:
+            print(entry['folder'] + ' ('+str(entry['count'])+') ' + str(entry['size']))
+        # Unused assets
+
+
+
+        # for asset in assets.assets:
+        #     if 'path' in asset:
+        #         if 'entity_lists/' in asset['path']:
+        #             asset['type'] = 'entity_list'
+
+        # write_assets(assets)
+
         # symbol = self.current_controller.symbols.find_symbol_by_name('gPaletteGroups')
 
         # asset = {
@@ -1400,3 +1788,30 @@ class DataExtractorPlugin:
         # #assets.insert_before(asset, next_asset)
         # write_assets(assets)
         # #print(assets)
+    def slot_remove_unused_assets(self) -> None:
+        assets = read_assets()
+        used_assets = set()
+
+        for folder in ['data', 'asm']:
+            for root, dirs, files in os.walk(os.path.join(get_repo_location(), folder)):
+                for file in files:
+                    if file.endswith('.4bpp') or file.endswith('.lz'):
+                        continue
+                    with open(os.path.join(root, file), 'r') as f:
+                        data = f.read()
+                        for match in re.findall(r'\.inc(bin|lude) \"(?P<file>.*)\"', data):
+                            asset = match[1][0:match[1].rindex('.')]
+                            used_assets.add(asset)
+
+        print(len(used_assets), len(assets.assets))
+
+        for i in reversed(range(0, len(assets.assets))):
+            asset = assets.assets[i]
+            if 'path' in asset:
+                path = asset['path'][0:asset['path'].rindex('.')]
+                if not path in used_assets:
+                    del assets.assets[i]
+
+        print(len(used_assets), len(assets.assets))
+
+        write_assets(assets)
