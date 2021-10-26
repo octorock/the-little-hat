@@ -7,7 +7,7 @@ from PySide6.QtGui import QKeySequence
 from plugins.data_extractor.assets import read_assets, write_assets
 from plugins.data_extractor.gba_lz77 import GBALZ77, DecompressionError
 from plugins.data_extractor.read_data import Reader, load_json_files, read_var
-from tlh.const import ROM_OFFSET, RomVariant
+from tlh.const import CUSTOM_ROM_VARIANTS, ROM_OFFSET, RomVariant
 from tlh.data.symbols import Symbol
 from tlh.settings import get_repo_location
 from PySide6.QtWidgets import QApplication, QMenu
@@ -17,6 +17,7 @@ from tlh.data.database import get_file_in_database, get_symbol_database
 from plugins.data_extractor.incbins import export_incbins
 import re
 import traceback
+import json
 
 @dataclass
 class DataType:
@@ -92,6 +93,7 @@ class DataExtractorPlugin:
         menu.addAction('Extract current exit region list', self.slot_extract_current_exit_region_list)
         menu.addAction('Extract current exit', self.slot_extract_current_exit)
         menu.addAction('Extract room property by symbol name', self.slot_extract_room_prop_by_symbol)
+        menu.addAction('Create asset lists', self.slot_create_asset_lists)
 
 
     def slot_copy_as_incbin(self) -> None:
@@ -615,8 +617,8 @@ class DataExtractorPlugin:
             print(hex(bitfield), area_id, local_flag_offset_index, unk)
 
 
-        with open(os.path.join(get_repo_location(), 'build', 'tmc', 'assets', 'areas', 'metadata.s'), 'w') as file:
-            file.writelines(lines)
+        # with open(os.path.join(get_repo_location(), 'build', 'tmc', 'assets', 'areas', 'metadata.s'), 'w') as file:
+        #     file.writelines(lines)
 
         #self.extract_room_properties('Room_MinishWoods_Main')
         #self.extract_room_exit_list(self.current_controller.symbols.find_symbol_by_name('gExitLists_MinishWoods_Main'))
@@ -646,8 +648,8 @@ class DataExtractorPlugin:
                 self.area_names.append('NULL')
                 print('.4byte 0')
             area_index += 1
-        print(self.area_names)
-        print(self.room_names)
+        # print(self.area_names)
+        # print(self.room_names)
         # Not used in gAreaTable, but in other tables
         self.area_names[0x61] = '61'
         self.room_names[0x61] = ['61_0']
@@ -658,14 +660,13 @@ class DataExtractorPlugin:
 
 
         # self.extract_room_exit_lists()
-        with open('/tmp/replacements.s', 'w') as file:
-            file.writelines(self.replacements)
-        return
+        # with open('/tmp/replacements.s', 'w') as file:
+        #     file.writelines(self.replacements)
 
         # Now extract all assets belonging to areas
         self.assets:list[Asset] = []
         self.extract_area_tilesets()
-        assets_symbol = self.current_controller.symbols.find_symbol_by_name('gAssets')
+        assets_symbol = self.current_controller.symbols.find_symbol_by_name('gMapData')
         self.print_assets_list(assets_symbol, self.assets)
 
     def print_assets_list(self, assets_symbol: Symbol, assets:list[Asset]) -> None:
@@ -688,7 +689,7 @@ class DataExtractorPlugin:
         last_used_offset = 0
         align_bytes = 0
         empty_bytes = 0
-        with open('tmp/asset_log.txt', 'w') as file:
+        with open(f'tmp/asset_log_{self.current_controller.rom_variant}.txt', 'w') as file:
             for asset in assets:
                 if asset.offset > last_used_offset:
                     diff = asset.offset-last_used_offset
@@ -697,14 +698,16 @@ class DataExtractorPlugin:
                         align_bytes += diff
                         #print(hex(assets_symbol.address + asset.offset))
                     else:
-                        file.write(f'# empty {hex(diff)}   from {hex(assets_symbol.address+previous_asset.offset+previous_asset.size)} to {hex(assets_symbol.address+asset.offset)}\n')
+                        file.write(f'# empty {hex(diff)}\n')#from {hex(assets_symbol.address+previous_asset.offset+previous_asset.size)} to {hex(assets_symbol.address+asset.offset)}\n')
                         empty_bytes += diff
                 elif asset.offset < last_used_offset:
                     if asset.offset == previous_asset.offset and asset.size == previous_asset.size:
                         file.write(f'  ^ same as previous: {asset.type} {asset.name}\n')
                         continue
                     file.write(f'%%% error {hex(last_used_offset-asset.offset)} bytes overlap\n')
-                file.write(f'  - {asset.type} {asset.name}: {hex(asset.offset)} + {hex(asset.size)} [{"compressed" if asset.compressed else "raw"}]  @{hex(assets_symbol.address+asset.offset)}\n')
+
+                file.write(f'  - {asset.type} {asset.name}: {hex(asset.size)} [{"compressed" if asset.compressed else "raw"}]\n')#  @{hex(assets_symbol.address+asset.offset)}\n')
+                #file.write(f'  - {asset.type} {asset.name}: {hex(asset.offset)} + {hex(asset.size)} [{"compressed" if asset.compressed else "raw"}]\n')#  @{hex(assets_symbol.address+asset.offset)}\n')
 
                 # Export asset
                 if asset.type not in ['palette']:
@@ -731,10 +734,10 @@ class DataExtractorPlugin:
                 if room_symbol.name.startswith('gUnk_'):
                     self.replacements.append(f'{room_symbol.name},{self.area_names[area_index]}_{room_index}\n')
                 self.room_names[area_index].append(room_symbol.name[5:])
-                self.extract_room_properties(room_symbol.name)
+                #self.extract_room_properties(room_symbol.name)
             else:
                 self.room_names[area_index].append(f'{self.area_names[area_index]}_{room_index}')
-                print('.4byte 0')
+                #print('.4byte 0')
             room_index += 1
 
     def extract_area_tilesets(self) -> None:
@@ -767,12 +770,12 @@ class DataExtractorPlugin:
         reader = Reader(data, self.current_controller.symbols)
         while reader.cursor < symbol.length:
             tileset_symbol = self.read_symbol(reader)
-            print(tileset_symbol)
+            #print(tileset_symbol)
             if tileset_symbol:
                 self.extract_asset(tileset_symbol, type)
 
     def extract_asset(self, symbol: Symbol, type: str) -> None:
-        assets_symbol = self.current_controller.symbols.find_symbol_by_name('gAssets')
+        assets_symbol = self.current_controller.symbols.find_symbol_by_name('gMapData')
 
         data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
         reader = Reader(data, self.current_controller.symbols)
@@ -785,7 +788,9 @@ class DataExtractorPlugin:
             compressed = property_2& 0x80000000
 
             if ram_address == 0:
-                print('Palette' , asset_offset)
+                # TODO get palettes?
+                pass
+                #print('Palette' , asset_offset)
             else:
 
                 if compressed:
@@ -825,7 +830,7 @@ class DataExtractorPlugin:
                 else:
                     actual_type = type + "_unknown"
                 self.assets.append(Asset(symbol.name + '_' + str(i), actual_type, asset_offset, data_length, compressed))
-                print(hex(asset_offset), compressed, hex(ram_address), hex(data_length))
+                #print(hex(asset_offset), compressed, hex(ram_address), hex(data_length))
             i += 1
 
     def extract_room_properties(self, symbol_name: str) -> None:
@@ -865,18 +870,18 @@ class DataExtractorPlugin:
             self.replacements.append(f'{unknown_func_3.name},sub_unk3_{room_name}\n')
         if state_changing_func:
             self.replacements.append(f'{state_changing_func.name},sub_StateChange_{room_name}\n')
-        print('ETTTT')
+        #print('ETTTT')
         self.extract_entity_list(entity_list_1)
         self.extract_entity_list(entity_list_2)
         self.extract_entity_list(enemy_list)
-        print('TILES')
+        #print('TILES')
         self.extract_tile_entity_list(tile_entity_list)
 
-        print(entity_list_1, entity_list_2, enemy_list, tile_entity_list, unknown_func_1, unknown_func_2, unknown_func_3, state_changing_func)
+        #print(entity_list_1, entity_list_2, enemy_list, tile_entity_list, unknown_func_1, unknown_func_2, unknown_func_3, state_changing_func)
         add_cnt = 0
         while reader.cursor < symbol.length:
             additional_entity_list = self.read_symbol(reader)
-            print(additional_entity_list)
+            #print(additional_entity_list)
             if additional_entity_list:
                 self.replacements.append(f'{additional_entity_list.name},gUnk_additional{add_cnt}_{room_name}\n')
             # TODO detect delayed entity lists
@@ -897,7 +902,7 @@ class DataExtractorPlugin:
     def extract_entity_list(self, symbol: Symbol) -> list[str]:
         if symbol is None:
             return
-        print('entity list ', symbol)
+        #print('entity list ', symbol)
         data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length + 0x100)
         reader = Reader(data, self.current_controller.symbols)
         lines = []
@@ -987,8 +992,8 @@ class DataExtractorPlugin:
             lines.append('@ unaccounted bytes\n')
             while reader.cursor < symbol.length:
                 lines.append(f'\t.byte {reader.read_u8()}\n')
-        print()
-        print (''.join(lines))
+        # print()
+        # print (''.join(lines))
         QApplication.clipboard().setText(''.join(lines))
         return lines
 
@@ -1815,3 +1820,225 @@ class DataExtractorPlugin:
         print(len(used_assets), len(assets.assets))
 
         write_assets(assets)
+
+
+
+
+
+
+
+### Creating asset lists
+
+    def slot_create_asset_lists(self) -> None:
+        if not hasattr(self, 'all_assets'):
+            self.all_assets: dict[str, list[Asset]] = {}
+        self.extract_area_table()
+
+        # Sort the assets and remove duplicates
+        # Always the last duplicate will remain in the array
+        assets = {}
+        for asset in self.assets:
+            assets[asset.offset] = asset
+
+        asset_list = []
+        last_used_offset = 0
+        empty_index = 0
+        for key in sorted(assets.keys()):
+            asset = assets[key]
+
+
+            # Handle known asset types
+            if asset.type == 'tileset_gfx':
+                asset.type = 'tileset'
+                if asset.compressed:
+                    asset.path = 'tilesets/' + asset.name + '.4bpp.lz'
+                else:
+                    asset.path = 'tilesets/' + asset.name + '.4bpp'
+
+            else:
+                asset.path = 'assets/' + asset.name + '.bin'
+
+
+
+
+            if asset.offset > last_used_offset:
+                # Insert assets for the empty space
+                size = asset.offset - last_used_offset
+                if size < 4:
+                    # TODO make sure there are actually 0s
+                    asset_list.append(Asset(f'align', 'align', last_used_offset, size, False))
+                else:
+                    unk_asset = Asset(f'unknown_{empty_index}', 'unknown', last_used_offset, size, False)
+                    unk_asset.path = f'assets/unknown_{empty_index}.bin'
+                    asset_list.append(unk_asset)
+                    empty_index += 1
+            # TODO adapt overlapping
+            last_used_offset = last_used_offset = asset.offset+asset.size
+            asset_list.append(asset)
+        self.all_assets[self.current_controller.rom_variant] = asset_list
+
+        missing = []
+        for variant in CUSTOM_ROM_VARIANTS:
+            if variant not in self.all_assets:
+                missing.append(variant)
+
+        #if True:
+        if len(missing) == 0:
+            if self.api.show_question(self.name, 'Collected assets for all variants. Calculate asset list?'):
+                self.calculate_asset_list()
+        else:
+            self.api.show_message(self.name, f'Collected assets for {self.current_controller.rom_variant}. Still missing for {", ".join(missing)}.')
+
+    def calculate_asset_list(self):
+
+        variant_names = {
+            RomVariant.CUSTOM: 'USA',
+            RomVariant.CUSTOM_EU: 'EU',
+            RomVariant.CUSTOM_JP: 'JP',
+            RomVariant.CUSTOM_DEMO_USA: 'DEMO_USA',
+            RomVariant.CUSTOM_DEMO_JP: 'DEMO_JP',
+        }
+
+        usa_start_offset = 0x324AE4
+        start_offsets = {
+            RomVariant.CUSTOM: 0x324AE4,
+            RomVariant.CUSTOM_EU: 0x323FEC,
+            RomVariant.CUSTOM_JP: 0x324710,
+            RomVariant.CUSTOM_DEMO_USA: 0x325514,
+            RomVariant.CUSTOM_DEMO_JP: 0x324708
+        }
+
+        # Only calculate the asset lists we actually got
+        variants = []
+        for key in self.all_assets:
+            variants.append(key)
+
+        offsets = {}
+        indices = {}
+        for variant in variants:
+            offsets[variant] = 0
+            indices[variant] = 0
+
+
+        assets = []
+
+        while indices[variants[0]] < len(self.all_assets[variants[0]]):
+            current_asset = {}
+            name = None
+            for variant in variants:
+                asset = self.all_assets[variant][indices[variant]]
+                current_asset[variant] = asset
+                if name is None:
+                    name = asset.name
+                else:
+                    assert(name == asset.name)
+                    # TODO somehow handle new or missing files
+
+            if asset.type == 'align':
+                for variant in variants:
+                    indices[variant] += 1
+                continue
+
+            print(name)
+            # Determine the sizes
+            sizes = {}
+            for variant in variants:
+                asset = current_asset[variant]
+                if not asset.size in sizes:
+                    sizes[asset.size] = []
+                sizes[asset.size].append(variant)
+
+            # Check offsets
+            changed_offsets = {}
+            for variant in variants:
+                if variant == RomVariant.CUSTOM:
+                    continue
+                offset = current_asset[variant].offset - current_asset[RomVariant.CUSTOM].offset + start_offsets[variant] - usa_start_offset
+                if offset != offsets[variant]:
+                    offsets[variant] = offset
+                    changed_offsets[variant_names[variant]] = offset
+                    #print(f'Wrong offset: {offset} {offsets[variant]}')
+                    #input()
+
+            if len(changed_offsets.keys()) != 0:
+                assets.append({'offsets': changed_offsets})
+
+
+            print('Sizes: ' + (', '.join(map(lambda x:str(x), sizes.keys()))))
+
+            if len(sizes.keys()) == 1:
+                # asset = self.all_assets[variants[0]][indices[variants[0]]]
+                asset = self.all_assets[RomVariant.CUSTOM][indices[RomVariant.CUSTOM]]
+                # Only one entry
+                assets.append({
+                    'path': asset.path,
+                    'start': usa_start_offset + asset.offset,
+                    'size': asset.size,
+                    'type': asset.type,
+                })
+            else:
+                for size in sizes:
+                    variant = sizes[size][0]
+                    asset = self.all_assets[variant][indices[variant]]
+                    assets.append({
+                        'path': asset.path,
+                        'variants': list(map(lambda x: variant_names[x], sizes[size])),
+                        'start': start_offsets[variant] + asset.offset - offsets[variant], # TODO need to care for other offsets here?
+                        'size': asset.size,
+                        'type': asset.type,
+                    })
+                    print(assets[-1])
+
+                # May need to add new offsets
+                # asset = self.all_assets[RomVariant.CUSTOM][indices[RomVariant.CUSTOM]]
+                # usa_addr = asset.offset + asset.size
+                # changed_offsets = {}
+                # for variant in variants:
+                #     if variant == RomVariant.CUSTOM:
+                #         continue
+                #     asset = self.all_assets[variant][indices[variant]]
+                #     offset = asset.offset + asset.size - usa_addr + start_offsets[variant] - usa_start_offset
+                #     if offset != offsets[variant]:
+                #         offsets[variant] = offset
+                #         changed_offsets[variant_names[variant]] = offset
+                # if len(changed_offsets.keys()) != 0:
+                #     assets.append({'offsets': changed_offsets})
+                #input()
+
+
+            for variant in variants:
+                indices[variant] += 1
+
+
+        print(json.dumps(assets, indent=2))
+
+        with open('/tmp/assets.json', 'w') as file:
+            json.dump(assets, file, indent=2)
+        with open('/tmp/assets.s', 'w') as file:
+            variant = variants[0]
+            for asset in self.all_assets[variant]:
+                if asset.type == 'align':
+                    file.write('\t.align 2\n')
+                else:
+                    file.write(f'{asset.name}::\n')
+                    file.write(f'\t.incbin "{asset.path}"\n')
+"""
+
+         = 0
+        previous_asset = None
+
+        # TMP fix sizes of fixed_gfx_assets
+        for i in range(len(assets)):
+            asset = assets[i]
+            if asset.offset < last_used_offset:
+                if asset.offset == assets[i-1].offset and asset.size == assets[i-1].size:
+                    pass
+                else:
+                    assets[i-1].type += '_size_changed_from_' + hex(assets[i-1].size)
+                    assets[i-1].size = asset.offset-assets[i-1].offset
+                    print('Adapted offset of ' + assets[i-1].name)
+            last_used_offset = asset.offset+asset.size
+        last_used_offset = 0
+        align_bytes = 0
+        empty_bytes = 0
+"""
