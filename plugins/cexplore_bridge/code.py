@@ -90,7 +90,7 @@ def split_code(code: str) -> Tuple[str, str, str]:
     in_headers = True
     for line in lines:
         if in_headers:
-            if '{' in line and not 'struct' in line:
+            if '{' in line and not 'struct' in line and not 'union' in line:
                 in_headers = False
                 data.append(line)
             elif 'NONMATCH' in line or 'ASM_FUNC' in line:
