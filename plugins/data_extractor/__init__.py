@@ -4,9 +4,10 @@ import os
 from pprint import pprint
 
 from PySide6.QtGui import QKeySequence
-from plugins.data_extractor.assets import read_assets, write_assets
+from plugins.data_extractor.assets import get_all_asset_configs, read_assets, write_assets
 from plugins.data_extractor.gba_lz77 import GBALZ77, DecompressionError
 from plugins.data_extractor.read_data import Reader, load_json_files, read_var
+from plugins.data_extractor.structs import generate_struct_definitions
 from tlh.const import CUSTOM_ROM_VARIANTS, ROM_OFFSET, RomVariant
 from tlh.data.symbols import Symbol
 from tlh.settings import get_repo_location
@@ -18,6 +19,8 @@ from plugins.data_extractor.incbins import export_incbins
 import re
 import traceback
 import json
+
+DEV_ACTIONS = False
 
 @dataclass
 class DataType:
@@ -67,6 +70,7 @@ class DataExtractorPlugin:
 
         self.action_export_incbins = self.api.register_menu_entry('Export Incbins', self.slot_export_incbins)
         self.action_remove_unused = self.api.register_menu_entry('Remove unused asset entries', self.slot_remove_unused_assets)
+        self.action_parse_structs = self.api.register_menu_entry('Parse structs', self.slot_parse_structs)
         load_json_files()
 
     def unload(self) -> None:
@@ -74,6 +78,7 @@ class DataExtractorPlugin:
         self.api.remove_menu_entry(self.action_incbin)
         self.api.remove_menu_entry(self.action_export_incbins)
         self.api.remove_menu_entry(self.action_remove_unused)
+        self.api.remove_menu_entry(self.action_parse_structs)
 
     def contextmenu_handler(self, controller: HexViewerController, menu: QMenu) -> None:
         menu.addSeparator()
@@ -84,16 +89,18 @@ class DataExtractorPlugin:
             menu.addAction('Copy as pointer list', self.slot_copy_as_pointerlist)
 
         menu.addAction('Extract data for symbol', self.slot_extract_data)
-        menu.addAction('Test', self.slot_test)
-        menu.addAction('Test modify asset list', self.test_asset_list_modification)
-        menu.addAction('Tmp', self.slot_tmp)
-        menu.addAction('Extract current entity list', self.slot_extract_current_entity_list)
-        menu.addAction('Extract current tile entity list', self.slot_extract_current_tile_entity_list)
-        menu.addAction('Extract current delayed entity list', self.slot_extract_current_delayed_entity_list)
-        menu.addAction('Extract current exit region list', self.slot_extract_current_exit_region_list)
-        menu.addAction('Extract current exit', self.slot_extract_current_exit)
-        menu.addAction('Extract room property by symbol name', self.slot_extract_room_prop_by_symbol)
-        menu.addAction('Create asset lists', self.slot_create_asset_lists)
+        if DEV_ACTIONS:
+            menu.addAction('Test', self.slot_test)
+            menu.addAction('Test modify asset list', self.test_asset_list_modification)
+            menu.addAction('Tmp', self.slot_tmp)
+            menu.addAction('Extract current entity list', self.slot_extract_current_entity_list)
+            menu.addAction('Extract current tile entity list', self.slot_extract_current_tile_entity_list)
+            menu.addAction('Extract current delayed entity list', self.slot_extract_current_delayed_entity_list)
+            menu.addAction('Extract current exit region list', self.slot_extract_current_exit_region_list)
+            menu.addAction('Extract current exit', self.slot_extract_current_exit)
+            menu.addAction('Extract room property by symbol name', self.slot_extract_room_prop_by_symbol)
+            menu.addAction('Create asset lists', self.slot_create_asset_lists)
+            menu.addAction('Sprite Test', self.slot_sprite_test)
 
 
     def slot_copy_as_incbin(self) -> None:
@@ -435,11 +442,11 @@ class DataExtractorPlugin:
 
             extra_x_off = reader.read_s8()
             extra_y_off = reader.read_s8()
-            lines.append(f'\t.byte {extra_x_off}, {extra_y_off}\n')
+            lines.append(f'\textra_offset x={extra_x_off}, y={extra_y_off}\n')
 
             extra_x_off = reader.read_s8()
             extra_y_off = reader.read_s8()
-            lines.append(f'\t.byte {extra_x_off}, {extra_y_off}\n')
+            lines.append(f'\textra_offset x={extra_x_off}, y={extra_y_off}\n')
 
         with open(os.path.join(get_repo_location(), 'build', 'tmc', 'assets', 'sprites', 'extraFrameOffsets.s'), 'w') as file:
             file.writelines(lines)
@@ -458,6 +465,8 @@ class DataExtractorPlugin:
         lines = []
         lines.append('gFixedTypeGfxData::\n')
 
+        self.assets_symbol = self.current_controller.symbols.find_symbol_by_name('gGlobalGfxAndPalettes')
+
         index = 0
         while reader.cursor < symbol.length:
             pointer = reader.read_u32()
@@ -468,8 +477,19 @@ class DataExtractorPlugin:
 
             print( (pointer& 0x7f000000) >> 0x18)
             gfx_data_len = ((pointer & 0x7F000000)>>24) * 0x200
-            lines.append(f'\t.4byte {hex(gfx_data_ptr)} + {compressed} + {hex((gfx_data_len//0x200))}<<24  @{index}\n')
-            self.gfx_assets.append(Asset(f'fixedTypeGfx_{index}', 'fixed_gfx ' + str(hex(maybe_size)), gfx_data_ptr, gfx_data_len, compressed))
+
+            offset_symbol = self.current_controller.symbols.get_symbol_at(self.assets_symbol.address+gfx_data_ptr)
+            if offset_symbol is None or offset_symbol.address != self.assets_symbol.address+gfx_data_ptr:
+                print(f'Could not find symbol for offset {hex(gfx_data_ptr)} at {hex(self.assets_symbol.address+gfx_data_ptr)}')
+                assert False
+
+            line = f'\tfixed_gfx src={offset_symbol.name}'
+            line += opt_param('size', '0x0', hex(gfx_data_len))
+            line += opt_param('compressed', '0', str(compressed))
+            line += f'\t@ {index}'
+            lines.append(line + '\n')
+            # lines.append(f'\t.4byte {hex(gfx_data_ptr)} + {compressed} + {hex((gfx_data_len//0x200))}<<24  @{index}\n')
+            self.gfx_assets.append(Asset(f'fixedTypeGfx_{index}', 'gfx', gfx_data_ptr, gfx_data_len, compressed))
             index += 1
 
         with open(os.path.join(get_repo_location(), 'build', 'tmc', 'assets', 'sprites', 'fixedTypeGfxDataPointers.s'), 'w') as file:
@@ -537,7 +557,7 @@ class DataExtractorPlugin:
         data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
         reader = Reader(data, self.current_controller.symbols)
         continue_loading_palette_sets = True
-        lines.append(f'{symbol.name}::\n')
+        lines.append(f'\n{symbol.name}::\n')
         while continue_loading_palette_sets:
             global_palette_index = reader.read_u16()
             palette_load_offset = reader.read_u8()
@@ -547,9 +567,19 @@ class DataExtractorPlugin:
             if num_palettes == 0:
                 num_palettes = 0x10
             continue_loading_palette_sets = (bitfield & 0x80 == 0x80)
-            lines.append(f'\t.2byte {global_palette_index}\n')
-            lines.append(f'\t.byte {palette_load_offset}\n')
-            lines.append(f'\t.byte {num_palettes if num_palettes < 0x10 else 0} + {continue_loading_palette_sets*0x80}\n')
+
+            # base = 0x5A2E80
+            # pal_offset = global_palette_index * 0x20
+            # offset_symbol = self.current_controller.symbols.get_symbol_at(base+pal_offset)
+            # if offset_symbol is None or offset_symbol.address != base+pal_offset:
+            #     print(f'Could not find symbol for offset {hex(pal_offset)} at {hex(base+pal_offset)}')
+            #     assert False
+
+            line = f'\tpalette_set palette={str(global_palette_index)}'
+            line += opt_param('offset', '0x0', hex(palette_load_offset))
+            line += opt_param('count', '0', str(num_palettes))
+            line += opt_param('terminator', '0', str(1-continue_loading_palette_sets))
+            lines.append(line + '\n')
             for i in range(num_palettes):
                 palette_indices.append(global_palette_index + i)
         return (lines, palette_indices)
@@ -583,6 +613,8 @@ class DataExtractorPlugin:
             lines.append(f'\t.4byte {palette_symbol.name}, {gfx_data_symbol.name}, {hex(gfx_data_len)}, 0\n')
             print(f'{palette_symbol.name},gFigurinePal{i}')
             print(f'{gfx_data_symbol.name},gFigurineGfx{i}')
+            self.gfx_assets.append(Asset(f'gFigurinePal{i}', 'palette', palette_symbol.address - self.assets_symbol.address, palette_symbol.length, False))
+            self.gfx_assets.append(Asset(f'gFigurineGfx{i}', 'gfx', gfx_data_symbol.address - self.assets_symbol.address, gfx_data_symbol.length, False))
             i = i+1
 
         with open(os.path.join(get_repo_location(), 'build', 'tmc', 'assets', 'figurines', 'figurines.s'), 'w') as file:
@@ -682,7 +714,7 @@ class DataExtractorPlugin:
                 if asset.offset == assets[i-1].offset and asset.size == assets[i-1].size:
                     pass
                 else:
-                    assets[i-1].type += '_size_changed_from_' + hex(assets[i-1].size)
+                    #assets[i-1].type += '_size_changed_from_' + hex(assets[i-1].size)
                     assets[i-1].size = asset.offset-assets[i-1].offset
                     print('Adapted offset of ' + assets[i-1].name)
             last_used_offset = asset.offset+asset.size
@@ -1327,13 +1359,11 @@ class DataExtractorPlugin:
         self.extract_palette_groups()
 
         # Add otherwise known gfx assets
-        self.gfx_assets.append(Asset('gFigurinePals', 'palette', 0x13040, 0x7740, False))
-        self.gfx_assets.append(Asset('gFigurineGfx', 'gfx', 0x29cc80, 0x82780-0x8c0, False))
+        #self.gfx_assets.append(Asset('gFigurinePals', 'palette', 0x13040, 0x7740, False))
+        #self.gfx_assets.append(Asset('gFigurineGfx', 'gfx', 0x29cc80, 0x82780-0x8c0, False))
 
 
 
-        # print gfx asset
-        self.print_assets_list(self.assets_symbol, self.gfx_assets)
 
         # print('---------')
         # for replacement in self.replacements:
@@ -1351,17 +1381,17 @@ class DataExtractorPlugin:
         self.replacements.append((symbol.name, f'gGfxGroup_{group_index}'))
         gfx_index = 0
         lines = []
-        lines.append(f'{symbol.name}::\n')
+        lines.append(f'\n{symbol.name}::\n')
         while reader.cursor < symbol.length:
             unk0 = reader.read_u32()
             gfx_offset = unk0 & 0xFFFFFF
             dest = reader.read_u32()
             unk8 = reader.read_u32()
             size = unk8 & 0xFFFFFF
-            terminator = unk0 & 0x80000000
+            terminator = unk0 & 0x80000000 == 0x80000000
 
             print(f'gGfx_{group_index}_{gfx_index}')
-            compressed = unk8 & 0x80000000
+            compressed = (unk8 & 0x80000000) // 0x80000000
             uncompressed_size = size
             if compressed:
                 size = self.get_compressed_length(self.assets_symbol.address + gfx_offset, size)
@@ -1373,7 +1403,22 @@ class DataExtractorPlugin:
                 self.gfx_assets.append(Asset(f'gGfx_{group_index}_{gfx_index}', 'gfx', gfx_offset, size, compressed))
             print(hex(gfx_offset), hex(dest), hex(size))
 
-            lines.append(f'\t.4byte {hex(gfx_offset)}+{hex(terminator)}+{hex(unk0 & 0xF000000)}, {hex(dest)}, {hex(uncompressed_size)} + {hex(compressed)} @ {gfx_index}\n')
+            base = 0x5A2B18
+            offset_symbol = self.current_controller.symbols.get_symbol_at(base+gfx_offset)
+            if offset_symbol is None or offset_symbol.address != base+gfx_offset:
+                print(f'Could not find symbol for offset {hex(gfx_offset)} at {hex(base+gfx_offset)}')
+                assert False
+
+            line = f'\tgfx_raw src={offset_symbol.name}'
+
+            line += opt_param('unknown', '0x0', hex((unk0 & 0xF000000)//0x1000000))
+            line += opt_param('dest', '0x0', hex(dest))
+            line += opt_param('size', '0x0', hex(uncompressed_size))
+            line += opt_param('compressed', '0', str(compressed))
+            line += opt_param('terminator', '0', str(1-terminator))
+
+            lines.append(line+'\n')
+            #lines.append(f'\t.4byte {hex(gfx_offset)}+{hex(terminator)}+{hex(unk0 & 0xF000000)}, {hex(dest)}, {hex(uncompressed_size)} + {hex(compressed)} @ {gfx_index}\n')
             if not terminator:
                 break
             gfx_index += 1
@@ -1482,7 +1527,7 @@ class DataExtractorPlugin:
         # symbol = self.current_controller.symbols.get_symbol_at(self.current_controller.address_resolver.to_local(self.current_controller.cursor))
 
 
-        (type_str, ok) = self.api.show_text_input(self.name, 'Enter data type')
+        (type_str, ok) = self.api.show_text_input(self.name, 'Enter data code')
         if not ok:
             return
         print(type_str)
@@ -1504,7 +1549,7 @@ class DataExtractorPlugin:
                 res = read_var(reader, type.type)
                 text = 'const ' + type.type + ' ' + type.name + ' = ' + self.get_struct_init(res) + ';';
             except Exception as e:
-                print(e)
+                traceback.print_exc()
                 self.api.show_error(self.name, str(e))
         elif type.regex == 1:
             if type.type == 'u8':
@@ -1559,65 +1604,120 @@ class DataExtractorPlugin:
         return res
 
     def slot_tmp(self) -> None:
+        self.gfx_assets = []
+        # self.extract_palette_groups()
+        #self.extract_fixed_type_gfx_data()
+        #self.extract_extra_frame_offsets()
+        #self.extract_frame_obj_lists()
+
+	# .4byte gSpriteAnimation_FileScreenObjects
+	# .4byte 00000000
+	# .4byte 00000000
+	# .4byte 00000000
+
+	# .4byte gSpriteAnimation_ObjectA2
+	# .4byte 00000000
+	# .4byte 00000000
+	# .4byte 00000000
+
+	# .4byte gSpriteAnimation_Object6A_9
+	# .4byte 00000000
+	# .4byte 00000000
+	# .4byte 00000000
+
+	# .4byte gSpriteAnimation_Vaati_1
+
+        self.replacements = []
+        animation_ptr = self.current_controller.symbols.find_symbol_by_name('gSpriteAnimation_Vaati_1')
+        self.extract_animation_list(animation_ptr)
+        with open('/tmp/replacements.s', 'w') as file:
+            file.writelines(self.replacements)
+
+
+        return
+
+        start_symbol = self.current_controller.symbols.find_symbol_by_name('gMapData')
+        in_lines = QApplication.clipboard().text().split('\n')
+        out_lines = []
+        for line in in_lines:
+            arr = line.split(' ')
+            if len(arr) >= 4 and arr[2] != '0x0,':
+                offset = int(arr[1][0:-1], 16)
+                addr = start_symbol.address + offset
+                symbol = self.current_controller.symbols.get_symbol_at(addr)
+                if symbol is None or symbol.address != addr:
+                    print(f'Could not find symbol for addr {hex(addr)} (offset: {hex(offset)})')
+                    #assert(False)
+                else:
+                    arr[1] = symbol.name + ','
+                    line = ' '.join(arr)
+                    print(offset)
+            out_lines.append(line)
+
+        print('\n'.join(out_lines))
+        QApplication.clipboard().setText('\n'.join(out_lines))
+
+        # Enum extraction
+
         #ENUM_12AED0
         # USA
-        """
-        ENUM_STARTS = [
-            0x812aaec,
-            0x812b20c,
-            0x812c600,
-            0x812e60c,
-            0x812f4a4,
-            0x812fa3c,
-            0x812feac,
-            0x8130378,
-            0x8130e0c,
-            0x81316ac
-        ]"""
-        ENUM_STARTS = [
-            # 0x812b20c #usa
-            #0x812AED0 # jp
-            0x812bd8c # demo_jp
-        ]
+        # """
+        # ENUM_STARTS = [
+        #     0x812aaec,
+        #     0x812b20c,
+        #     0x812c600,
+        #     0x812e60c,
+        #     0x812f4a4,
+        #     0x812fa3c,
+        #     0x812feac,
+        #     0x8130378,
+        #     0x8130e0c,
+        #     0x81316ac
+        # ]"""
+        # ENUM_STARTS = [
+        #     # 0x812b20c #usa
+        #     #0x812AED0 # jp
+        #     0x812bd8c # demo_jp
+        # ]
 
-        symbol_name = 'ENUM_12'
+        # symbol_name = 'ENUM_12'
 
-        symbol = self.current_controller.symbols.find_symbol_by_name(symbol_name)
-        if symbol is None:
-            self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
-            return
-        ptr = symbol.address
-        prefix = 'ENUM_' + hex(ptr)[2:].upper()
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        # symbol = self.current_controller.symbols.find_symbol_by_name(symbol_name)
+        # if symbol is None:
+        #     self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
+        #     return
+        # ptr = symbol.address
+        # prefix = 'ENUM_' + hex(ptr)[2:].upper()
+        # data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
+        # reader = Reader(data, self.current_controller.symbols)
 
-        values=[]
-        while reader.cursor < symbol.length:
-            entry = self.read_symbol(reader)
-            if entry and entry.length > 0:
-                print(entry)
-                values.append(self.read_str(entry))
-            # entry = bytes_to_u32(baserom_data[ptr:ptr+4])
-            # if entry < ROM_START or entry-ROM_START > len(baserom_data):
-            #     break
-            # values.append(read_str(baserom_data, entry-ROM_START))
-            # ptr += 4
+        # values=[]
+        # while reader.cursor < symbol.length:
+        #     entry = self.read_symbol(reader)
+        #     if entry and entry.length > 0:
+        #         print(entry)
+        #         values.append(self.read_str(entry))
+        #     # entry = bytes_to_u32(baserom_data[ptr:ptr+4])
+        #     # if entry < ROM_START or entry-ROM_START > len(baserom_data):
+        #     #     break
+        #     # values.append(read_str(baserom_data, entry-ROM_START))
+        #     # ptr += 4
 
-        lines = []
-        lines.append(f'{prefix}:\n')
-        for value in values:
-            lines.append(f'\t.4byte {prefix}_{value}\n')
+        # lines = []
+        # lines.append(f'{prefix}:\n')
+        # for value in values:
+        #     lines.append(f'\t.4byte {prefix}_{value}\n')
 
-        for value in reversed(values):
-            lines.append(f'{prefix}_{value}:\n')
-            pad = ''
-            count = (4 - ((len(value) + 1) % 4)) % 4
-            for i in range(count):
-                pad += '\\0'
-            lines.append(f'\t.ascii "{value}\\0{pad}"\n')
+        # for value in reversed(values):
+        #     lines.append(f'{prefix}_{value}:\n')
+        #     pad = ''
+        #     count = (4 - ((len(value) + 1) % 4)) % 4
+        #     for i in range(count):
+        #         pad += '\\0'
+        #     lines.append(f'\t.ascii "{value}\\0{pad}"\n')
 
-        print (''.join(lines))
-        QApplication.clipboard().setText(''.join(lines))
+        # print (''.join(lines))
+        # QApplication.clipboard().setText(''.join(lines))
 
 
 
@@ -1720,6 +1820,8 @@ class DataExtractorPlugin:
                         text += separator + str(key)
                 elif type(obj[key]) is list:
                     text += separator + self.get_struct_init(obj[key])
+                elif type(obj[key]) is dict: # No names for struct initialisation
+                    text += separator + self.get_struct_init(obj[key])
                 else:
                     text += separator + str(obj[key])
                 separator = ', '
@@ -1728,36 +1830,75 @@ class DataExtractorPlugin:
 
 
     def test_asset_list_modification(self) -> None:
-        assets = read_assets()
+        assets = read_assets('sounds.json')
 
-        stats = {}
-
+        # Add sizes and headerOffsets to the sounds
+        offsets = {}
+        for variant in ['EU', 'JP', 'DEMO_USA', 'DEMO_JP']:
+            offsets[variant] = 0
         for asset in assets.assets:
+            if 'offsets' in asset:
+                for key in asset['offsets']:
+                    offsets[key] = asset['offsets'][key]
             if 'path' in asset:
-                folder = asset['path'][0:asset['path'].index('/')]
-                if not folder in stats:
-                    stats[folder] = {
-                        'count': 0,
-                        'size': 0
-                    }
-                stats[folder]['count'] += 1
-                if 'size' in asset:
-                    stats[folder]['size'] += asset['size']
+                label = asset['path'][7:-4]
+                print(label)
 
-        lists = []
-        for key in stats:
-            stat = stats[key]
-            lists.append({
-                'folder': key,
-                'count': stat['count'],
-                'size': stat['size']
-            })
+                header_symbol = self.current_controller.symbols.find_symbol_by_name(label)
+                first_track_symbol = self.current_controller.symbols.find_symbol_by_name(label+'_1')
 
-        lists.sort(key=lambda x:x['count'])
-        #lists.sort(key=lambda x:x['size'])
-        for entry in lists:
-            print(entry['folder'] + ' ('+str(entry['count'])+') ' + str(entry['size']))
-        # Unused assets
+                asset['start'] = first_track_symbol.address
+                asset['options']['headerOffset'] = header_symbol.address - first_track_symbol.address
+                asset['size'] = header_symbol.address + header_symbol.length - first_track_symbol.address
+        write_assets('sounds.json', assets)
+
+        # # Find all offsets at a certain path, so that we can move everything after into a different json file
+        # target_path = 'programmable_wave_samples/gUnk_08A11BAC.bin'
+        # offsets = {}
+        # for variant in ['EU', 'JP', 'DEMO_USA', 'DEMO_JP']:
+        #     offsets[variant] = 0
+
+        # for asset in assets.assets:
+        #     if 'offsets' in asset:
+        #         for key in asset['offsets']:
+        #             offsets[key] = asset['offsets'][key]
+        #     if 'path' in asset:
+        #         if asset['path'] == target_path:
+        #             print(target_path)
+        #             print(json.dumps({'offsets': offsets}, indent=2))
+        #             break
+
+        print('done')
+
+        # Find the most and biggest assets
+        # stats = {}
+        # for asset in assets.assets:
+        #     if 'path' in asset:
+        #         folder = asset['path'][0:asset['path'].index('/')]
+        #         if not folder in stats:
+        #             stats[folder] = {
+        #                 'count': 0,
+        #                 'size': 0
+        #             }
+        #         stats[folder]['count'] += 1
+        #         if 'size' in asset:
+        #             stats[folder]['size'] += asset['size']
+
+        # lists = []
+        # for key in stats:
+        #     stat = stats[key]
+        #     lists.append({
+        #         'folder': key,
+        #         'count': stat['count'],
+        #         'size': stat['size']
+        #     })
+
+        # lists.sort(key=lambda x:x['count'])
+        # #lists.sort(key=lambda x:x['size'])
+        # for entry in lists:
+        #     print(entry['folder'] + ' ('+str(entry['count'])+') ' + str(entry['size']))
+
+
 
 
 
@@ -1794,9 +1935,9 @@ class DataExtractorPlugin:
         # write_assets(assets)
         # #print(assets)
     def slot_remove_unused_assets(self) -> None:
-        assets = read_assets()
         used_assets = set()
 
+        # Search all includes in data&asm files
         for folder in ['data', 'asm']:
             for root, dirs, files in os.walk(os.path.join(get_repo_location(), folder)):
                 for file in files:
@@ -1808,18 +1949,28 @@ class DataExtractorPlugin:
                             asset = match[1][0:match[1].rindex('.')]
                             used_assets.add(asset)
 
-        print(len(used_assets), len(assets.assets))
+        configs = get_all_asset_configs()
+        for config in configs:
+            assets = read_assets(config)
 
-        for i in reversed(range(0, len(assets.assets))):
-            asset = assets.assets[i]
-            if 'path' in asset:
-                path = asset['path'][0:asset['path'].rindex('.')]
-                if not path in used_assets:
-                    del assets.assets[i]
+            print(len(used_assets), len(assets.assets))
 
-        print(len(used_assets), len(assets.assets))
+            for i in reversed(range(0, len(assets.assets))):
+                asset = assets.assets[i]
+                if 'path' in asset:
+                    path = asset['path'][0:asset['path'].rindex('.')]
+                    if not path in used_assets:
+                        del assets.assets[i]
+                elif 'offsets' in asset:
+                    if 'offsets' in assets.assets[i+1]:
+                        # Deduplicate offsets
+                        for variant in asset['offsets']:
+                            if not variant in assets.assets[i+1]['offsets']:
+                                assets.assets[i+1]['offsets'][variant] = asset['offsets'][variant]
+                        del assets.assets[i]
+            print(len(used_assets), len(assets.assets))
 
-        write_assets(assets)
+            write_assets(config, assets)
 
 
 
@@ -1832,7 +1983,20 @@ class DataExtractorPlugin:
     def slot_create_asset_lists(self) -> None:
         if not hasattr(self, 'all_assets'):
             self.all_assets: dict[str, list[Asset]] = {}
-        self.extract_area_table()
+        
+        self.extract_gfx_groups()
+        self.extract_figurine_data()
+        self.extract_sprites()
+        self.extract_frame_obj_lists()
+        self.extract_extra_frame_offsets()
+
+        # print gfx asset
+        self.print_assets_list(self.assets_symbol, self.gfx_assets)
+        self.assets = self.gfx_assets
+
+        # TODO fetch palettes from this?
+        # -> not needed as those refer to palette groups which already are extracted?
+        #self.extract_area_table()
 
         # Sort the assets and remove duplicates
         # Always the last duplicate will remain in the array
@@ -1854,7 +2018,13 @@ class DataExtractorPlugin:
                     asset.path = 'tilesets/' + asset.name + '.4bpp.lz'
                 else:
                     asset.path = 'tilesets/' + asset.name + '.4bpp'
-
+            elif asset.type == 'gfx':
+                if asset.compressed:
+                    asset.path = 'gfx/' + asset.name + '.4bpp.lz'
+                else:
+                    asset.path = 'gfx/' + asset.name + '.4bpp'
+            elif asset.type == 'palette':
+                asset.path = 'palettes/' + asset.name + '.gbapal'
             else:
                 asset.path = 'assets/' + asset.name + '.bin'
 
@@ -1882,8 +2052,8 @@ class DataExtractorPlugin:
             if variant not in self.all_assets:
                 missing.append(variant)
 
-        #if True:
-        if len(missing) == 0:
+        if True:
+        #if len(missing) == 0:
             if self.api.show_question(self.name, 'Collected assets for all variants. Calculate asset list?'):
                 self.calculate_asset_list()
         else:
@@ -1899,13 +2069,22 @@ class DataExtractorPlugin:
             RomVariant.CUSTOM_DEMO_JP: 'DEMO_JP',
         }
 
-        usa_start_offset = 0x324AE4
+        # usa_start_offset = 0x324AE4
+        # start_offsets = {
+        #     RomVariant.CUSTOM: 0x324AE4,
+        #     RomVariant.CUSTOM_EU: 0x323FEC,
+        #     RomVariant.CUSTOM_JP: 0x324710,
+        #     RomVariant.CUSTOM_DEMO_USA: 0x325514,
+        #     RomVariant.CUSTOM_DEMO_JP: 0x324708
+        # }
+
+        usa_start_offset = 0x5A2E80
         start_offsets = {
-            RomVariant.CUSTOM: 0x324AE4,
-            RomVariant.CUSTOM_EU: 0x323FEC,
-            RomVariant.CUSTOM_JP: 0x324710,
-            RomVariant.CUSTOM_DEMO_USA: 0x325514,
-            RomVariant.CUSTOM_DEMO_JP: 0x324708
+            RomVariant.CUSTOM: 0x5A2E80,
+            RomVariant.CUSTOM_EU: 0x5A23D0,
+            RomVariant.CUSTOM_JP: 0x5A2B20,
+            RomVariant.CUSTOM_DEMO_USA: 0x5A38B0,
+            RomVariant.CUSTOM_DEMO_JP: 0x5A2B18
         }
 
         # Only calculate the asset lists we actually got
@@ -2022,23 +2201,33 @@ class DataExtractorPlugin:
                 else:
                     file.write(f'{asset.name}::\n')
                     file.write(f'\t.incbin "{asset.path}"\n')
-"""
+    """
 
-         = 0
-        previous_asset = None
+            = 0
+            previous_asset = None
 
-        # TMP fix sizes of fixed_gfx_assets
-        for i in range(len(assets)):
-            asset = assets[i]
-            if asset.offset < last_used_offset:
-                if asset.offset == assets[i-1].offset and asset.size == assets[i-1].size:
-                    pass
-                else:
-                    assets[i-1].type += '_size_changed_from_' + hex(assets[i-1].size)
-                    assets[i-1].size = asset.offset-assets[i-1].offset
-                    print('Adapted offset of ' + assets[i-1].name)
-            last_used_offset = asset.offset+asset.size
-        last_used_offset = 0
-        align_bytes = 0
-        empty_bytes = 0
-"""
+            # TMP fix sizes of fixed_gfx_assets
+            for i in range(len(assets)):
+                asset = assets[i]
+                if asset.offset < last_used_offset:
+                    if asset.offset == assets[i-1].offset and asset.size == assets[i-1].size:
+                        pass
+                    else:
+                        assets[i-1].type += '_size_changed_from_' + hex(assets[i-1].size)
+                        assets[i-1].size = asset.offset-assets[i-1].offset
+                        print('Adapted offset of ' + assets[i-1].name)
+                last_used_offset = asset.offset+asset.size
+            last_used_offset = 0
+            align_bytes = 0
+            empty_bytes = 0
+    """
+
+
+    def slot_sprite_test(self) -> None:
+        print('Test')
+
+    def slot_parse_structs(self) -> None:
+        generate_struct_definitions()
+        # Reload structs.json
+        load_json_files()
+        print('ok')

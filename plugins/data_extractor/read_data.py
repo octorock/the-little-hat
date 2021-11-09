@@ -61,8 +61,8 @@ def load_json_files() -> None:
 
 def read_struct(reader: Reader, struct: any) -> any:
     res = {}
-    for key in struct:
-        res[key] = read_var(reader, struct[key])
+    for key in struct['members']:
+        res[key] = read_var(reader, struct['members'][key])
     return res
 
 def read_array(reader: Reader, type: str, length: int) -> any:
@@ -77,7 +77,8 @@ def read_array(reader: Reader, type: str, length: int) -> any:
     return res
 
 def read_union(reader: Reader, union: any) -> any:
-    assert(False)
+    # TODO
+    raise Exception('Unions not implemented yet')
 
 def read_pointer(reader: Reader, type: str) -> any:
     pointer = reader.read_u32()
@@ -88,7 +89,29 @@ def read_pointer(reader: Reader, type: str) -> any:
         raise Exception(f'Could not find symbol at {hex(pointer)}')
     return '&' + symbol.name
 
+def read_bitfield(reader: Reader, length: int) -> any:
+    if (reader.bitfield_remaining == 0):
+        # Read the next byte
+        reader.bitfield = read_var(reader, 'u8')
+        reader.bitfield_remaining = 8
+    if reader.bitfield_remaining < length:
+        print(f'Not enough bytes in bitfield remaining. Need {length}, got {reader.bitfield_remaining}')
+        assert(False)
+
+    reader.bitfield_remaining -= length;
+    val = reader.bitfield & (2**length-1)
+    reader.bitfield >>= length
+    # TODO somehow handle that all bits of the bytes need to be taken up by the bitfield?
+    return val
+
 def read_var(reader: Reader, type: str) -> any:
+    if isinstance(type, dict):
+        if 'type' in type:
+            if type['type'] == 'struct':
+                return read_struct(reader, type)
+            elif type['type'] == 'union':
+                return read_union(reader, type)
+        raise Exception(f'Unhandled type struct {type}')
     if '*' in type:
         return read_pointer(reader, type)
     if '[' in type:
@@ -98,6 +121,8 @@ def read_var(reader: Reader, type: str) -> any:
         else:
             length = int(arr[1][0:-1])
         return read_array(reader, arr[0], length)
+    if ':' in type:
+        return read_bitfield(reader, int(type.split(':')[1]))
     if type == 'u8':
         return reader.read_u8()
     elif type == 's8':

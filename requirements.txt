@@ -12,9 +12,11 @@ itsdangerous==2.0.1
 Jinja2==3.0.1
 MarkupSafe==2.0.1
 packaging==20.9
+Pillow==8.4.0
 pluggy==0.13.1
 py==1.10.0
 pycodestyle==2.7.0
+pycparser==2.21
 pyparsing==2.4.7
 PySide6==6.0.2
 pytest==6.2.2

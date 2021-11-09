@@ -49,11 +49,14 @@ class Assets:
                 self.assets.insert(i, asset)
                 break
 
-def read_assets() -> Assets:
-    with open(os.path.join(settings.get_repo_location(), 'assets.json'), 'r') as file:
+def get_all_asset_configs() -> list[str]:
+    return [x for x in os.listdir(os.path.join(settings.get_repo_location(), 'assets')) if x.endswith('.json')]
+
+def read_assets(name: str) -> Assets:
+    with open(os.path.join(settings.get_repo_location(), 'assets', name), 'r') as file:
         return Assets(json.load(file))
 
-def write_assets(assets: Assets) -> None:
-    with open(os.path.join(settings.get_repo_location(), 'assets.json'), 'w') as file:
+def write_assets(name: str, assets: Assets) -> None:
+    with open(os.path.join(settings.get_repo_location(), 'assets', name), 'w') as file:
         json.dump(assets.assets, file, indent=2)
 

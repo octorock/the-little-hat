@@ -42,7 +42,11 @@ def load_plugins(main_window):
         if not os.path.isdir(location) or not main_module + '.py' in os.listdir(location):
             print(f'{main_module}.py not found in plugin {i}')
             continue
-        mod = import_module('plugins.' + i)
+        try:
+            mod = import_module('plugins.' + i)
+        except Exception as e:
+            print(f'Exception occurred during loading plugin {i}:')
+            traceback.print_exc()
 
         initialize_plugin(i, mod, plugins)
 
@@ -127,9 +131,13 @@ def reload_plugins() -> None:
             if module_name != mod.__name__ and module_name.startswith(mod.__name__):
                 children.append(module_name)
 
-        for child in children:
-            print(f'Reloading child {child}')
-            reload(sys.modules[child])
-        print(f'Reloading {mod.__name__}')
-        mod = reload(mod)
-        initialize_plugin(pkg_name, mod, plugins)
+        try:
+            for child in children:
+                print(f'Reloading child {child}')
+                reload(sys.modules[child])
+            print(f'Reloading {mod.__name__}')
+            mod = reload(mod)
+            initialize_plugin(pkg_name, mod, plugins)
+        except Exception as e:
+            print(f'Exception occurred during reloading plugins:')
+            traceback.print_exc()
