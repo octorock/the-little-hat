@@ -9,7 +9,8 @@ from plugins.data_extractor.gba_lz77 import GBALZ77, DecompressionError
 from plugins.data_extractor.read_data import Reader, load_json_files, read_var
 from plugins.data_extractor.structs import generate_struct_definitions
 from tlh.const import CUSTOM_ROM_VARIANTS, ROM_OFFSET, RomVariant
-from tlh.data.symbols import Symbol
+from tlh.data.rom import Rom
+from tlh.data.symbols import Symbol, SymbolList
 from tlh.settings import get_repo_location
 from PySide6.QtWidgets import QApplication, QMenu
 from tlh.hexviewer.controller import HexViewerController
@@ -1520,6 +1521,57 @@ class DataExtractorPlugin:
         return symbol
 
 
+    def extract_data(self, code: str, symbols: SymbolList, rom: Rom) -> str:
+        type = self.parse_type(code)
+
+        if type is None:
+            raise Exception(f'Could not parse type of `{code}`')
+
+        symbol = symbols.find_symbol_by_name(type.name)
+        if symbol is None:
+            raise Exception(f'Could not find symbol {type.name}')
+
+        text = ''
+
+        data = rom.get_bytes(symbol.address, symbol.address+symbol.length)
+        reader = Reader(data, symbols)
+
+        if type.regex == 0:
+            res = read_var(reader, type.type)
+            text = 'const ' + type.type + ' ' + type.name + ' = ' + self.get_struct_init(res) + ';';
+        elif type.regex == 1:
+            if type.type == 'u8':
+                text = 'const ' + type.type + ' ' + type.name + '[] = {'
+                for i in range(symbol.address, symbol.address+symbol.length):
+                    text += str(rom.get_byte(i)) + ', '
+                text += '};'
+            elif '*' in type.type: # pointers
+                if symbol.length % 4 != 0:
+                    raise Exception('Incorrect data length')
+
+                text = 'const ' + type.type + ' ' + type.name + '[] = {'
+                for i in range(symbol.address, symbol.address+symbol.length, 4):
+                    pointer = rom.get_pointer(i)
+                    pointer_symbol = symbols.get_symbol_at(pointer - ROM_OFFSET)
+                    text += '&' + pointer_symbol.name + ', '
+                text += '};'
+            else:
+                res = read_var(reader, type.type + '[]')
+                text = 'const ' + type.type + ' ' + type.name + '[] = ' + self.get_struct_init(res) + ';';
+        elif type.regex == 3:
+            if symbol.length % 4 != 0:
+                raise Exception('Incorrect data length')
+
+            text = 'void (*const ' + type.name + '[])(' + type.params + ') = {'
+            for i in range(symbol.address, symbol.address+symbol.length, 4):
+                pointer = rom.get_pointer(i)
+                pointer_symbol = symbols.get_symbol_at(pointer - ROM_OFFSET)
+                text += pointer_symbol.name + ', '
+            text += '};'
+        else:
+            raise Exception(f'Unimplemented type for regex {type.regex}')
+        return text
+
     def slot_extract_data(self) -> None:
         if self.current_controller.symbols is None:
             self.api.show_error(self.name, f'No symbols loaded for current editor')
@@ -1532,65 +1584,14 @@ class DataExtractorPlugin:
             return
         print(type_str)
 
-        type = self.parse_type(type_str)
-
-        symbol = self.current_controller.symbols.find_symbol_by_name(type.name)
-        if symbol is None:
-            self.api.show_error(self.name, f'Could not find symbol {type.name}')
-            return
-
-        text = ''
-
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
-
-        if type.regex == 0:
-            try:
-                res = read_var(reader, type.type)
-                text = 'const ' + type.type + ' ' + type.name + ' = ' + self.get_struct_init(res) + ';';
-            except Exception as e:
-                traceback.print_exc()
-                self.api.show_error(self.name, str(e))
-        elif type.regex == 1:
-            if type.type == 'u8':
-                text = 'const ' + type.type + ' ' + type.name + '[] = {'
-                for i in range(symbol.address, symbol.address+symbol.length):
-                    text += str(self.current_controller.rom.get_byte(i)) + ', '
-                text += '};'
-            elif '*' in type.type: # pointers
-                if symbol.length % 4 != 0:
-                    self.api.show_error(self.name, 'Incorrect data length')
-
-                text = 'const ' + type.type + ' ' + type.name + '[] = {'
-                for i in range(symbol.address, symbol.address+symbol.length, 4):
-                    pointer = self.current_controller.get_as_pointer(i)
-                    pointer_symbol = self.current_controller.symbols.get_symbol_at(pointer - ROM_OFFSET)
-                    text += '&' + pointer_symbol.name + ', '
-                text += '};'
-            else:
-                try:
-                    res = read_var(reader, type.type + '[]')
-                    text = 'const ' + type.type + ' ' + type.name + '[] = ' + self.get_struct_init(res) + ';';
-                except Exception as e:
-                    traceback.print_exc()
-                    self.api.show_error(self.name, str(e))
-        elif type.regex == 3:
-            if symbol.length % 4 != 0:
-                self.api.show_error(self.name, 'Incorrect data length')
-
-            text = 'void (*const ' + type.name + '[])(' + type.params + ') = {'
-            for i in range(symbol.address, symbol.address+symbol.length, 4):
-                pointer = self.current_controller.get_as_pointer(i)
-                pointer_symbol = self.current_controller.symbols.get_symbol_at(pointer - ROM_OFFSET)
-                text += pointer_symbol.name + ', '
-            text += '};'
-        else:
-            self.api.show_error(self.name, f'Unimplemented type for regex {type.regex}')
-            return
-
-
+        try:
+            text = self.extract_data(type_str, self.current_controller.symbols, self.current_controller.rom)
+        except Exception as e:
+            traceback.print_exc()
+            self.api.show_error(self.name, str(e))
         QApplication.clipboard().setText(text)
         print(text)
+
 
     def read_str(self, symbol):
         res = ''

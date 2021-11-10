@@ -14,6 +14,7 @@ class ServerWorker(QObject):
     signal_error = Signal(str)
     signal_shutdown = Signal()
     signal_c_code = Signal(str)
+    signal_extract_data = Signal(str)
 
     def process(self) -> None:
         try:
@@ -38,6 +39,10 @@ class ServerWorker(QObject):
             @sio.event
             def disconnect(sid):
                 self.signal_disconnected.emit()
+
+            @sio.event
+            def extract_data(sid, data):
+                self.signal_extract_data.emit(data)
 
             @app.route('/shutdown', methods=['GET'])
             def shutdown():
@@ -66,3 +71,6 @@ class ServerWorker(QObject):
 
     def slot_request_c_code(self) -> None:
         self.sio.emit('request_c_code')
+
+    def slot_extracted_data(self, data) -> None:
+        self.sio.emit('extracted_data', data)

@@ -1,7 +1,13 @@
 function main() {
     createIndicator();
     loadSocketIo();
-    findMonacoEditors();
+    if (window.hub == undefined) {
+        findMonacoEditorsLegacy();
+    } else {
+        // Find monaco editors via the exposed hub object.
+        findMonacoEditors();
+        registerShortcut();
+    }
 }
 
 function createIndicator() {
@@ -27,13 +33,15 @@ color_green = '#67c52a';
 color_red = '#ec2f19';
 color_yellow = '#efdf00';
 
+let socket;
+
 function startSocketIo() {
-    var socket = io('http://localhost:10241');
+    socket = io('http://localhost:10241');
     socket.on('disconnect', function () {
-        error('Disconnected');
+        connect_error('Disconnected');
     });
     socket.on('connect_error', function () {
-        error('Connection failed');
+        connect_error('Connection failed');
     });
     socket.on('connect', () => {
         setStatus('Connected', color_green);
@@ -44,7 +52,7 @@ function startSocketIo() {
             asmEditorModel.setValue(data);
             setStatus('Received code', color_green)
         } else {
-            error('asm editor not yet found');
+            connect_error('asm editor not yet found');
         }
     });
     socket.on('c_code', (data) => {
@@ -52,7 +60,7 @@ function startSocketIo() {
             cEditorModel.setValue(data);
             setStatus('Received code', color_green)
         } else {
-            error('c editor not yet found');
+            connect_error('c editor not yet found');
         }
     });
     socket.on('add_c_code', (data) => {
@@ -60,7 +68,7 @@ function startSocketIo() {
             cEditorModel.setValue(cEditorModel.getValue() + data);
             setStatus('Received code', color_green)
         } else {
-            error('c editor not yet found');
+            connect_error('c editor not yet found');
         }
     });
     socket.on('request_c_code', () => {
@@ -68,20 +76,39 @@ function startSocketIo() {
             socket.emit('c_code', cEditorModel.getValue());
             setStatus('Sent code', color_green)
         } else {
-            error('c editor not yet found');
+            connect_error('c editor not yet found');
+        }
+    });
+    socket.on('extracted_data', (data) => {
+        console.log(data);
+        // TODO return error somehow?
+        if (data['status'] === 'ok') {
+            cEditor.editor.executeEdits("CExploreBridge", [
+                { range: cEditor.editor.getSelection(), text: data['text'] }
+        ]);
+        } else if (data['status'] === 'error') {
+            error(data['text']);
         }
     });
 }
 
-function error(message) {
+function connect_error(message) {
     console.error(message);
     setStatus('Error: ' + message, color_red);
 }
 
-asmEditorModel = null;
-cEditorModel = null;
+function error(message) {
+    console.error(message)
+    // TODO less obtrusive error toast
+    alert(message)
+}
 
-function findMonacoEditors() {
+let asmEditor = null;
+let asmEditorModel = null;
+let cEditor = null;
+let cEditorModel = null;
+
+function findMonacoEditorsLegacy() {
     placeholders = document.getElementsByClassName('monaco-placeholder');
     let cEditorUri = null;
     let asmEditorUri = null;
@@ -97,7 +124,7 @@ function findMonacoEditors() {
             }
 
             if (asmEditorUri != null) {
-                error('Found more than one asm editor.');
+                connect_error('Found more than one asm editor.');
                 console.log(asmEditorUri);
                 console.log(placeholder);
                 return;
@@ -106,7 +133,7 @@ function findMonacoEditors() {
             ignoreNextAsm = true;
         } else if (mode == 'nc') {
             if (cEditorUri != null) {
-                error('Found more than one c editor.');
+                connect_error('Found more than one c editor.');
                 return;
             }
             cEditorUri = placeholder.children[0].dataset.uri;
@@ -116,12 +143,55 @@ function findMonacoEditors() {
     }
 
     if (asmEditorUri == null || cEditorUri == null) {
-        error('Could not find both asm and c editor.');
+        connect_error('Could not find both asm and c editor.');
         return;
     }
 
     asmEditorModel = monaco.editor.getModel(asmEditorUri);
     cEditorModel = monaco.editor.getModel(cEditorUri);
+
+    console.log('asmEditorModel', asmEditorModel);
+    console.log('cEditorModel', cEditorModel);
+}
+
+function findMonacoEditors() {
+    for (const editor of hub.editors) {
+        switch (editor.editor.getModel().getModeId()) {
+            case 'asm':
+                if (asmEditor != null) {
+                    connect_error('There are two asm editors open.')
+                    return;
+                }
+                asmEditor = editor;
+                asmEditorModel = editor.editor.getModel();
+                break;
+            case 'nc':
+                if (cEditor != null) {
+                    connect_error('There are two c editors open.')
+                    return;
+                }
+                cEditor = editor;
+                cEditorModel = editor.editor.getModel();
+                break;
+            default:
+                // ignore other editors if there were any for some reason?
+                break;
+        }
+    }
+}
+
+function registerShortcut() {
+    document.onkeyup = function(e) {
+        if (e.ctrlKey && e.key == 'b') {
+            let selectedText = cEditorModel.getValueInRange(cEditor.editor.getSelection());
+            if (selectedText.length == 0) {
+                error('Nothing selected in c editor.');
+                return;
+            }
+
+            socket.emit('extract_data', selectedText);
+        }
+    };
 }
 
 main();

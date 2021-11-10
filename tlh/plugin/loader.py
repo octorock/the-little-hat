@@ -106,6 +106,13 @@ def disable_plugin(plugin: Plugin) -> None:
 def get_plugins() -> list[Plugin]:
     return plugins
 
+
+def get_plugin(pkg_name: str, class_name: str) -> Optional[Plugin]:
+    for plugin in plugins:
+        if plugin.pkg_name == pkg_name and plugin.class_name == class_name:
+            return plugin
+    return None
+
 def reload_plugins() -> None:
     global plugins
     # Disable all enabled plugins

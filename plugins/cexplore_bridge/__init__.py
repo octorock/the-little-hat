@@ -1,8 +1,13 @@
+import traceback
 from plugins.cexplore_bridge.ghidra import improve_decompilation
 from plugins.cexplore_bridge.code import find_globals, get_code, split_code, store_code
 from PySide6.QtCore import QThread, Qt, Signal
 from PySide6.QtWidgets import QApplication, QDialog, QDialogButtonBox, QDockWidget
+from tlh.const import RomVariant
+from tlh.data.database import get_symbol_database
+from tlh.data.rom import get_rom
 from tlh.plugin.api import PluginApi
+from tlh.plugin.loader import get_plugin
 from tlh.ui.ui_plugin_cexplore_bridge_dock import Ui_BridgeDock
 from plugins.cexplore_bridge.server import ServerWorker
 import requests
@@ -44,6 +49,10 @@ class BridgeDock(QDockWidget):
         self.ui.setupUi(self)
         self.server_thread = None
 
+        self.symbols = None
+        self.rom = None
+        self.data_extractor_plugin = None
+
         self.slot_server_running(False)
 
         self.ui.pushButtonStartServer.clicked.connect(self.slot_start_server)
@@ -81,6 +90,7 @@ class BridgeDock(QDockWidget):
         self.server_worker.signal_c_code.connect(self.slot_received_c_code)
         self.server_worker.signal_started.connect(self.slot_server_started)
         self.server_worker.signal_shutdown.connect(self.slot_server_stopped)
+        self.server_worker.signal_extract_data.connect(self.slot_extract_data)
         self.server_worker.moveToThread(self.server_thread)
         self.server_thread.started.connect(self.server_worker.process)
         self.server_thread.start()
@@ -247,6 +257,35 @@ class BridgeDock(QDockWidget):
         except requests.exceptions.RequestException as e:
             self.api.show_error('CExplore Bridge', 'Could not reach Ghidra server. Did you start the script?')
             return False
+
+    def slot_extract_data(self, text: str) -> None:
+        if self.symbols is None:
+            # First need to load symbols
+            self.symbols = get_symbol_database().get_symbols(RomVariant.CUSTOM)
+            if self.symbols is None:
+                self.server_worker.slot_extracted_data({'status': 'error', 'text': 'No symbols for rom CUSTOM loaded'})
+                return
+
+        if self.data_extractor_plugin is None:
+            self.data_extractor_plugin = get_plugin('data_extractor', 'DataExtractorPlugin')
+            if self.data_extractor_plugin is None:
+                self.server_worker.slot_extracted_data({'status': 'error', 'text': 'Data Extractor plugin not loaded'})
+                return
+
+        if self.rom is None:
+            self.rom = get_rom(RomVariant.CUSTOM)
+            if self.rom is None:
+                self.server_worker.slot_extracted_data({'status': 'error', 'text': 'CUSTOM rom could not be loaded'})
+                return
+
+        try:
+            result = self.data_extractor_plugin.instance.extract_data(text, self.symbols, self.rom)
+            if result is not None:
+                self.server_worker.slot_extracted_data({'status': 'ok', 'text': result})
+        except Exception as e:
+            traceback.print_exc()
+            self.server_worker.slot_extracted_data({'status': 'error', 'text': str(e)}) 
+
 
 class ReceivedDialog(QDialog):
     signal_matching = Signal(str, str, str)
