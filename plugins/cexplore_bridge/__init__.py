@@ -70,8 +70,10 @@ class BridgeDock(QDockWidget):
         self.visibilityChanged.connect(self.slot_close)
 
     def slot_close(self, visibility: bool) -> None:
-        if not visibility and self.server_thread is not None:
-            self.slot_stop_server()
+        # TODO temporarily disable until a good way to detect dock closing is found
+        pass
+        #if not visibility and self.server_thread is not None:
+        #    self.slot_stop_server()
 
     def slot_server_running(self, running: bool) -> None:
         if running:

@@ -90,7 +90,7 @@ def split_code(code: str) -> Tuple[str, str, str]:
     in_headers = True
     for line in lines:
         if in_headers:
-            if '{' in line and not 'struct' in line and not 'union' in line:
+            if '{' in line and not 'struct' in line and not 'union' in line and not 'enum' in line:
                 in_headers = False
                 data.append(line)
             elif 'NONMATCH' in line or 'ASM_FUNC' in line:
@@ -119,7 +119,7 @@ def read_file_split_headers(src_file: str) -> Tuple[List[str], List[str]]:
         # match headers
         for line in f:
             if in_headers:
-                if '{' in line and not 'struct' in line:
+                if '{' in line and not 'struct' in line and not 'union' in line and not 'enum' in line:
                     in_headers = False
                     data.append(line)
                 elif 'NONMATCH' in line or 'ASM_FUNC' in line:

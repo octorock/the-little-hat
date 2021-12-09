@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 import os
 from pprint import pprint
+from typing import Optional
 
 from PySide6.QtGui import QKeySequence
 from plugins.data_extractor.assets import get_all_asset_configs, read_assets, write_assets
@@ -51,6 +52,27 @@ def opt_param(name: str, default: str, value: str) -> str:
         return f', {name}={value}'
     return ''
 
+OBJ_SIZES = {
+    0: {
+        0: (8, 8),
+        1: (16, 16),
+        2: (32, 32),
+        3: (64, 64),
+    },
+    1: {
+        0: (16, 8),
+        1: (32, 8),
+        2: (32, 16),
+        3: (64, 32),
+    },
+    2: {
+        0: (8, 16),
+        1: (8, 32),
+        2: (16, 32),
+        3: (32, 64),
+    },
+}
+
 class DataExtractorPlugin:
     name = 'Data Extractor'
     description = 'Extracts data in different formats'
@@ -92,7 +114,6 @@ class DataExtractorPlugin:
         menu.addAction('Extract data for symbol', self.slot_extract_data)
         if DEV_ACTIONS:
             menu.addAction('Test', self.slot_test)
-            menu.addAction('Test modify asset list', self.test_asset_list_modification)
             menu.addAction('Tmp', self.slot_tmp)
             menu.addAction('Extract current entity list', self.slot_extract_current_entity_list)
             menu.addAction('Extract current tile entity list', self.slot_extract_current_tile_entity_list)
@@ -101,7 +122,9 @@ class DataExtractorPlugin:
             menu.addAction('Extract current exit', self.slot_extract_current_exit)
             menu.addAction('Extract room property by symbol name', self.slot_extract_room_prop_by_symbol)
             menu.addAction('Create asset lists', self.slot_create_asset_lists)
+            menu.addAction('tmp remove', self.slot_tmp2)
             menu.addAction('Sprite Test', self.slot_sprite_test)
+        menu.addAction('Test modify asset list', self.test_asset_list_modification)
 
 
     def slot_copy_as_incbin(self) -> None:
@@ -217,8 +240,7 @@ class DataExtractorPlugin:
             self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
             return
 
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
         '''
         '''animations
         end_of_animation = False
@@ -278,8 +300,7 @@ class DataExtractorPlugin:
             self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
             return
 
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
 
         first_level = []
         second_level = []
@@ -382,8 +403,7 @@ class DataExtractorPlugin:
             self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
             return
 
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
 
         first_level = []
         second_level = []
@@ -460,8 +480,7 @@ class DataExtractorPlugin:
             self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
             return
 
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
 
         lines = []
         lines.append('gFixedTypeGfxData::\n')
@@ -504,8 +523,7 @@ class DataExtractorPlugin:
             self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
             return
 
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
 
         lines = []
         lines.append('gPaletteGroups::\n')
@@ -555,8 +573,7 @@ class DataExtractorPlugin:
     def extract_palette_group(self, pointer: int, symbol: Symbol) -> tuple[list[str], list[int]]:
         lines: list[str] = []
         palette_indices: list[int] = []
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
         continue_loading_palette_sets = True
         lines.append(f'\n{symbol.name}::\n')
         while continue_loading_palette_sets:
@@ -592,8 +609,7 @@ class DataExtractorPlugin:
             self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
             return
 
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
 
         lines = []
         lines.append('@ Figurine Data\n')
@@ -630,8 +646,7 @@ class DataExtractorPlugin:
             self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
             return
 
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
 
         lines = []
         lines.append('gAreaMetadata::\n')
@@ -664,8 +679,7 @@ class DataExtractorPlugin:
             self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
             return
 
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
         self.area_names = []
         self.room_names = []
         area_index = 0
@@ -758,8 +772,7 @@ class DataExtractorPlugin:
 
 
     def extract_area_rooms(self, area_index: int, symbol: Symbol) -> None:
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
         room_index = 0
         while reader.cursor < symbol.length:
             room_symbol = self.read_symbol(reader)
@@ -810,8 +823,7 @@ class DataExtractorPlugin:
     def extract_asset(self, symbol: Symbol, type: str) -> None:
         assets_symbol = self.current_controller.symbols.find_symbol_by_name('gMapData')
 
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
         i = 0
         while reader.cursor < symbol.length: # TODO use as general parsing code for asset list
             asset_offset = reader.read_u32() & 0x7FFFFFFF
@@ -872,8 +884,7 @@ class DataExtractorPlugin:
             self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
             return
 
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
 
         entity_list_1 = self.read_symbol(reader)
         entity_list_2 = self.read_symbol(reader)
@@ -1270,8 +1281,7 @@ class DataExtractorPlugin:
             self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
             return
 
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
         area_index = 0
 
         while reader.cursor < symbol.length:
@@ -1325,8 +1335,7 @@ class DataExtractorPlugin:
             self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
             return
 
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
 
         lines = []
         group_lines = []
@@ -1377,8 +1386,7 @@ class DataExtractorPlugin:
 
     def extract_gfx_group(self, symbol: Symbol, group_index: int) -> list[str]:
         print(symbol)
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
         self.replacements.append((symbol.name, f'gGfxGroup_{group_index}'))
         gfx_index = 0
         lines = []
@@ -1432,8 +1440,7 @@ class DataExtractorPlugin:
             self.api.show_error(self.name, f'Could not find symbol {symbol_name}')
             return
 
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
 
         self.replacements = []
 
@@ -1454,8 +1461,7 @@ class DataExtractorPlugin:
             file.writelines(self.replacements)
 
     def extract_sprite_frame(self, symbol: Symbol) -> None:
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
         i = 0
         while reader.cursor < symbol.length:
             num_gfx_tiles = reader.read_u8()
@@ -1467,8 +1473,7 @@ class DataExtractorPlugin:
             i += 1
 
     def extract_animation_list(self, symbol: Symbol) -> None:
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
 
         lines = []
         animation_lines = []
@@ -1489,8 +1494,7 @@ class DataExtractorPlugin:
         #     file.writelines(lines)
 
     def extract_animation(self, symbol: Symbol, new_name: str) -> list[str]:
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
         lines = []
         print(new_name)
         lines.append(f'{new_name}:: @{symbol.name}\n')
@@ -1595,8 +1599,7 @@ class DataExtractorPlugin:
 
     def read_str(self, symbol):
         res = ''
-        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
-        reader = Reader(data, self.current_controller.symbols)
+        reader = self.get_reader_for_symbol(symbol)
         while reader.cursor < symbol.length:
             byte = reader.read_u8()
             if byte == 0:
@@ -1824,34 +1827,48 @@ class DataExtractorPlugin:
                 elif type(obj[key]) is dict: # No names for struct initialisation
                     text += separator + self.get_struct_init(obj[key])
                 else:
-                    text += separator + str(obj[key])
+                    if type(obj[key]) != int or obj[key] < 0x1000000:
+                        text += separator + str(obj[key])
+                    else:
+                        text += separator + hex(obj[key])
                 separator = ', '
             text += ' }'
         return text
 
 
     def test_asset_list_modification(self) -> None:
-        assets = read_assets('sounds.json')
+        # Align map assets
+        assets = read_assets('map.json')
+        for asset in assets.assets:
+            if 'path' in asset:
+                start = asset['start']
+                if start % 4 != 0:
+                    diff = 4 - start % 4;
+                    asset['start'] = start + diff;
+                    asset['size'] -= diff;
+
+        write_assets('map.json', assets)
 
         # Add sizes and headerOffsets to the sounds
-        offsets = {}
-        for variant in ['EU', 'JP', 'DEMO_USA', 'DEMO_JP']:
-            offsets[variant] = 0
-        for asset in assets.assets:
-            if 'offsets' in asset:
-                for key in asset['offsets']:
-                    offsets[key] = asset['offsets'][key]
-            if 'path' in asset:
-                label = asset['path'][7:-4]
-                print(label)
+        #assets = read_assets('sounds.json')
+        # offsets = {}
+        # for variant in ['EU', 'JP', 'DEMO_USA', 'DEMO_JP']:
+        #     offsets[variant] = 0
+        # for asset in assets.assets:
+        #     if 'offsets' in asset:
+        #         for key in asset['offsets']:
+        #             offsets[key] = asset['offsets'][key]
+        #     if 'path' in asset:
+        #         label = asset['path'][7:-4]
+        #         print(label)
 
-                header_symbol = self.current_controller.symbols.find_symbol_by_name(label)
-                first_track_symbol = self.current_controller.symbols.find_symbol_by_name(label+'_1')
+        #         header_symbol = self.current_controller.symbols.find_symbol_by_name(label)
+        #         first_track_symbol = self.current_controller.symbols.find_symbol_by_name(label+'_1')
 
-                asset['start'] = first_track_symbol.address
-                asset['options']['headerOffset'] = header_symbol.address - first_track_symbol.address
-                asset['size'] = header_symbol.address + header_symbol.length - first_track_symbol.address
-        write_assets('sounds.json', assets)
+        #         asset['start'] = first_track_symbol.address
+        #         asset['options']['headerOffset'] = header_symbol.address - first_track_symbol.address
+        #         asset['size'] = header_symbol.address + header_symbol.length - first_track_symbol.address
+        # write_assets('sounds.json', assets)
 
         # # Find all offsets at a certain path, so that we can move everything after into a different json file
         # target_path = 'programmable_wave_samples/gUnk_08A11BAC.bin'
@@ -1937,6 +1954,10 @@ class DataExtractorPlugin:
         # #print(assets)
     def slot_remove_unused_assets(self) -> None:
         used_assets = set()
+
+        used_assets.add('demo/save1')
+        used_assets.add('demo/save2')
+        used_assets.add('demo/save3')
 
         # Search all includes in data&asm files
         for folder in ['data', 'asm']:
@@ -2224,11 +2245,463 @@ class DataExtractorPlugin:
     """
 
 
+    def get_reader_for_symbol(self, symbol:Symbol) -> Optional[Reader]:
+        data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length)
+        return Reader(data, self.current_controller.symbols)
+
+
+####################################### SPRITES
+
+
+    def iterate_all_sprite_data_a(self, path: str, symbol: Symbol) -> None:
+        reader = self.get_reader_for_symbol(symbol)
+
+        replacements = []
+
+        lines = []
+        i = 0
+
+        self.continue_extract = True
+        while reader.cursor < symbol.length:
+
+            ### SpriteDataA
+            bitfield = reader.read_u16()
+            object_palette_id = reader.read_u16()
+            if bitfield == 0xffff:
+                sprite_data_ptr = self.read_symbol(reader)
+                # This sprite consists of multiple forms
+                self.iterate_all_sprite_data_a(f'{path}_{i}_form', sprite_data_ptr)
+            else:
+                sprite_data_ptr = reader.read_u32()
+            sprite_index = reader.read_u16()
+            unk = reader.read_u16()
+            another_pointer = reader.read_u32()
+
+            if bitfield != 0xffff:
+                print(f'{path}_{i}')
+
+                gfx_type = (bitfield & 0xC000) >> 14
+                self.used_sprites.add(sprite_index)
+
+                if sprite_index < 323:
+                    # Now go through their animations
+                    reader2 = self.get_reader_for_symbol(self.current_controller.symbols.find_symbol_by_name('gSpritePtrs'))
+                    reader2.cursor = sprite_index * 16
+                    animation_ptr = self.read_symbol(reader2)
+                    print(animation_ptr)
+                    frame_gfx_data_list_ptr = self.read_symbol(reader2)
+                    gfx_pointer = self.read_symbol(reader2)
+
+                    gfx_base = ''
+                    if gfx_type == 0:
+                        # Fixed
+                        fixed_gfx_index = bitfield
+                        gfx_base = f'gFixedGfx_{fixed_gfx_index}'
+                    elif gfx_type == 1:
+                        # Swap
+                        swap_gfx_slots_needed = (bitfield & 0x0FF0) >> 4
+                        assert(gfx_pointer is not None)
+                        gfx_base = gfx_pointer.name
+                    elif gfx_type == 2:
+                        # Common
+                        common_gfx_tile_index = bitfield & 0x03FF
+                        gfx_base = f'gGfx_23 + {common_gfx_tile_index*0x20}'
+                    else:
+                        assert(False)
+
+                    self.current_frames = None
+                    if frame_gfx_data_list_ptr:
+                        self.iterate_all_frames(f'{path}_{i}_frame', frame_gfx_data_list_ptr)
+                        print(f'got frame data {len(self.current_frames)}')
+                    if animation_ptr:
+                        self.iterate_all_animations(f'{path}_{i}_animation', sprite_index, animation_ptr, gfx_type, gfx_base)
+
+            if not self.continue_extract:
+                break
+            i += 1
+
+    def iterate_all_frames(self, path: str, symbol: Symbol) -> None:
+        reader = self.get_reader_for_symbol(symbol)
+        i = 0
+        self.current_frames = []
+        while reader.cursor < symbol.length:
+            num_gfx_tiles = reader.read_u8()
+            unk = reader.read_u8()
+            first_gfx_tile_index = reader.read_u16()
+            self.current_frames.append((first_gfx_tile_index, num_gfx_tiles))
+            i += 1
+
+    def iterate_all_animations(self, path: str, sprite_index: int, symbol: Symbol, gfx_type: int, gfx_base: str) -> None:
+        reader = self.get_reader_for_symbol(symbol)
+
+        i = 0
+        while reader.cursor < symbol.length:
+            animation_ptr = self.read_symbol(reader)
+            if animation_ptr:
+                print(f'{path}_{i}')
+                self.iterate_all_animation_frames(f'{path}_{i}_frame', sprite_index, animation_ptr, gfx_type, gfx_base)
+            i += 1
+
+    def iterate_all_animation_frames(self, path: str, sprite_index: int, symbol: Symbol, gfx_type: int, gfx_base: str) -> None:
+        reader = self.get_reader_for_symbol(symbol)
+        lines = []
+        end_of_animation = False
+        i = 0
+        while not end_of_animation and reader.cursor+3 < symbol.length:
+            frame_index = reader.read_u8()
+            keyframe_duration = reader.read_u8()
+            bitfield = reader.read_u8()
+            bitfield2 = reader.read_u8()
+
+            end_of_animation = bitfield2 & 0x80 != 0
+            # print(frame_index, keyframe_duration, bitfield, bitfield2)
+            if frame_index != 255:
+                self.get_obj(f'{path}_{i}_obj', sprite_index, frame_index, gfx_type, gfx_base)
+            else:
+                # TODO what is displayed for this frame index?
+                print('Invalid frame index')
+            #print(f'{path}_{i}')
+            i += 1
+
+        # if not end_of_animation:
+        #     lines.append('@ TODO why no terminator?\n')
+        while reader.cursor < symbol.length:
+            keyframe_count = reader.read_u8()
+            # lines.append(f'\t.byte {keyframe_count} @ keyframe count\n')
+        return lines
+
+    def get_obj(self, path: str, sprite_index: int, frame_index: int, gfx_type: int, gfx_base: str) -> None:
+        symbol = self.current_controller.symbols.find_symbol_by_name('gFrameObjLists')
+        addr1 = symbol.address + sprite_index * 4
+        data1 = self.current_controller.rom.get_bytes(addr1, addr1+4)
+        reader1 = Reader(data1, self.current_controller.symbols)
+        offset1 = reader1.read_u32()
+        addr2 = symbol.address + offset1 + frame_index * 4
+        data2 = self.current_controller.rom.get_bytes(addr2, addr2+4)
+        reader2 = Reader(data2, self.current_controller.symbols)
+        offset2 = reader2.read_u32()
+        addr3 = symbol.address + offset2
+        data3 = self.current_controller.rom.get_bytes(addr3, addr3 + 10000) # TODO maybe calculate correct length by number of objects?
+        reader = Reader(data3, self.current_controller.symbols)
+        num_objects = reader.read_u8()
+        if num_objects > 200:
+            raise Exception(f'num_objects {num_objects} too big')
+
+        for i in range(num_objects):
+            x_offset = reader.read_s8()
+            y_offset = reader.read_s8()
+            bitfield = reader.read_u8()
+            bitfield2 = reader.read_u16()
+            # bitfield
+            override_entity_palette_index = (bitfield & 0x01) != 0
+            # Bit 02 seems unused.
+            h_flip = (bitfield & 0x04) != 0
+            v_flip = (bitfield & 0x08) != 0
+            size = (bitfield & 0x30) >> 4
+            shape = (bitfield & 0xC0) >> 6
+
+            # bitfield2
+            first_gfx_tile_offset = bitfield2 & 0x03FF
+            priority = (bitfield2 & 0x0C00) >> 10
+            palette_index = (bitfield2 & 0xF000) >> 12
+
+            (obj_width, obj_height) = OBJ_SIZES[shape][size]
+            
+            num_gfx_tiles_needed = (obj_width//8) * (obj_height//8)
+
+            if gfx_type == 1:
+                # Swap gfx
+                print(frame_index)
+                if frame_index >= len(self.current_frames):
+                    print(f'ERROR: frame_index too big {frame_index} , {len(self.current_frames)}')
+                    return
+                (first_gfx_tile_index, num_gfx_tiles) = self.current_frames[frame_index]
+                first_gfx_tile_offset += first_gfx_tile_index
+                #self.continue_extract = False
+
+
+            print(f'{path}_{i} {gfx_base} + {hex(first_gfx_tile_offset*0x20)} {num_gfx_tiles_needed*0x20}')
+            self.add_section(gfx_base, first_gfx_tile_offset*0x20, num_gfx_tiles_needed*0x20, f'{path}_{i}')
+            # print(x_offset, y_offset, bitfield, bitfield2)
+            # print(override_entity_palette_index, h_flip, v_flip, size, shape)
+            # print(first_gfx_tile_offset, priority, palette_index)
+
+    def iterate_all_sprite_data_b(self, path: str, symbol: Symbol) -> None:
+        reader = self.get_reader_for_symbol(symbol)
+
+        replacements = []
+
+        lines = []
+        i = 0
+        print(symbol)
+        self.continue_extract = True
+        while reader.cursor < symbol.length:
+            bitfield = reader.read_u8()
+            type = bitfield & 0x03
+            unk = reader.read_u8()
+            bitfield2 = reader.read_u16()
+            if type == 2:
+                sprite_data_ptr = self.read_symbol(reader)
+                self.iterate_all_sprite_data_b(f'{path}_{i}_form', sprite_data_ptr)
+                i += 1
+                continue
+            else:
+                # sprite_data_ptr = reader.read_u32()
+                bitfield3 = reader.read_u16()
+                bitfield4 = reader.read_u16()
+
+                sprite_index = bitfield4 & 0x3ff
+                gfx_type = (bitfield2 & 0x0C00) >> 10
+
+                print(sprite_index)
+                self.used_sprites.add(sprite_index)
+
+                if sprite_index < 322: # TODO the few remaining at gSpriteAnimations_322
+                    # Now go through their animations
+                    reader2 = self.get_reader_for_symbol(self.current_controller.symbols.find_symbol_by_name('gSpritePtrs'))
+                    reader2.cursor = sprite_index * 16
+                    animation_ptr = self.read_symbol(reader2)
+                    frame_gfx_data_list_ptr = self.read_symbol(reader2)
+                    gfx_pointer = self.read_symbol(reader2)
+                    print(animation_ptr, frame_gfx_data_list_ptr, gfx_pointer)
+
+                    print(gfx_type)
+                    gfx_base = ''
+                    if gfx_type == 0:
+                        # Fixed
+                        fixed_gfx_index = bitfield2
+                        gfx_base = f'gFixedGfx_{fixed_gfx_index}'
+                    elif gfx_type == 1:
+                        # Swap
+                        swap_gfx_slots_needed = (bitfield2 & 0x0FF0) >> 4
+                        if gfx_pointer is None:
+                            print('ERROR: missing gfx_pointer for swap gfx')
+                            i+=1
+                            continue
+                        assert(gfx_pointer is not None)
+                        gfx_base = gfx_pointer.name
+                    elif gfx_type == 2:
+                        # Common
+                        common_gfx_tile_index = bitfield2 & 0x03FF
+                        gfx_base = f'gGfx_23 + {common_gfx_tile_index*0x20}'
+                    else:
+                        assert(False)
+
+                    self.current_frames = None
+                    if frame_gfx_data_list_ptr:
+                        self.iterate_all_frames(f'{path}_{i}_frame', frame_gfx_data_list_ptr)
+                        print(f'got frame data {len(self.current_frames)}')
+                    if animation_ptr:
+                        self.iterate_all_animations(f'{path}_{i}_animation', sprite_index, animation_ptr, gfx_type, gfx_base)
+
+            if not self.continue_extract:
+                break
+
+            i += 1
+
+    def iterate_all_sprite_data_c(self, path: str, symbol: Symbol) -> None:
+        reader = self.get_reader_for_symbol(symbol)
+
+        i = 0
+        while reader.cursor < symbol.length:
+            bitfield = reader.read_u8()
+            unk = reader.read_u32()
+            sprite_index = reader.read_u8()
+            gfx_load_bitfield = reader.read_u16()
+            if bitfield == 0xff:
+                # MULTIPLE FORMS TODO
+                continue
+            self.used_sprites.add(sprite_index)
+            i += 1
+
+    def add_section(self, base: str, start: int, size: int, path: str) -> None:
+        if not base in self.sections:
+            self.sections[base] = []
+        self.sections[base].append((start, size, path))
+
     def slot_sprite_test(self) -> None:
-        print('Test')
+        # Iterate over all entities to see how to split up sprite data
+
+        self.sections = {}
+        self.used_sprites = set()
+
+        symbol = self.current_controller.symbols.find_symbol_by_name('gEnemyDefinitions')
+        self.iterate_all_sprite_data_a('enemy', symbol)
+
+        symbol = self.current_controller.symbols.find_symbol_by_name('gProjectileDefinitions')
+        self.iterate_all_sprite_data_a('projectile', symbol)
+        symbol = self.current_controller.symbols.find_symbol_by_name('gObjectDefinitions')
+        self.iterate_all_sprite_data_b('object', symbol)
+        symbol = self.current_controller.symbols.find_symbol_by_name('gNPCDefinitions')
+        self.iterate_all_sprite_data_b('npc', symbol)
+        # symbol = self.current_controller.symbols.find_symbol_by_name('gPlayerItemDefinitions')
+        # self.iterate_all_sprite_data_c('playerItem', symbol)
+
+        for key in self.sections:
+            self.sections[key].sort(key = lambda x:x[0])
+
+        json.dump(self.sections, open('/tmp/sections.json', 'w'), indent=2)
+
+
+        with open('/tmp/used_sprites.txt', 'w') as file:
+            for sprite in self.used_sprites:
+                file.write(f'{sprite}\n')
+        print('End of sprite test')
+
+
+####################################### END OF SPRITES
+
 
     def slot_parse_structs(self) -> None:
         generate_struct_definitions()
         # Reload structs.json
         load_json_files()
         print('ok')
+
+    def slot_tmp2(self) -> None:
+        lines = QApplication.clipboard().text().split('\n')
+        out_lines = []
+        for line in lines:
+            if '{' in line and '}' in line:
+                arr = line.split(',')
+                print(len(arr))
+                '''
+                    u8 type;
+                    u8 unk;
+                    u16 bitfield;
+                    union {
+                        struct {
+                            u16 paletteIndex;
+                            u16 spriteIndex;
+                '''
+                '''
+                typedef struct ObjectDefinition {
+                    struct {
+                        u8 type : 2;
+                        u8 flags : 2;
+                        u8 unk : 4;
+                        u8 hitbox;
+                        u16 gfx : 10;
+                        u16 gfx_type : 2;
+                        u16 unk2 : 4;
+                    } PACKED bitfield;
+                    union {
+                        struct {
+                            u16 paletteIndex : 10;
+                            u16 unk : 2;
+                            u16 shadow : 2;
+                            u16 unk2 : 2;
+                            u16 spriteIndex : 10;
+                            u16 spritePriority : 3;
+                            u16 draw : 3;
+                        } PACKED sprite;
+                        const struct ObjectDefinition* definition;
+                    } data;
+                } ObjectDefinition;
+                '''
+
+                if (len(arr) == 6):
+                    print(arr)
+                    print(arr[3])
+
+                    _type = int(arr[0].replace('{', ''))
+                    _unk = int(arr[1])
+                    _bitfield = int(arr[2])
+                    _paletteIndex = int(arr[3].replace('{', ''))
+                    _spriteIndex = arr[4].replace('}', '').strip()
+
+
+                    type = _type & 3
+                    flags = (_type >> 2) & 3
+                    unk = (_type >> 4) & 0xf
+                    hitbox = _unk
+                    gfx = _bitfield & 0x3ff
+                    gfx_type = (_bitfield >> 10) & 3
+                    unk2 = (_bitfield >> 12) & 0xf
+                    paletteIndex = _paletteIndex & 0x3ff
+                    unk3 = (_paletteIndex >> 10) & 3
+                    shadow = (_paletteIndex >> 12) & 3
+                    unk4 = (_paletteIndex >> 14) & 3
+                    if _spriteIndex.isnumeric():
+                        _spriteIndex = int(_spriteIndex)
+                        spriteIndex = _spriteIndex & 0x3ff
+                        spritePriority = (_spriteIndex >> 10) & 7
+                        draw = (_spriteIndex >> 13) & 7
+                    else:
+                        spriteIndex = _spriteIndex
+                        spritePriority = 0
+                        draw = 0
+
+                    arr[0] = f'{{ {{ {type}, {flags}, {unk}'
+                    arr[1] = f' {hitbox}'
+                    arr[2] = f' {gfx}, {gfx_type}, {unk2} }}'
+                    arr[3] = f' {{ {paletteIndex}, {unk3}, {shadow}, {unk4}'
+                    arr[4] = f' {spriteIndex}, {spritePriority}, {draw} }} }}'
+
+
+                    modified = ','.join(arr)
+                    out_lines.append(modified)
+                    continue
+            out_lines.append(line)
+        out = '\n'.join(out_lines)
+        print(out)
+        QApplication.clipboard().setText(out)
+
+
+# # u16 unk;
+# # u32 unk2;
+
+# # struct {
+# #     u8 spritePriority : 3;
+# #     u8 unknown : 1;
+# #     u8 draw : 2;
+# #     u8 shadow : 2;
+# # } PACKED spriteFlags;
+# # u8 health;
+# # s16 speed;
+# # u8 damageType;
+# # u8 flags2;
+
+# unk = int(arr[4])
+# if '0x' in arr[5]:
+#     unk2 = int(arr[5][:-2], 16)
+# else:
+#     unk2 = int(arr[5][:-2])
+# print(unk2)
+
+# spritePriority = unk & 7
+# unknown = (unk >> 3) & 1
+# draw = (unk >> 4) & 3
+# shadow = (unk >> 6) & 3
+# health = (unk >> 8) & 0xff
+# arr[4] = f' {{ {spritePriority}, {unknown}, {draw}, {shadow} }}, {health}'
+
+# speed = unk2 & 0xffff
+# damageType = (unk2 >> 16) & 0xff
+# flags2 = (unk2 >> 24) & 0xff
+# arr[5] = f' {speed}, {damageType}, {flags2}' + ' }'
+# modified = ','.join(arr)
+# out_lines.append(modified)
+# continue#
+
+
+#     print(len(arr))
+# if (len(arr) == 13):
+
+
+#     print(arr[3])
+
+#     if arr[3].strip().isnumeric():
+#         val = int(arr[3])
+#         print(val)
+#         spriteIndex = val & 0xfff
+#         field0x3c = val >> 12
+#         print(spriteIndex, field0x3c)
+#         arr[3] = f' {spriteIndex}, {field0x3c}'
+#     else:
+#         arr[3] = arr[3] + ', 0'
+
+
+#     modified = ','.join(arr)
+#     out_lines.append(modified)
+#     continue

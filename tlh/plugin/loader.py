@@ -35,6 +35,8 @@ def load_plugins(main_window):
 
     plugins = []
     possibleplugins = os.listdir(plugin_folder)
+     # Sort plugins by folder name. This determines the order the plugins are loaded in, the order they are displayed in the settings menu and the order of their menu entries.
+    possibleplugins.sort()
     for i in possibleplugins:
         if i == '__pycache__':
             continue

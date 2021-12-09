@@ -1,7 +1,7 @@
 function main() {
     createIndicator();
     loadSocketIo();
-    if (window.hub == undefined) {
+    if (window.hub == undefined || window.hub.editors == undefined) {
         findMonacoEditorsLegacy();
     } else {
         // Find monaco editors via the exposed hub object.
@@ -83,9 +83,9 @@ function startSocketIo() {
         console.log(data);
         // TODO return error somehow?
         if (data['status'] === 'ok') {
-            cEditor.editor.executeEdits("CExploreBridge", [
+            cEditor.editor.executeEdits('CExploreBridge', [
                 { range: cEditor.editor.getSelection(), text: data['text'] }
-        ]);
+            ]);
         } else if (data['status'] === 'error') {
             error(data['text']);
         }
@@ -181,7 +181,7 @@ function findMonacoEditors() {
 }
 
 function registerShortcut() {
-    document.onkeyup = function(e) {
+    document.onkeyup = function (e) {
         if (e.ctrlKey && e.key == 'b') {
             let selectedText = cEditorModel.getValueInRange(cEditor.editor.getSelection());
             if (selectedText.length == 0) {

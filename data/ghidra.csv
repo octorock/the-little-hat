@@ -7,12 +7,13 @@ uint,u32,False
 int([ _\)]),s32\1,False
 undefined2,u16,False
 undefined4,u32,False
+undefined,u8,False
 "\([u,s]32\)\*\([u,s]16 ?\*\)\(\([u,s]32\)&(\S*) \+ 2\)",\1.HALF.HI,False
 "\*\([u,s]16 ?\*\)\(\([u,s]32\)&(\S*) \+ 2\)",\1.HALF.HI,False
 "\*\([u,s]16\*\)\&this->(\S*)",this->\1.HALF.LO,False
 "(?:\(s32\))?\* ?\([s,u]16\* ?\)\(\(s32\) ?& ?this->(\S*) \+ 2\)",this->\1.HALF.HI,False
 \._2_2_,.HALF.HI,False
-(?:\(u32\) )?\* ?\(u8\*\)&this->(\w*),this->\1.HALF.LO,False
+### might also be .BYTES.byte0 (?:\(u32\) )?\* ?\(u8\*\)&this->([\w\-\>]*),this->\1.HALF.LO,False
 (?:\([us](?:32|16)\))? ?\* ?\(u8\*\)\(\(s32\)&(\S*) \+ 1\),\1.HALF.HI,False
 \(s32\)\(u32\)\(u16\)([\w\->]*),\1.HWORD,False
 \(s32\)\(u32\) \* \(u16\*\)&([\w\->]*),\1.HALF.LO,False
@@ -21,16 +22,16 @@ undefined4,u32,False
 (- .* >> 4\)? & 0x3fU? \|.* >> 4 & 0x3fU?.*<< 6[^\n]*),\1 // TODO look at TILE macro,True
 gPlayerState\.flags ,gPlayerState.flags.all ,False
 (\w*)->frames ,\1->frames.all ,False
-(\w*)->spriteSettings = \1->spriteSettings & 0xfc \| 2;,\1->spriteSettings.b.draw = 2;,False
-(\w*)->spriteSettings = \1->spriteSettings & 0xfc \| 1;,\1->spriteSettings.b.draw = 1;,False
-(\w*)->spriteSettings = \1->spriteSettings \| 3;,\1->spriteSettings.b.draw = 3;,False
-(\w*)->spriteSettings = \1->spriteSettings & 0xfc;,\1->spriteSettings.b.draw = 0;,False
-(\S*)->spriteSettings = \1->spriteSettings & 0xfc \| 1;,\1->spriteSettings.b.draw = 1;,False
-(\w*)->spriteSettings = \1->spriteSettings \| 0x40;,\1->spriteSettings.b.flipX = 1;,False
-(\w*)->spriteSettings = \1->spriteSettings & 0xfc \| this->spriteSettings & 3 \^ 1;,\1->spriteSettings.b.draw ^= 1;,False
-(\w*)->spriteSettings = \1->spriteSettings & 0xcf \| 0x10;,\1->spriteSettings.b.shadow = 1;,False
-(\w*)->spriteSettings = \1->spriteSettings & 0xbf;,\1->spriteSettings.b.flipX = 0;,False
-\((\w*)->spriteSettings \& 3\) ==,\1->spriteSettings.b.draw ==,False
+(\w*)->spriteSettings = \1->spriteSettings & 0xfc \| 2;,\1->spriteSettings.draw = 2;,False
+(\w*)->spriteSettings = \1->spriteSettings & 0xfc \| 1;,\1->spriteSettings.draw = 1;,False
+(\w*)->spriteSettings = \1->spriteSettings \| 3;,\1->spriteSettings.draw = 3;,False
+(\w*)->spriteSettings = \1->spriteSettings & 0xfc;,\1->spriteSettings.draw = 0;,False
+(\S*)->spriteSettings = \1->spriteSettings & 0xfc \| 1;,\1->spriteSettings.draw = 1;,False
+(\w*)->spriteSettings = \1->spriteSettings \| 0x40;,\1->spriteSettings.flipX = 1;,False
+(\w*)->spriteSettings = \1->spriteSettings & 0xfc \| this->spriteSettings & 3 \^ 1;,\1->spriteSettings.draw ^= 1;,False
+(\w*)->spriteSettings = \1->spriteSettings & 0xcf \| 0x10;,\1->spriteSettings.shadow = 1;,False
+(\w*)->spriteSettings = \1->spriteSettings & 0xbf;,\1->spriteSettings.flipX = 0;,False
+\((\w*)->spriteSettings \& 3\) ==,\1->spriteSettings.draw ==,False
 (\w*)->spriteOrientation = .*\1->spriteOrientation \| 0xc0\);,\1->spriteOrientation.flipY = 3;,False
 (\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f \| 0x80\);,\1->spriteOrientation.flipY = 2;,False
 (\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f \| 0x40\);,\1->spriteOrientation.flipY = 1;,False
@@ -81,4 +82,10 @@ gPlayerState\.flags ,gPlayerState.flags.all ,False
 '&',0x26,False
 '\(',0x28,False
 '\\'',0x27,False
+'a',0x61,False
+'_',0x5f,False
+'x',0x78,False
+'y',0x79,False
+'-',0x2d,False
+'=',0x3d,False
 \(this->manager\),this->manager,False
