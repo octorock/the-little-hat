@@ -124,7 +124,7 @@ class BridgeDock(QDockWidget):
     def slot_error(self, error: str) -> None:
         self.slot_server_running(False)
         self.server_thread.terminate()
-        self.api.show_error('CExplore Bridge', error)
+        self.api.show_error('Entity Explorer Bridge', error)
 
     def slot_edit_load_folder(self):
         dir = QFileDialog.getExistingDirectory(

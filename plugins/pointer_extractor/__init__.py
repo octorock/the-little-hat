@@ -46,7 +46,7 @@ class PointerExtractorPlugin:
         incbins = []
 
         assembly_extensions = ['.inc', '.s']
-        for root, dir, files in os.walk(settings.get_repo_location()):
+        for root, dirs, files in os.walk(settings.get_repo_location()):
             for file in files:
                 filename, file_extension = os.path.splitext(file)
                 if file_extension in assembly_extensions:
