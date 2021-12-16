@@ -1,8 +1,11 @@
 import traceback
+
+from PySide6.QtGui import QKeySequence
 from plugins.cexplore_bridge.ghidra import improve_decompilation
 from plugins.cexplore_bridge.code import find_globals, get_code, split_code, store_code
 from PySide6.QtCore import QThread, Qt, Signal
 from PySide6.QtWidgets import QApplication, QDialog, QDialogButtonBox, QDockWidget
+from plugins.cexplore_bridge.link import generate_cexplore_url
 from tlh.const import RomVariant
 from tlh.data.database import get_symbol_database
 from tlh.data.rom import get_rom
@@ -12,10 +15,14 @@ from tlh.ui.ui_plugin_cexplore_bridge_dock import Ui_BridgeDock
 from plugins.cexplore_bridge.server import ServerWorker
 import requests
 from tlh.ui.ui_plugin_cexplore_bridge_received_code_dialog import Ui_ReceivedCodeDialog
-
+import os
+import re
+from tlh import settings
 
 # Set this to true if you know what you are doing and want to skip all confirm dialogs and confirmation messages
 NO_CONFIRMS = False
+# Menu entries to created NONMATCH lists
+CREATE_LISTS = False
 
 class CExploreBridgePlugin:
     name = 'CExplore Bridge'
@@ -27,10 +34,17 @@ class CExploreBridgePlugin:
 
     def load(self) -> None:
         self.action_show_bridge = self.api.register_menu_entry(
-            'CExplore Bridge', self.slot_show_bridge)
+            'CExplorex Bridge', self.slot_show_bridge)
+        if CREATE_LISTS:
+            self.action_find_nonmatching = self.api.register_menu_entry('List NONMATCH', self.slot_find_nonmatching)
+            self.action_find_nonmatching.setShortcut(QKeySequence("Ctrl+F3"))
+            self.action_find_asmfunc = self.api.register_menu_entry('List ASM_FUNC', self.slot_find_asmfunc)
 
     def unload(self) -> None:
         self.api.remove_menu_entry(self.action_show_bridge)
+        if CREATE_LISTS:
+            self.api.remove_menu_entry(self.action_find_nonmatching)
+            self.api.remove_menu_entry(self.action_find_asmfunc)
         if self.dock is not None:
             self.dock.close()
 
@@ -39,6 +53,72 @@ class CExploreBridgePlugin:
 
         self.api.main_window.addDockWidget(Qt.LeftDockWidgetArea, self.dock)
 
+
+    def slot_find_nonmatching(self) -> None:
+        symbols = get_symbol_database().get_symbols(RomVariant.CUSTOM) # Symbols for our custom USA rom
+        nonmatch = self.collect_non_matching_funcs()
+        with open('tmp/nonmatching.html', 'w') as out:
+            out.write('<link rel="stylesheet" href="theme.css" /><script src="sortable.min.js"></script><table class="sortable-theme-slick" data-sortable><thead><tr><th>File</th><th>Function</th><th>Size</th><th data-sortable="false"></th></thead><tbody>\n')
+            for (file, func) in nonmatch:
+                symbol = symbols.find_symbol_by_name(func)
+                size = 0
+                if symbol is None:
+                    print(f'No symbol found for {func}, maybe static?')
+                    return
+                else:
+                    size = symbol.length
+
+                (err, asm, src, signature) = get_code(func, True)
+                if err:
+                    self.api.show_error(self.name, asm)
+                    return
+                url = generate_cexplore_url(src, asm)
+                out.write(f'<tr><td>{file}</td><td>{func}</td><td>{size}</td><td><a href="{url}">CExplore</a></td></tr>\n')
+            out.write('</tbody></table>\n')
+        self.api.show_message(self.name, 'Wrote to tmp/nonmatching.html')
+
+    def slot_find_asmfunc(self) -> None:
+        symbols = get_symbol_database().get_symbols(RomVariant.CUSTOM) # Symbols for our custom USA rom
+        nonmatch = self.collect_asm_funcs()
+        with open('tmp/asm_funcs.html', 'w') as out:
+            out.write('<link rel="stylesheet" href="theme.css" /><script src="sortable.min.js"></script><table class="sortable-theme-slick" data-sortable><thead><tr><th>File</th><th>Function</th><th>Size</th></thead><tbody>')
+            for (file, func) in nonmatch:
+                symbol = symbols.find_symbol_by_name(func)
+                size = 0
+                if symbol is None:
+                    print(f'No symbol found for {func}, maybe static?')
+                    size = '?'
+                else:
+                    size = symbol.length
+                out.write(f'<tr><td>{file}</td><td>{func}</td><td>{size}</td></tr>')
+            out.write('</tbody></table>')
+        self.api.show_message(self.name, 'Wrote to tmp/asm_funcs.html')
+
+    def collect_non_matching_funcs(self):
+        result = []
+        src_folder = os.path.join(settings.get_repo_location(), 'src')
+        for root, dirs, files in os.walk(src_folder):
+            for file in files:
+                if file.endswith('.c'):
+                    with open(os.path.join(root, file), 'r') as f:
+                        data = f.read()
+                        # Find all NONMATCH macros
+                        for match in re.findall(r'NONMATCH\(".*",(?: static)?\W*\w*\W*(\w*).*\)', data):
+                            result.append((os.path.relpath(os.path.join(root,file), src_folder), match))
+        return result
+
+    def collect_asm_funcs(self):
+        result = []
+        src_folder = os.path.join(settings.get_repo_location(), 'src')
+        for root, dirs, files in os.walk(src_folder):
+            for file in files:
+                if file.endswith('.c'):
+                    with open(os.path.join(root, file), 'r') as f:
+                        data = f.read()
+                        # Find all ASM_FUNC macros
+                        for match in re.findall(r'ASM_FUNC\(".*",(?: static)?\W*\w*\W*(\w*).*\)', data):
+                            result.append((os.path.relpath(os.path.join(root,file), src_folder), match))
+        return result
 
 class BridgeDock(QDockWidget):
 

@@ -32,6 +32,9 @@ class MGBABridgePlugin:
             self.dock.close()
 
     def slot_show_bridge(self) -> None:
+        if get_symbol_database().get_symbols(RomVariant.CUSTOM) is None:
+            self.api.show_error(self.name, 'Symbols for CUSTOM variant need to be loaded for mGBA bridge to work.')
+            return
         self.dock = BridgeDock(self.api.main_window, self.api)
         self.api.main_window.addDockWidget(Qt.LeftDockWidgetArea, self.dock)
 
