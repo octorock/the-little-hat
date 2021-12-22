@@ -15,7 +15,7 @@
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QGridLayout" name="gridLayout_2">
-    <item row="6" column="0">
+    <item row="7" column="0">
      <widget class="QScrollArea" name="scrollArea">
       <property name="widgetResizable">
        <bool>true</bool>
@@ -26,7 +26,7 @@
          <x>0</x>
          <y>0</y>
          <width>466</width>
-         <height>287</height>
+         <height>254</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -47,13 +47,6 @@
       </widget>
      </widget>
     </item>
-    <item row="4" column="0" colspan="2">
-     <widget class="QPushButton" name="pushButtonStartServer">
-      <property name="text">
-       <string>Start Server</string>
-      </property>
-     </widget>
-    </item>
     <item row="3" column="0">
      <widget class="QLabel" name="labelConnectionStatus">
       <property name="text">
@@ -65,6 +58,23 @@
      <widget class="QPushButton" name="pushButtonStopServer">
       <property name="text">
        <string>Stop Server</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0" colspan="2">
+     <widget class="QPushButton" name="pushButtonStartServer">
+      <property name="text">
+       <string>Start Server</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="0">
+     <widget class="QLabel" name="labelScriptName">
+      <property name="text">
+       <string/>
+      </property>
+      <property name="textInteractionFlags">
+       <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
       </property>
      </widget>
     </item>

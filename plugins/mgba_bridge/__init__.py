@@ -13,6 +13,7 @@ import os
 from tlh.ui.ui_plugin_mgba_bridge_dock import Ui_BridgeDock
 import requests
 
+
 class MGBABridgePlugin:
     name = 'mGBA Bridge'
     description = 'Connect to mGBA'
@@ -33,7 +34,6 @@ class MGBABridgePlugin:
     def slot_show_bridge(self) -> None:
         self.dock = BridgeDock(self.api.main_window, self.api)
         self.api.main_window.addDockWidget(Qt.LeftDockWidgetArea, self.dock)
-
 
 
 class BridgeDock(QDockWidget):
@@ -81,7 +81,6 @@ class BridgeDock(QDockWidget):
         self.server_thread.start()
         self.slot_server_running(True)
 
-
     def slot_stop_server(self) -> None:
         # Shutdown needs to be triggered by the server thread, so send a request
         requests.get('http://localhost:10244/shutdown')
@@ -117,7 +116,8 @@ class BridgeDock(QDockWidget):
         #instruction_pointer = 0x8009b70
         #instruction_pointer = 0x8009d42
         instruction_pointer = addr
-        symbols = get_symbol_database().get_symbols(RomVariant.CUSTOM) # Symbols for our custom USA rom
+        symbols = get_symbol_database().get_symbols(
+            RomVariant.CUSTOM)  # Symbols for our custom USA rom
         symbol = symbols.get_symbol_at(instruction_pointer-ROM_OFFSET)
         script_name = symbol.name
         script_offset = instruction_pointer-ROM_OFFSET - symbol.address
@@ -137,21 +137,25 @@ class BridgeDock(QDockWidget):
                         script_file = path
 
         if script_file is None:
-            self.ui.labelCode.setText(f'ERROR: Count not find script file containing {script_name}')
+            self.ui.labelCode.setText(
+                f'ERROR: Count not find script file containing {script_name}')
             return
+
+        self.ui.labelScriptName.setText(script_file)
 
         script_lines = []
         with open(script_file, 'r') as file:
             script_lines = file.read().split('\n')
 
-        #print(script_lines)
+        # print(script_lines)
         # TODO for testing ifdefs: script_0800B200
-        #print('test')
-        #print(symbol)
-        #print(script_offset)
+        # print('test')
+        # print(symbol)
+        # print(script_offset)
 
         # TODO only disassemble the number of bytes, the actual instructions are not interesting as they are read from the source file.
-        (_, instructions) = disassemble_script(rom.get_bytes(symbol.address, symbol.address+symbol.length), symbol.address)
+        (_, instructions) = disassemble_script(rom.get_bytes(
+            symbol.address, symbol.address+symbol.length), symbol.address)
 
         output = ''
         current_instruction = 0
@@ -177,6 +181,15 @@ class BridgeDock(QDockWidget):
                 # TODO check variant
                 is_usa = stripped.split(' ')[1] == 'USA'
                 ifdef_stack.append(is_usa)
+                output += f'{line}\n'
+                continue
+            if '.ifndef' in stripped:
+                if not ifdef_stack[-1]:
+                    ifdef_stack.append(False)
+                    output += f'{line}\n'
+                    continue
+                is_usa = stripped.split(' ')[1] == 'USA'
+                ifdef_stack.append(not is_usa)
                 output += f'{line}\n'
                 continue
             if '.else' in stripped:

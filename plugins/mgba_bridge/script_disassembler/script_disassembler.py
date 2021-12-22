@@ -35,31 +35,33 @@ class Instruction:
     addr: int
     text: str
 
+
 def disassemble_command(ctx: Context, add_all_annotations=False) -> Tuple[int, Instruction]:
     global used_labels
-    if (add_all_annotations or ctx.script_addr + ctx.ptr in used_labels) and ctx.ptr != 0:
-        # print offsets to debug when manually inserting labels
-        print(f'{get_script_label(ctx.script_addr + ctx.ptr)}:')
+    # if (add_all_annotations or ctx.script_addr + ctx.ptr in used_labels) and ctx.ptr != 0:
+    # print offsets to debug when manually inserting labels
+    #print(f'{get_script_label(ctx.script_addr + ctx.ptr)}:')
     cmd = struct.unpack('H', ctx.data[ctx.ptr:ctx.ptr + 2])[0]
     if cmd == 0:
         # this does not need to be the end of the script
-        print('\t.2byte 0x0000')
+        #print('\t.2byte 0x0000')
         ctx.ptr += 2
         return (1, Instruction(ctx.ptr-2, '0000'))
 
     if cmd == 0xffff:
         ctx.ptr += 2
-        print('SCRIPT_END')
+        # print('SCRIPT_END')
         if ctx.ptr >= len(ctx.data) - 1:
             # This is already the end
             return (2, Instruction(ctx.ptr-2, 'SCRIPT_END'))
         cmd = struct.unpack('H', ctx.data[ctx.ptr:ctx.ptr + 2])[0]
         if cmd == 0x0000:
             # This is actually the end of the script
-            print('\t.2byte 0x0000')
+            #print('\t.2byte 0x0000')
             ctx.ptr += 2
             return (2, Instruction(ctx.ptr-4, 'SCRIPT_END'))
-        return (3, Instruction(ctx.ptr-2, 'SCRIPT_END'))  # There is a SCRIPT_END without 0x0000 afterwards, but still split into a new file, please
+        # There is a SCRIPT_END without 0x0000 afterwards, but still split into a new file, please
+        return (3, Instruction(ctx.ptr-2, 'SCRIPT_END'))
 
     commandStartAddress = ctx.ptr
 
@@ -68,7 +70,8 @@ def disassemble_command(ctx: Context, add_all_annotations=False) -> Tuple[int, I
         raise Exception(f'Zero commandSize not allowed')
     commandId = cmd & 0x3FF
     if commandId >= len(commands):
-        raise Exception(f'Invalid commandId {commandId} / {len(commands)} {cmd}')
+        raise Exception(
+            f'Invalid commandId {commandId} / {len(commands)} {cmd}')
     command = commands[commandId]
     param_length = commandSize - 1
     if commandSize > 1:
@@ -77,7 +80,8 @@ def disassemble_command(ctx: Context, add_all_annotations=False) -> Tuple[int, I
 
     # Handle parameters
     if not 'params' in command:
-        raise Exception(f'Parameters not defined for {command["fun"]}. Should be of length {str(param_length)}')
+        raise Exception(
+            f'Parameters not defined for {command["fun"]}. Should be of length {str(param_length)}')
 
     params = None
     suffix = ''
@@ -98,32 +102,34 @@ def disassemble_command(ctx: Context, add_all_annotations=False) -> Tuple[int, I
                 f'No suitable parameter configuration with length {commandSize-1} found for {command["fun"]}')
     else:
         if not command['params'] in parameters:
-            raise Exception(f'Parameter configuration {command["params"]} not defined')
+            raise Exception(
+                f'Parameter configuration {command["params"]} not defined')
         params = parameters[command['params']]
 
     command_name = f'{command["fun"]}{suffix}'
 
     if params['length'] == -1:  # variable parameter length
-        print(f'\t.2byte {u16_to_hex(cmd)} @ {build_script_command(command_name)} with {commandSize-1} parameters')
-        if commandSize > 1:
-            print('\n'.join(['\t.2byte ' + x for x in barray_to_u16_hex(ctx.data[ctx.ptr + 2:ctx.ptr + commandSize * 2])]))
-            print(f'@ End of parameters')
+        #        print(f'\t.2byte {u16_to_hex(cmd)} @ {build_script_command(command_name)} with {commandSize-1} parameters')
+        #        if commandSize > 1:
+        #            print('\n'.join(['\t.2byte ' + x for x in barray_to_u16_hex(ctx.data[ctx.ptr + 2:ctx.ptr + commandSize * 2])]))
+        #            print(f'@ End of parameters')
         ctx.ptr += commandSize * 2
         return (1, Instruction(commandStartAddress, 'TODO'))
     elif params['length'] == -2:  # point and var
-        print(f'\t.2byte {u16_to_hex(cmd)} @ {build_script_command(command_name)} with {commandSize-3} parameters')
+        #        print(f'\t.2byte {u16_to_hex(cmd)} @ {build_script_command(command_name)} with {commandSize-3} parameters')
 
-        print('\t.4byte ' + get_pointer(ctx.data[ctx.ptr + 2:ctx.ptr + 6]))
-        if commandSize > 3:
-            print('\n'.join(['\t.2byte ' + x for x in barray_to_u16_hex(ctx.data[ctx.ptr + 6:ctx.ptr + commandSize * 2])]))
-            print(f'@ End of parameters')
+        #        print('\t.4byte ' + get_pointer(ctx.data[ctx.ptr + 2:ctx.ptr + 6]))
+        #        if commandSize > 3:
+        #            print('\n'.join(['\t.2byte ' + x for x in barray_to_u16_hex(ctx.data[ctx.ptr + 6:ctx.ptr + commandSize * 2])]))
+        #            print(f'@ End of parameters')
         ctx.ptr += commandSize * 2
         return (1, Instruction(commandStartAddress, 'TODO'))
 
     if commandSize-1 != params['length']:
-        raise Exception(f'Call {command_name} with {commandSize-1} length, while length of {params["length"]} defined')
+        raise Exception(
+            f'Call {command_name} with {commandSize-1} length, while length of {params["length"]} defined')
 
-    print(f'\t{build_script_command(command_name)} {params["read"](ctx)}')
+ #   print(f'\t{build_script_command(command_name)} {params["read"](ctx)}')
 
     # Execute script
     ctx.ptr += commandSize * 2
@@ -141,7 +147,7 @@ def disassemble_script(input_bytes, script_addr, add_all_annotations=False) -> T
             break
         #print('remaining', len(ctx.data)-ctx.ptr)
         (res, instruction) = disassemble_command(ctx, add_all_annotations)
-        #print(instruction.addr)
+        # print(instruction.addr)
         instructions.append(instruction)
         if res == 0:
             break
@@ -156,9 +162,12 @@ def disassemble_script(input_bytes, script_addr, add_all_annotations=False) -> T
     if ctx.ptr < len(ctx.data):
         if (len(ctx.data) - ctx.ptr) % 2 != 0:
             print_rest_bytes(ctx)
-            raise Exception(f'There is extra data at the end {ctx.ptr} / {len(ctx.data)}')
-        print('\n'.join(['.2byte ' + x for x in barray_to_u16_hex(ctx.data[ctx.ptr:])]))
-        raise Exception(f'There is extra data at the end {ctx.ptr} / {len(ctx.data)}')
+            raise Exception(
+                f'There is extra data at the end {ctx.ptr} / {len(ctx.data)}')
+        print(
+            '\n'.join(['.2byte ' + x for x in barray_to_u16_hex(ctx.data[ctx.ptr:])]))
+        raise Exception(
+            f'There is extra data at the end {ctx.ptr} / {len(ctx.data)}')
 
     if not foundEnd:
         # Sadly, there are script files without and end?
@@ -198,16 +207,19 @@ def generate_macros():
             # emit macros for all variants
             for i, variant in enumerate(command['params']):
                 if not variant in parameters:
-                    raise Exception(f'Parameter configuration {variant} not defined')
+                    raise Exception(
+                        f'Parameter configuration {variant} not defined')
                 params = parameters[variant]
                 id = ((params['length'] + 1) << 0xA) + num
                 suffix = ''
                 if i != 0:
                     suffix = f'_{params["length"]}'
-                emit_macro(f'{build_script_command(command["fun"])}{suffix}', id, params)
+                emit_macro(
+                    f'{build_script_command(command["fun"])}{suffix}', id, params)
         else:
             if not command['params'] in parameters:
-                raise Exception(f'Parameter configuration {command["params"]} not defined')
+                raise Exception(
+                    f'Parameter configuration {command["params"]} not defined')
             params = parameters[command['params']]
             id = ((params['length'] + 1) << 0xA) + num
 
