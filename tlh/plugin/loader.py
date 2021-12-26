@@ -11,6 +11,7 @@ import sys
 plugin_folder = './plugins'
 main_module = '__init__'
 
+
 @dataclass
 class Plugin:
     name: str
@@ -25,8 +26,10 @@ class Plugin:
     def get_settings_name(self) -> str:
         return self.pkg_name + ':' + self.class_name
 
+
 plugins: list[Plugin] = []
 api: PluginApi = None
+
 
 def load_plugins(main_window):
     global plugins, api
@@ -35,7 +38,7 @@ def load_plugins(main_window):
 
     plugins = []
     possibleplugins = os.listdir(plugin_folder)
-     # Sort plugins by folder name. This determines the order the plugins are loaded in, the order they are displayed in the settings menu and the order of their menu entries.
+    # Sort plugins by folder name. This determines the order the plugins are loaded in, the order they are displayed in the settings menu and the order of their menu entries.
     possibleplugins.sort()
     for i in possibleplugins:
         if i == '__pycache__':
@@ -52,32 +55,39 @@ def load_plugins(main_window):
 
         initialize_plugin(i, mod, plugins)
 
+    # return plugins
 
-    #return plugins
 
-def initialize_plugin(i: str, mod: any, plugins: List[Plugin]) -> Optional[Plugin]:
-        clsmembers = inspect.getmembers(mod, inspect.isclass)
+def initialize_plugin(i: str, mod: any, plugins: List[Plugin]) -> None:
+    clsmembers = inspect.getmembers(mod, inspect.isclass)
 
-        found = False
-        for name, cls in clsmembers:
-            if name.endswith('Plugin'):
-                if not hasattr(cls, 'name'):
-                    print(f'Plugin class {name} is missing attribute "name"')
-                    continue
-                if not hasattr(cls, 'description'):
-                    print(f'Plugin class {name} is missing attribute "description"')
-                    continue
+    found = False
+    for name, cls in clsmembers:
+        if name.endswith('Plugin'):
+            if not hasattr(cls, 'name'):
+                print(f'Plugin class {name} is missing attribute "name"')
+                continue
+            if not hasattr(cls, 'description'):
+                print(
+                    f'Plugin class {name} is missing attribute "description"')
+                continue
 
-                found = True
-                plugin = Plugin(cls.name, cls.description, name, i, False, cls, None, mod)
-                plugins.append(plugin)
+            if hasattr(cls, 'hidden'):
+                if cls.hidden:
+                    # Hidden plugins cannot be loaded and are not displayed
+                    return
 
-                if settings.is_plugin_enabled(i + ':' + name):
-                    enable_plugin(plugin)
+            found = True
+            plugin = Plugin(cls.name, cls.description,
+                            name, i, False, cls, None, mod)
+            plugins.append(plugin)
 
-                break
-        if not found:
-            print(f'No class ending with "Plugin" found in plugin {i}')
+            if settings.is_plugin_enabled(i + ':' + name):
+                enable_plugin(plugin)
+
+            break
+    if not found:
+        print(f'No class ending with "Plugin" found in plugin {i}')
 
 
 def enable_plugin(plugin: Plugin) -> bool:
@@ -88,7 +98,8 @@ def enable_plugin(plugin: Plugin) -> bool:
         plugin.enabled = True
         return True
     except Exception as e:
-        print(f'Exception occurred during enabling plugin {plugin.get_settings_name()}:')
+        print(
+            f'Exception occurred during enabling plugin {plugin.get_settings_name()}:')
         traceback.print_exc()
         print('Plugin was disabled and has to be enabled again manually.')
         settings.set_plugin_enabled(plugin.get_settings_name(), False)
@@ -100,10 +111,12 @@ def disable_plugin(plugin: Plugin) -> None:
         if (hasattr(plugin.instance, 'unload')):
             plugin.instance.unload()
     except Exception as e:
-        print(f'Exception occurred during unloading plugin {plugin.get_settings_name()}:')
+        print(
+            f'Exception occurred during unloading plugin {plugin.get_settings_name()}:')
         traceback.print_exc()
     plugin.instance = None
     plugin.enabled = False
+
 
 def get_plugins() -> list[Plugin]:
     return plugins
@@ -115,13 +128,13 @@ def get_plugin(pkg_name: str, class_name: str) -> Optional[Plugin]:
             return plugin
     return None
 
+
 def reload_plugins() -> None:
     global plugins
     # Disable all enabled plugins
     for plugin in plugins:
         if plugin.enabled:
             disable_plugin(plugin)
-
 
     old_modules = []
 
@@ -135,7 +148,7 @@ def reload_plugins() -> None:
         # Reload any children of this module first
         children = []
 
-        # TODO correctly bring the 
+        # TODO correctly bring the
         for module_name in sys.modules.keys():
             if module_name != mod.__name__ and module_name.startswith(mod.__name__):
                 children.append(module_name)
