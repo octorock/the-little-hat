@@ -79,7 +79,15 @@ class FunctionPointerType(Type):
     parameter_types: List[Type]
 
     def __str__(self):
-        return f'{self.return_type}(*)({", ".join([str(s) for s in self.parameter_types])})'
+        return f'{self.return_type}(*)({", ".join([str(s) for s in self.parameter_types] if self.parameter_types else "")})'
+
+@dataclass
+class FunctionDeclType(Type):
+    return_type: Type
+    parameter_types: List[Type]
+
+    def __str__(self):
+        return f'{self.return_type}()({", ".join([str(s) for s in self.parameter_types] if self.parameter_types else "")})'
 
 
 @dataclass
@@ -153,7 +161,9 @@ def get_type_str(type):
         if isinstance(type.type, pycparser.c_ast.FuncDecl):
             ftype = type.type
             return_type = get_type_str(ftype.type)
-            parameter_types = [get_type_str(x.type) for x in ftype.args.params]
+            parameter_types = None
+            if ftype.args is not None:
+                parameter_types = [get_type_str(x.type) for x in ftype.args.params]
             return FunctionPointerType(return_type, parameter_types)
         return PointerType(get_type_str(type.type))
     if isinstance(type, pycparser.c_ast.Union):
@@ -168,6 +178,13 @@ def get_type_str(type):
         return StructType(name)
     if isinstance(type, pycparser.c_ast.Enum):
         return None
+    if isinstance(type, pycparser.c_ast.FuncDecl):
+        return_type = get_type_str(type.type)
+        parameter_types = None
+        if type.args is not None:
+            parameter_types = [get_type_str(x.type) for x in type.args.params]
+        return FunctionDeclType(return_type, parameter_types)
+    print(type.coord)
     raise ValueError('bad type')
 
 
@@ -257,6 +274,7 @@ def parse_to_json(input_filename, output_filename) -> None:
     with open(input_filename) as input_file:
         text = input_file.read()
         text = text.replace('__attribute__((packed))', '')
+        text = text.replace('__attribute__((packed, aligned(2)))', '')
         ast = pycparser.CParser().parse(text, input_filename)
         v = StructVisitor()
         v.visit(ast)
@@ -273,20 +291,16 @@ def generate_struct_definitions() -> None:
     with open('tmp/test.c', 'w') as file:
         file.write(
 '''
-#include "area.h"
-#include "audio.h"
+#include "sound.h"
 #include "coord.h"
-#include "createObject.h"
-#include "cutscene.h"
 #include "effects.h"
 #include "enemy.h"
 #include "entity.h"
-#include "fileScreen.h"
+#include "fileselect.h"
 #include "flags.h"
 #include "functions.h"
 #include "game.h"
 #include "global.h"
-#include "greatFairy.h"
 #include "item.h"
 #include "main.h"
 #include "manager.h"
@@ -294,16 +308,15 @@ def generate_struct_definitions() -> None:
 #include "npc.h"
 #include "object.h"
 #include "player.h"
-#include "random.h"
 #include "room.h"
 #include "save.h"
 #include "screen.h"
 #include "script.h"
 #include "sprite.h"
 #include "structures.h"
-#include "textbox.h"
+#include "message.h"
 #include "tiles.h"
-#include "utils.h"
+#include "common.h"
 '''
 )
     repo_location = settings.get_repo_location()
