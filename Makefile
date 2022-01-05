@@ -11,11 +11,11 @@ UI_FILES =  $(notdir $(wildcard $(RESOURCE_DIR)/*.ui))
 RESOURCES = $(notdir $(wildcard $(RESOURCE_DIR)/*.qrc))
 
 ifeq ($(OS),Windows_NT)
-	PYUIC = python venv/Scripts/pyside6-uic.exe
-	PYRCC = python venv/Scripts/pyside6-rcc.exe
+	PYUIC = python3 venv/Scripts/pyside6-uic.exe
+	PYRCC = python3 venv/Scripts/pyside6-rcc.exe
 else
-	PYUIC = python venv/bin/pyside6-uic
-	PYRCC = python venv/bin/pyside6-rcc
+	PYUIC = python3 venv/bin/pyside6-uic
+	PYRCC = python3 venv/bin/pyside6-rcc
 endif
  
  
@@ -44,7 +44,7 @@ tidy:
 init: venv/touchfile
 
 venv/touchfile: requirements.txt
-	test -d venv || python -m venv venv
+	test -d venv || python3 -m venv venv
 ifeq ($(OS),Windows_NT)
 	venv/Scripts/activate; pip install -Ur requirements.txt
 else
@@ -54,16 +54,16 @@ endif
 
 run: all
 ifeq ($(OS),Windows_NT)
-	venv/Scripts/activate; python main.py
+	venv/Scripts/activate; python3 main.py
 else
-	. venv/bin/activate; python main.py
+	. venv/bin/activate; python3 main.py
 endif
 
 test:
 	# for issues see https://docs.pytest.org/en/stable/goodpractices.html#tests-outside-application-code
 ifeq ($(OS),Windows_NT)
-	venv/Scripts/activate; python -m pytest
+	venv/Scripts/activate; python3 -m pytest
 else
-	. venv/bin/activate; python -m pytest
+	. venv/bin/activate; python3 -m pytest
 endif
 .PHONY: init clean tidy run test
