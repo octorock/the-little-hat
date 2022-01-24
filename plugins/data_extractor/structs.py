@@ -184,7 +184,6 @@ def get_type_str(type):
         if type.args is not None:
             parameter_types = [get_type_str(x.type) for x in type.args.params]
         return FunctionDeclType(return_type, parameter_types)
-    print(type.coord)
     raise ValueError('bad type')
 
 

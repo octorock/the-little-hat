@@ -1,3 +1,4 @@
+from xxlimited import Str
 import socketio
 from flask import Flask, request
 from PySide6.QtCore import QObject, Signal
@@ -15,6 +16,8 @@ class ServerWorker(QObject):
     signal_shutdown = Signal()
     signal_c_code = Signal(str)
     signal_extract_data = Signal(str)
+    signal_fetch_decompilation = Signal(str)
+    signal_upload_function = Signal(str)
 
     def process(self) -> None:
         try:
@@ -23,7 +26,11 @@ class ServerWorker(QObject):
             log.setLevel(logging.ERROR)
 
             sio = socketio.Server(async_mode='threading', cors_allowed_origins=[
-                                  'https://cexplore.henny022.eu.ngrok.io', 'http://localhost:10240'])
+                                  'https://cexplore.henny022.eu.ngrok.io',
+                                  'http://localhost:10240',
+                                  'http://localhost:3000',
+                                  'https://nonmatch.netlify.app'
+                                  ])
             self.sio = sio
             app = Flask(__name__)
             app.wsgi_app = socketio.WSGIApp(sio, app.wsgi_app)
@@ -43,6 +50,14 @@ class ServerWorker(QObject):
             @sio.event
             def extract_data(sid, data):
                 self.signal_extract_data.emit(data)
+
+            @sio.event
+            def fetch_decompilation(sid, data):
+                self.signal_fetch_decompilation.emit(data)
+
+            @sio.event
+            def upload_function(sid, data):
+                self.signal_upload_function.emit(data)
 
             @app.route('/shutdown', methods=['GET'])
             def shutdown():

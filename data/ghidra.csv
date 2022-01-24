@@ -13,6 +13,7 @@ undefined,u8,False
 "\*\([u,s]16\*\)\&this->(\S*)",this->\1.HALF.LO,False
 "(?:\(s32\))?\* ?\([s,u]16\* ?\)\(\(s32\) ?& ?this->(\S*) \+ 2\)",this->\1.HALF.HI,False
 \._2_2_,.HALF.HI,False
+\._0_2_,.HALF.LO,False
 ### might also be .BYTES.byte0 (?:\(u32\) )?\* ?\(u8\*\)&this->([\w\-\>]*),this->\1.HALF.LO,False
 (?:\([us](?:32|16)\))? ?\* ?\(u8\*\)\(\(s32\)&(\S*) \+ 1\),\1.HALF.HI,False
 \(s32\)\(u32\)\(u16\)([\w\->]*),\1.HWORD,False
@@ -20,13 +21,14 @@ undefined,u8,False
 \)\n\n{,) {,False
     return;\n},},False
 (- .* >> 4\)? & 0x3fU? \|.* >> 4 & 0x3fU?.*<< 6[^\n]*),\1 // TODO look at TILE macro,True
-gPlayerState\.flags ,gPlayerState.flags.all ,False
 (\w*)->frames ,\1->frames.all ,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xfc \| 2;,\1->spriteSettings.draw = 2;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xfc \| 1;,\1->spriteSettings.draw = 1;,False
 (\w*)->spriteSettings = \1->spriteSettings \| 3;,\1->spriteSettings.draw = 3;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xfc;,\1->spriteSettings.draw = 0;,False
 (\S*)->spriteSettings = \1->spriteSettings & 0xfc \| 1;,\1->spriteSettings.draw = 1;,False
+(\w*)->spriteSettings = \(\w*\)\(\(u8\)\1->spriteSettings & 0xfc\);,\1->spriteSettings.draw = 0;,False
+(\w*)->spriteSettings = \(\w*\)\(\(u8\)\1->spriteSettings & 0xfc \| 1\);,\1->spriteSettings.draw = 1;,False
 (\w*)->spriteSettings = \1->spriteSettings \| 0x40;,\1->spriteSettings.flipX = 1;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xfc \| this->spriteSettings & 3 \^ 1;,\1->spriteSettings.draw ^= 1;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xcf \| 0x10;,\1->spriteSettings.shadow = 1;,False
@@ -89,3 +91,6 @@ gPlayerState\.flags ,gPlayerState.flags.all ,False
 '-',0x2d,False
 '=',0x3d,False
 \(this->manager\),this->manager,False
+\(this->base\)\.,super->,False
+\&this->base,super,False
+'\\n',0xa,False

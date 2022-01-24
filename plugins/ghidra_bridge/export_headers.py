@@ -1,7 +1,8 @@
 from os import walk, mkdir, path
+import os
 from pathlib import Path
+from typing import List
 from tlh import settings
-
 
 
 def patch_extern_struct(lines):
@@ -28,7 +29,28 @@ def patch_types_h(lines):
     .replace('int64_t', 'signed long long')
     , lines)
 
-def patch_entity_h(lines):
+def patch_entity_h(lines: List[str]):
+    # Entity struct should only include common fields
+    exclude_deprecated = False
+
+    outlines = []
+    for line in lines:
+        if '#ifndef NENT_DEPRECATED' in line:
+            exclude_deprecated = True
+
+        if '#endif' in line:
+            if exclude_deprecated:
+                exclude_deprecated = False
+                continue
+
+        if exclude_deprecated:
+            continue
+
+        outlines.append(line)
+
+    lines = outlines
+
+    # Pack the Entity struct
     for i,line in enumerate(lines):
         if 'struct Entity' in line:
             lines.insert(i, '#pragma pack(1)\n')
@@ -50,6 +72,12 @@ def export_headers():
     INCLUDE_FOLDER = settings.get_repo_location()+'/include'
     OUTPUT_FOLDER = 'tmp/ghidra_types'
 
+    # Remove all previous output files
+    for filepath in Path(OUTPUT_FOLDER).rglob('*'):
+        if filepath.is_file():
+            os.remove(filepath)
+
+    # Generate new header files
     for (dirpath, dirnames, filenames) in walk(INCLUDE_FOLDER):
         for filepath in filenames:
             rel_dirpath = dirpath[len(INCLUDE_FOLDER)+1:]

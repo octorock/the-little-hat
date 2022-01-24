@@ -34,7 +34,7 @@ class CExploreBridgePlugin:
 
     def load(self) -> None:
         self.action_show_bridge = self.api.register_menu_entry(
-            'CExplorex Bridge', self.slot_show_bridge)
+            'CExplore Bridge', self.slot_show_bridge)
         if CREATE_LISTS:
             self.action_find_nonmatching = self.api.register_menu_entry('List NONMATCH', self.slot_find_nonmatching)
             self.action_find_nonmatching.setShortcut(QKeySequence("Ctrl+F3"))
@@ -173,6 +173,8 @@ class BridgeDock(QDockWidget):
         self.server_worker.signal_started.connect(self.slot_server_started)
         self.server_worker.signal_shutdown.connect(self.slot_server_stopped)
         self.server_worker.signal_extract_data.connect(self.slot_extract_data)
+        self.server_worker.signal_fetch_decompilation.connect(self.slot_fetch_decompilation)
+        self.server_worker.signal_upload_function.connect(self.slot_download_requested)
         self.server_worker.moveToThread(self.server_thread)
         self.server_thread.started.connect(self.server_worker.process)
         self.server_thread.start()
@@ -196,7 +198,7 @@ class BridgeDock(QDockWidget):
     # Returns true if the user accepted the uploading
     def upload_function(self, include_function: bool) -> bool:
         # TODO try catch all of the slots?
-        (err, asm, src, signature) = get_code(self.ui.lineEditFunctionName.text(), include_function)
+        (err, asm, src, signature) = get_code(self.ui.lineEditFunctionName.text().strip(), include_function)
         if err:
             self.api.show_error('CExplore Bridge', asm)
             return
@@ -204,16 +206,20 @@ class BridgeDock(QDockWidget):
         if NO_CONFIRMS:
             # For pros also directly go to the function in Ghidra and apply the signature
             self.slot_goto()
-            self.apply_function_type(self.ui.lineEditFunctionName.text(), signature)
+            self.apply_function_type(self.ui.lineEditFunctionName.text().strip(), signature)
 
-        if NO_CONFIRMS or self.api.show_question('CExplore Bridge', f'Replace code in CExplore with {self.ui.lineEditFunctionName.text()}?'):
+        if NO_CONFIRMS or self.api.show_question('CExplore Bridge', f'Replace code in CExplore with {self.ui.lineEditFunctionName.text().strip()}?'):
             self.server_worker.slot_send_asm_code(asm)
             self.server_worker.slot_send_c_code(src)
             if not NO_CONFIRMS:
                 self.api.show_message(
-                    'CExplore Bridge', f'Uploaded code of {self.ui.lineEditFunctionName.text()}.')
+                    'CExplore Bridge', f'Uploaded code of {self.ui.lineEditFunctionName.text().strip()}.')
             return True
         return False
+
+    def slot_download_requested(self, name: str) -> None:
+        self.ui.lineEditFunctionName.setText(name)
+        self.slot_download_function()
 
     def slot_download_function(self) -> None:
         self.enable_function_group(False)
@@ -236,13 +242,13 @@ class BridgeDock(QDockWidget):
 
     def store(self, includes: str,header: str, code: str, matching: bool) -> None:
         (err, msg) = store_code(
-            self.ui.lineEditFunctionName.text(), includes, header, code, matching)
+            self.ui.lineEditFunctionName.text().strip(), includes, header, code, matching)
         if err:
             self.api.show_error('CExplore Bridge', msg)
             return
         if not NO_CONFIRMS:
             self.api.show_message(
-                'CExplore Bridge', f'Sucessfully replaced code of {self.ui.lineEditFunctionName.text()}.')
+                'CExplore Bridge', f'Sucessfully replaced code of {self.ui.lineEditFunctionName.text().strip()}.')
 
     def slot_copy_js_code(self) -> None:
         QApplication.clipboard().setText(
@@ -282,16 +288,20 @@ class BridgeDock(QDockWidget):
 
     def slot_goto(self) -> None:
         try:
-            r = requests.get('http://localhost:10242/goto/' + self.ui.lineEditFunctionName.text())
+            r = requests.get('http://localhost:10242/goto/' + self.ui.lineEditFunctionName.text().strip())
             if r.status_code != 200:
                 self.api.show_error('CExplore Bridge', r.text)
                 return
         except requests.exceptions.RequestException as e:
             self.api.show_error('CExplore Bridge', 'Could not reach Ghidra server. Did you start the script?')
 
+    def slot_fetch_decompilation(self, name: str) -> None:
+        self.ui.lineEditFunctionName.setText(name)
+        self.slot_decompile()
+
     def slot_decompile(self) -> None:
         try:
-            r = requests.get('http://localhost:10242/decompile/' + self.ui.lineEditFunctionName.text())
+            r = requests.get('http://localhost:10242/decompile/' + self.ui.lineEditFunctionName.text().strip())
             if r.status_code != 200:
                 self.api.show_error('CExplore Bridge', r.text)
                 return
