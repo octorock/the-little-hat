@@ -206,7 +206,7 @@ class BridgeDock(QDockWidget):
         if NO_CONFIRMS:
             # For pros also directly go to the function in Ghidra and apply the signature
             self.slot_goto()
-            self.apply_function_type(self.ui.lineEditFunctionName.text().strip(), signature)
+            #self.apply_function_type(self.ui.lineEditFunctionName.text().strip(), signature)
 
         if NO_CONFIRMS or self.api.show_question('CExplore Bridge', f'Replace code in CExplore with {self.ui.lineEditFunctionName.text().strip()}?'):
             self.server_worker.slot_send_asm_code(asm)

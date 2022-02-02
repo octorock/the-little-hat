@@ -3,7 +3,7 @@
 
 from tlh.hexviewer.diff_calculator import LinkedDiffCalculator
 from tlh.hexviewer.controller import HexViewerController
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from tlh.const import RomVariant
 from tlh.common.ui.progress_dialog import ProgressDialog
 from PySide6.QtGui import QAction
@@ -38,7 +38,7 @@ class PluginApi:
     def show_question(self, title: str, text: str) -> bool:
         return QMessageBox.question(self.main_window, title, text) == QMessageBox.Yes
 
-    def show_text_input(self, title: str, text: str) -> (str, bool):
+    def show_text_input(self, title: str, text: str) -> Tuple[str, bool]:
         return QInputDialog.getText(self.main_window, title, text)
 
     # Hex Viewer

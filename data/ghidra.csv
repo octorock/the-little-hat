@@ -7,6 +7,7 @@ uint,u32,False
 int([ _\)]),s32\1,False
 undefined2,u16,False
 undefined4,u32,False
+undefined1,u8,False
 undefined,u8,False
 "\([u,s]32\)\*\([u,s]16 ?\*\)\(\([u,s]32\)&(\S*) \+ 2\)",\1.HALF.HI,False
 "\*\([u,s]16 ?\*\)\(\([u,s]32\)&(\S*) \+ 2\)",\1.HALF.HI,False
@@ -27,8 +28,6 @@ undefined,u8,False
 (\w*)->spriteSettings = \1->spriteSettings \| 3;,\1->spriteSettings.draw = 3;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xfc;,\1->spriteSettings.draw = 0;,False
 (\S*)->spriteSettings = \1->spriteSettings & 0xfc \| 1;,\1->spriteSettings.draw = 1;,False
-(\w*)->spriteSettings = \(\w*\)\(\(u8\)\1->spriteSettings & 0xfc\);,\1->spriteSettings.draw = 0;,False
-(\w*)->spriteSettings = \(\w*\)\(\(u8\)\1->spriteSettings & 0xfc \| 1\);,\1->spriteSettings.draw = 1;,False
 (\w*)->spriteSettings = \1->spriteSettings \| 0x40;,\1->spriteSettings.flipX = 1;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xfc \| this->spriteSettings & 3 \^ 1;,\1->spriteSettings.draw ^= 1;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xcf \| 0x10;,\1->spriteSettings.shadow = 1;,False
@@ -52,7 +51,6 @@ undefined,u8,False
 (\w*)->spriteRendering = .*\1->spriteRendering \| 0xc0\);,\1->spriteRendering.b3 = 3;,False
 (\w*)->palette = \1->palette & 0xf0;,\1->palette.b.b0 = 0;,False
 (\w*)->palette = \1->palette & 0xf0 \| (.);,\1->palette.b.b0 = \2;,False
-
 \((\w*)\*\)0x0,NULL,False
 "__divsi3\(([^,]*), ([^\)]*)\)",\1 / \2,False
 "__modsi3\(([^,]*), ([^\)]*)\)",\1 % \2,False
@@ -61,14 +59,8 @@ undefined,u8,False
 "_call_via_r2\((\w*), (\w*), \*\(u32\*\)\(&(\w*) \+ (?:\(u32\))?(\S*) \* 4\)\);","\3[\4](\1, \2);",False
 \(s32\)\(-(\S*) \| \1\) >> 0x1f,BOOLCAST(\1),False
 (\S*) \= \1 (\S) (\S*);,\1 \2= \3;,False
-'\\a',7,False
-'\\b',8,False
-'\\0',0,False
 '\\x([0-9a-f]+)',0x\1,False
-'\\r',0xd,False
-'!',0x21,False
-'P',0x50,False
-'<',0x3c,False
+'\\0',0,False
 0x01,1,False
 0x02,2,False
 0x03,3,False
@@ -76,21 +68,38 @@ undefined,u8,False
 0x05,5,False
 0x06,6,False
 0x07,7,False
+'\\a',7,False
 0x08,8,False
+'\\b',8,False
 0x09,9,False
-'}',0x7d,False
 '\\v,0xb,False
+'\\r',0xd,False
 ' ',0x20,False
 '&',0x26,False
 '\(',0x28,False
 '\\'',0x27,False
-'a',0x61,False
 '_',0x5f,False
+'\\n',0xa,False
+'\\f',0xc,False
+'!',0x21,False
+'-',0x2d,False
+'0',0x30,False
+'8',0x38,False
+'<',0x3c,False
+'=',0x3d,False
+'@',0x40,False
+'H',0x48,False
+'K',0x4b,False
+'P',0x50,False
+'Z',0x5a,False
+'`',0x60,False
+'a',0x61,False
+'n',0x6e,False
 'x',0x78,False
 'y',0x79,False
-'-',0x2d,False
-'=',0x3d,False
+'}',0x7d,False
 \(this->manager\),this->manager,False
 \(this->base\)\.,super->,False
 \&this->base,super,False
-'\\n',0xa,False
+(\w*)->spriteSettings = \(\w*\)\(\(u8\)\1->spriteSettings & 0xfc\);,\1->spriteSettings.draw = 0;,False
+(\w*)->spriteSettings = \(\w*\)\(\(u8\)\1->spriteSettings & 0xfc \| 1\);,\1->spriteSettings.draw = 1;,False
