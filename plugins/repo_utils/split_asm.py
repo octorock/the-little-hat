@@ -82,8 +82,8 @@ def split_asm(api: PluginApi, path: str) -> str:
 
     lines = []
 
-    lines.append('#include "global.h"')
-    lines.append('#include "entity.h"\n')
+    #lines.append('#include "global.h"')
+    #lines.append('#include "entity.h"\n')
     for func in funcs:
         funcpath = os.path.join(non_matching_folder, func.name+'.inc')
         with open(os.path.join(settings.get_repo_location(), funcpath), 'w') as f:
@@ -92,13 +92,12 @@ def split_asm(api: PluginApi, path: str) -> str:
             f.write('\t.syntax divided\n')
 
         #print(f'ASM_FUNC("{funcpath}", void {func.name}(Entity* this))\n')
-        #lines.append(f'ASM_FUNC("{funcpath}", void {func.name}())\n')
-        lines.append(
-            f'ASM_FUNC("{funcpath}", void {func.name}(Entity* this))\n')
+        lines.append(f'ASM_FUNC("{funcpath}", void {func.name}())\n')
+        #lines.append(f'ASM_FUNC("{funcpath}", void {func.name}(Entity* this))\n')
 
     out = '\n'.join(lines)
 
-    with open(os.path.join(settings.get_repo_location(), 'src', path + '.c'), 'w') as f:
+    with open(os.path.join(settings.get_repo_location(), 'src', path + '.c'), 'a') as f:
         f.write(out)
     api.show_message(
         name, f'Created file at src/{path}.c. Now change the path in linker.ld.')
