@@ -1,4 +1,3 @@
-from PySide6.QtWidgets import QMessageBox
 from tlh.plugin.api import PluginApi
 
 
@@ -6,7 +5,7 @@ class TestPlugin:
     name = 'Test'
     description = '''Description of the test plugin
 Descriptions can have multiple lines'''
-    hidden = True
+    hidden = True # Hide this plugin from the settings dialog
 
     def __init__(self, api: PluginApi) -> None:
         self.api = api
@@ -18,5 +17,4 @@ Descriptions can have multiple lines'''
         self.api.remove_menu_entry(self.menu_entry)
 
     def show_test(self):
-        QMessageBox.information(self.api.main_window,
-                                'Test', 'test plugin loaded successfully')
+        self.api.show_message('Test', 'test plugin loaded successfully')

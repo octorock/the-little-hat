@@ -190,6 +190,7 @@
     "type": "union",
     "members": {
       "WORD": "s32",
+      "WORD_U": "u32",
       "HALF": {
         "type": "struct",
         "members": {
@@ -313,20 +314,13 @@
       "zVelocity": "s32",
       "speed": "s16",
       "spriteAnimation": "u8[3]",
-      "spritePriority": {
-        "type": "struct",
-        "members": {
-          "b0": "u8 : 3",
-          "b1": "u8 : 3",
-          "b2": "u8 : 1",
-          "b3": "u8 : 1"
-        }
-      },
+      "spritePriority": "SpritePriority",
       "collisions": "u16",
       "x": {
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -356,6 +350,7 @@
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -385,6 +380,7 @@
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -421,10 +417,10 @@
       "hurtType": "u8",
       "bitfield": "u8",
       "knockbackDuration": "u8",
-      "field_0x43": "u8",
+      "confusedTime": "u8",
       "damage": "u8",
       "health": "u8",
-      "field_0x46": "u16",
+      "knockbackSpeed": "u16",
       "hitbox": "Hitbox*",
       "field_0x4c": "Entity_*",
       "parent": "Entity_*",
@@ -437,7 +433,7 @@
       "spriteVramOffset": "u16",
       "spriteOffsetX": "u8",
       "spriteOffsetY": "s8",
-      "myHeap": "u32*",
+      "myHeap": "void*",
       "field_0x68": {
         "type": "union",
         "members": {
@@ -494,6 +490,7 @@
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -575,6 +572,7 @@
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -720,6 +718,7 @@
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -749,6 +748,7 @@
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -805,9 +805,123 @@
   "Palette": {
     "type": "struct",
     "members": {
-      "_0": "u8",
+      "_0_0": "u8 : 4",
+      "_0_4": "u8 : 4",
       "_1": "u8",
       "_2": "u16"
+    }
+  },
+  "struct_gUnk_020000C0_1": {
+    "type": "struct",
+    "members": {
+      "unk_00": {
+        "type": "struct",
+        "members": {
+          "unk0": "u8 : 1",
+          "unk1": "u8 : 1",
+          "unk2": "u8 : 1",
+          "unk3": "u8 : 1",
+          "unk4": "u8 : 4"
+        }
+      },
+      "unk_01": "u8",
+      "unk_02": "u16",
+      "unk_04": {
+        "type": "union",
+        "members": {
+          "WORD": "s32",
+          "WORD_U": "u32",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "s16",
+              "HI": "s16"
+            }
+          },
+          "HALF_U": {
+            "type": "struct",
+            "members": {
+              "LO": "u16",
+              "HI": "u16"
+            }
+          },
+          "BYTES": {
+            "type": "struct",
+            "members": {
+              "byte0": "u8",
+              "byte1": "u8",
+              "byte2": "u8",
+              "byte3": "u8"
+            }
+          }
+        }
+      },
+      "unk_08": {
+        "type": "union",
+        "members": {
+          "WORD": "s32",
+          "WORD_U": "u32",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "s16",
+              "HI": "s16"
+            }
+          },
+          "HALF_U": {
+            "type": "struct",
+            "members": {
+              "LO": "u16",
+              "HI": "u16"
+            }
+          },
+          "BYTES": {
+            "type": "struct",
+            "members": {
+              "byte0": "u8",
+              "byte1": "u8",
+              "byte2": "u8",
+              "byte3": "u8"
+            }
+          }
+        }
+      },
+      "unk_0C": {
+        "type": "union",
+        "members": {
+          "WORD": "s32",
+          "WORD_U": "u32",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "s16",
+              "HI": "s16"
+            }
+          },
+          "HALF_U": {
+            "type": "struct",
+            "members": {
+              "LO": "u16",
+              "HI": "u16"
+            }
+          },
+          "BYTES": {
+            "type": "struct",
+            "members": {
+              "byte0": "u8",
+              "byte1": "u8",
+              "byte2": "u8",
+              "byte3": "u8"
+            }
+          }
+        }
+      }
+    }
+  },
+  "struct_gUnk_020000C0": {
+    "type": "struct",
+    "members": {
+      "unk_00": "struct_gUnk_020000C0_1[4]"
     }
   },
   "Frame": {
@@ -890,6 +1004,15 @@
       "unknown2": "u8[3]"
     }
   },
+  "SpritePriority": {
+    "type": "struct",
+    "members": {
+      "b0": "u8 : 3",
+      "b1": "u8 : 3",
+      "b2": "u8 : 1",
+      "b3": "u8 : 1"
+    }
+  },
   "Entity": {
     "type": "struct",
     "members": {
@@ -959,20 +1082,13 @@
       "zVelocity": "s32",
       "speed": "s16",
       "spriteAnimation": "u8[3]",
-      "spritePriority": {
-        "type": "struct",
-        "members": {
-          "b0": "u8 : 3",
-          "b1": "u8 : 3",
-          "b2": "u8 : 1",
-          "b3": "u8 : 1"
-        }
-      },
+      "spritePriority": "SpritePriority",
       "collisions": "u16",
       "x": {
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -1002,6 +1118,7 @@
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -1031,6 +1148,7 @@
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -1067,10 +1185,10 @@
       "hurtType": "u8",
       "bitfield": "u8",
       "knockbackDuration": "u8",
-      "field_0x43": "u8",
+      "confusedTime": "u8",
       "damage": "u8",
       "health": "u8",
-      "field_0x46": "u16",
+      "knockbackSpeed": "u16",
       "hitbox": "Hitbox*",
       "field_0x4c": "Entity_*",
       "parent": "Entity_*",
@@ -1083,7 +1201,7 @@
       "spriteVramOffset": "u16",
       "spriteOffsetX": "u8",
       "spriteOffsetY": "s8",
-      "myHeap": "u32*",
+      "myHeap": "void*",
       "field_0x68": {
         "type": "union",
         "members": {
@@ -1140,6 +1258,7 @@
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -1221,6 +1340,229 @@
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "s16",
+              "HI": "s16"
+            }
+          },
+          "HALF_U": {
+            "type": "struct",
+            "members": {
+              "LO": "u16",
+              "HI": "u16"
+            }
+          },
+          "BYTES": {
+            "type": "struct",
+            "members": {
+              "byte0": "u8",
+              "byte1": "u8",
+              "byte2": "u8",
+              "byte3": "u8"
+            }
+          }
+        }
+      },
+      "field_0x80": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x82": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "cutsceneBeh": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x86": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      }
+    }
+  },
+  "GenericEntity": {
+    "type": "struct",
+    "members": {
+      "base": "Entity",
+      "field_0x68": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x6a": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x6c": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x6e": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x70": {
+        "type": "union",
+        "members": {
+          "WORD": "s32",
+          "WORD_U": "u32",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "s16",
+              "HI": "s16"
+            }
+          },
+          "HALF_U": {
+            "type": "struct",
+            "members": {
+              "LO": "u16",
+              "HI": "u16"
+            }
+          },
+          "BYTES": {
+            "type": "struct",
+            "members": {
+              "byte0": "u8",
+              "byte1": "u8",
+              "byte2": "u8",
+              "byte3": "u8"
+            }
+          }
+        }
+      },
+      "field_0x74": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x76": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x78": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x7a": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x7c": {
+        "type": "union",
+        "members": {
+          "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -1391,16 +1733,16 @@
       "quiverType": "u8",
       "filler": "u8[2]",
       "charm": "u8",
-      "unkB": "u8",
-      "itemOnA": "u8",
-      "itemOnB": "u8",
+      "picolyteType": "u8",
+      "itemButtons": "u8[2]",
       "bottles": "u8[4]",
       "effect": "u8",
-      "filler3": "u8[5]",
+      "hasAllFigurines": "u8",
+      "filler3": "u8[4]",
       "rupees": "u16",
-      "field_0x1a": "u16",
+      "shells": "u16",
       "charmTimer": "u16",
-      "unkTimer": "u16",
+      "picolyteTimer": "u16",
       "effectTimer": "u16",
       "filler4": "u8[4]"
     }
@@ -1448,41 +1790,6 @@
       "field_0x6": "u8",
       "field_0x7": "u8",
       "pad": "u8[24]"
-    }
-  },
-  "ScreenTransitionData": {
-    "type": "struct",
-    "members": {
-      "type": "u16",
-      "field_0x2": "u8[4]",
-      "playerXPos": "s16",
-      "playerYPos": "s16",
-      "field_0xa": "u8",
-      "area": "u8",
-      "room": "u8",
-      "playerLayer": "u8",
-      "field_0xe": "u8",
-      "playerState": "u8",
-      "transitionSFX": "u16"
-    }
-  },
-  "FadeControl": {
-    "type": "struct",
-    "members": {
-      "active": "u8",
-      "field_0x1": "u8",
-      "field_0x2": "u8",
-      "field_0x3": "u8",
-      "mask": "u32",
-      "fadeType": "u16",
-      "fadeSpeed": "u16",
-      "fadeDuration": "u16",
-      "field_0xe": "u16",
-      "field_0x10": "s16",
-      "field_0x12": "s16",
-      "field_0x14": "s16",
-      "field_0x16": "u16",
-      "field_0x18": "u16"
     }
   },
   "struct_020354C0": {
@@ -1566,9 +1873,11 @@
   "OAMObj": {
     "type": "struct",
     "members": {
-      "unk0": "u16",
+      "unk0": "u8",
+      "unk1": "u8",
       "unk2": "u16",
-      "unk4": "u16",
+      "unk4": "u8",
+      "unk5": "u8",
       "unk6": "u8",
       "unk7": "u8"
     }
@@ -1585,6 +1894,33 @@
       "_0": "u8[24]",
       "oam": "OamData[128]",
       "unk": "OAMObj[160]"
+    }
+  },
+  "Droptable": {
+    "type": "union",
+    "members": {
+      "s": {
+        "type": "struct",
+        "members": {
+          "none": "s16",
+          "rupee1": "s16",
+          "rupee5": "s16",
+          "rupee20": "s16",
+          "hearts": "s16",
+          "fairy": "s16",
+          "bombs": "s16",
+          "arrows": "s16",
+          "mysteriousShells": "s16",
+          "kinstoneGreen": "s16",
+          "kinstoneBlue": "s16",
+          "kinstoneRed": "s16",
+          "none2": "s16",
+          "none3": "s16",
+          "none4": "s16",
+          "none5": "s16"
+        }
+      },
+      "a": "s16[16]"
     }
   },
   "RoomControls": {
@@ -1619,6 +1955,7 @@
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -1648,6 +1985,7 @@
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -1696,11 +2034,12 @@
       "unk_10": "u8[4]",
       "flags": "u32",
       "unk3": "u32",
-      "filler4": "u8[48]",
-      "filler5": "u8[28]",
+      "filler4": "u8[44]",
+      "currentAreaDroptable": "Droptable",
       "animFlags": "u32",
       "field_0x6c": "void*[8]",
-      "field_0x8c": "void*[16]"
+      "field_0x8c": "void*[8]",
+      "field_0xac": "void*[8]"
     }
   },
   "EntityData": {
@@ -1752,8 +2091,8 @@
       "dungeon_y": "s16",
       "dungeon_map_x": "u16",
       "dungeon_map_y": "u16",
-      "overworld_map_x": "s16",
-      "overworld_map_y": "s16",
+      "overworld_map_x": "u16",
+      "overworld_map_y": "u16",
       "field_0x24": "u8[8]"
     }
   },
@@ -1787,6 +2126,22 @@
       "armos_data": "struct_0300110C"
     }
   },
+  "ScreenTransitionData": {
+    "type": "struct",
+    "members": {
+      "type": "u16",
+      "field_0x2": "u8[4]",
+      "playerXPos": "s16",
+      "playerYPos": "s16",
+      "field_0xa": "u8",
+      "area": "u8",
+      "room": "u8",
+      "playerLayer": "u8",
+      "field_0xe": "u8",
+      "playerState": "u8",
+      "transitionSFX": "u16"
+    }
+  },
   "TileEntity": {
     "type": "struct",
     "members": {
@@ -1814,13 +2169,16 @@
       "windcrests": "u32",
       "filler44": "u8[12]",
       "unk50": "u32",
-      "filler54": "u8[12]",
+      "filler54": "u8[8]",
+      "unk5C": "u32",
       "areaVisitFlags": "u32[8]",
       "name": "char[6]",
       "filler86": "u8[2]",
       "saved_status": "PlayerRoomStatus",
       "stats": "Stats",
-      "fillerD0": "u8[72]",
+      "fillerD0": "u8[70]",
+      "didAllFusions": "u8",
+      "unk117": "u8",
       "unk118": "u8[19]",
       "unk12B": "u8[22]",
       "unk141": "u8[128]",
@@ -1830,7 +2188,7 @@
       "flags": "u8[512]",
       "unk45C": "u8[16]",
       "unk46C": "u8[32]",
-      "unk48C": "u32[7]",
+      "timers": "u32[7]",
       "demo_timer": "u32",
       "filler4ac": "u8[8]"
     }
@@ -1878,6 +2236,7 @@
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -1907,6 +2266,7 @@
         "type": "union",
         "members": {
           "WORD": "s32",
+          "WORD_U": "u32",
           "HALF": {
             "type": "struct",
             "members": {
@@ -2099,6 +2459,17 @@
       "unk_08": "u8"
     }
   },
+  "LayerStruct": {
+    "type": "struct",
+    "members": {
+      "bgControlPtr": "u16*",
+      "_4": "u16[4096]",
+      "_2004": "u8[4096]",
+      "_3004": "u8[4096]",
+      "_4004": "u8[4096]",
+      "_5004": "s16[1280]"
+    }
+  },
   "RoomResInfo": {
     "type": "struct",
     "members": {
@@ -2123,8 +2494,12 @@
       "dungeon_idx": "u8",
       "localFlagOffset": "u16",
       "filler": "u8[4]",
-      "unk_0a": "u16",
-      "filler3": "u8[4]",
+      "lightLevel": "u16",
+      "unk_0b": "u8",
+      "unk_0c_0": "u8 : 1",
+      "unk_0c_1": "u8 : 3",
+      "unk_0c_4": "u8 : 4",
+      "filler3": "u8[2]",
       "field_0x10": "u16",
       "curPortalX": "u16",
       "curPortalY": "u16",
@@ -2139,8 +2514,8 @@
       "roomResInfos": "RoomResInfo[64]",
       "currentRoomInfo": "RoomResInfo",
       "pCurrentRoomInfo": "RoomResInfo*",
-      "musicIndex": "u32",
-      "pMusicIndex": "u32",
+      "bgm": "u32",
+      "queued_bgm": "u32",
       "filler5": "u8[32]",
       "transitionManager": "void*",
       "onEnter": "void(*)()",
@@ -2164,17 +2539,6 @@
       "location": "u8",
       "flag_bank": "u8",
       "_3": "u8"
-    }
-  },
-  "struct_080FCA20": {
-    "type": "struct",
-    "members": {
-      "_0": "u8",
-      "_1": "u8",
-      "_2": "u8",
-      "_3": "u8",
-      "_4": "u16",
-      "_6": "u16"
     }
   },
   "Main": {
@@ -2267,17 +2631,141 @@
       "storyPanelIndex": "u8",
       "transitionTimer": "u16",
       "field_0xa": "u16",
-      "field_0xc": "u8*",
-      "focusCoords": "u8[2]",
-      "field_0x12": "u8",
-      "unk13": "u8",
+      "field_0xc": "u8*"
+    }
+  },
+  "GenericMenu": {
+    "type": "struct",
+    "members": {
+      "base": "Menu",
+      "unk10": {
+        "type": "union",
+        "members": {
+          "i": "s32",
+          "h": "u16[2]",
+          "a": "u8[4]"
+        }
+      },
       "unk14": "u8",
       "unk15": "u8",
       "unk16": "u8",
       "selectMtx": "u8",
-      "filler18": "u8[18]",
+      "unk18": "u16",
+      "unk1a": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "unk1c": "u8",
+      "unk1d": "u8",
+      "unk1e": "u8",
+      "unk1f": "s8",
+      "unk20": "u8",
+      "unk21": "u8",
+      "filler22": "u8[6]",
+      "unk28": "u8",
+      "unk29": "u8",
       "unk2a": "u8",
-      "field_0x2c": "int"
+      "unk2b": "u8",
+      "unk2c": "s8",
+      "unk2d": "u8",
+      "unk2e": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      }
+    }
+  },
+  "KinstoneMenu": {
+    "type": "struct",
+    "members": {
+      "base": "Menu",
+      "unk10": {
+        "type": "union",
+        "members": {
+          "WORD": "s32",
+          "WORD_U": "u32",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "s16",
+              "HI": "s16"
+            }
+          },
+          "HALF_U": {
+            "type": "struct",
+            "members": {
+              "LO": "u16",
+              "HI": "u16"
+            }
+          },
+          "BYTES": {
+            "type": "struct",
+            "members": {
+              "byte0": "u8",
+              "byte1": "u8",
+              "byte2": "u8",
+              "byte3": "u8"
+            }
+          }
+        }
+      },
+      "filler14": "u8[4]",
+      "unk18": "u16",
+      "unk1a": "u16",
+      "filler1c": "u8[14]",
+      "unk2a": "u8",
+      "filler2b": "u8[1]",
+      "unk2c": "s8",
+      "filler2d": "u8[2]",
+      "unk2f": "s8"
+    }
+  },
+  "FigurineMenu": {
+    "type": "struct",
+    "members": {
+      "base": "Menu",
+      "unk10": {
+        "type": "union",
+        "members": {
+          "h": "u16[2]",
+          "a": "u8[4]"
+        }
+      },
+      "filler14": "u8[6]",
+      "unk1a": "u8",
+      "filler1b": "u8[1]",
+      "unk1c": "u8",
+      "unk1d": "u8",
+      "unk1e": "u8",
+      "unk1f": "s8",
+      "unk20": "u8",
+      "unk21": "u8",
+      "filler22": "u8[12]",
+      "unk2e": "u16"
+    }
+  },
+  "PauseMenu": {
+    "type": "struct",
+    "members": {
+      "base": "Menu",
+      "items": "u8[17]"
     }
   },
   "Message": {
@@ -2360,6 +2848,25 @@
       "_a6": "u16"
     }
   },
+  "FadeControl": {
+    "type": "struct",
+    "members": {
+      "active": "bool8",
+      "unused1": "u8",
+      "color": "u8",
+      "unused2": "u8",
+      "mask": "u32",
+      "type": "u16",
+      "speed": "u16",
+      "progress": "u16",
+      "sustain": "u16",
+      "iris_size": "s16",
+      "iris_x": "s16",
+      "iris_y": "s16",
+      "win_inside_cnt": "u16",
+      "win_outside_cnt": "u16"
+    }
+  },
   "LcdControls": {
     "type": "struct",
     "members": {
@@ -2438,8 +2945,8 @@
   "OAMCommand": {
     "type": "struct",
     "members": {
-      "x": "u16",
-      "y": "u16",
+      "x": "s16",
+      "y": "s16",
       "_4": "u16",
       "_6": "u16",
       "_8": "u16"

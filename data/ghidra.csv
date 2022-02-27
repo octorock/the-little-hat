@@ -23,6 +23,9 @@ undefined,u8,False
     return;\n},},False
 (- .* >> 4\)? & 0x3fU? \|.* >> 4 & 0x3fU?.*<< 6[^\n]*),\1 // TODO look at TILE macro,True
 (\w*)->frames ,\1->frames.all ,False
+\(this->manager\),this->manager,False
+\(this->base\)\.,super->,False
+\&this->base,super,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xfc \| 2;,\1->spriteSettings.draw = 2;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xfc \| 1;,\1->spriteSettings.draw = 1;,False
 (\w*)->spriteSettings = \1->spriteSettings \| 3;,\1->spriteSettings.draw = 3;,False
@@ -30,25 +33,26 @@ undefined,u8,False
 (\S*)->spriteSettings = \1->spriteSettings & 0xfc \| 1;,\1->spriteSettings.draw = 1;,False
 (\w*)->spriteSettings = \1->spriteSettings \| 0x40;,\1->spriteSettings.flipX = 1;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xfc \| this->spriteSettings & 3 \^ 1;,\1->spriteSettings.draw ^= 1;,False
+(\w*)->spriteSettings = \1->spriteSettings & 0xcf;,\1->spriteSettings.shadow = 0;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xcf \| 0x10;,\1->spriteSettings.shadow = 1;,False
 (\w*)->spriteSettings = \1->spriteSettings & 0xbf;,\1->spriteSettings.flipX = 0;,False
 \((\w*)->spriteSettings \& 3\) ==,\1->spriteSettings.draw ==,False
-(\w*)->spriteOrientation = .*\1->spriteOrientation \| 0xc0\);,\1->spriteOrientation.flipY = 3;,False
-(\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f \| 0x80\);,\1->spriteOrientation.flipY = 2;,False
-(\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f \| 0x40\);,\1->spriteOrientation.flipY = 1;,False
-(\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f\);,\1->spriteOrientation.flipY = 0;,False
+(\w*)->spriteOrientation = .*\1->spriteOrientation \| 0xc0;,\1->spriteOrientation.flipY = 3;,False
+(\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f \| 0x80;,\1->spriteOrientation.flipY = 2;,False
+(\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f \| 0x40;,\1->spriteOrientation.flipY = 1;,False
+(\w*)->spriteOrientation = .*\1->spriteOrientation & 0x3f;,\1->spriteOrientation.flipY = 0;,False
 (\w*)->spritePriority =.*\1->spritePriority & 199\);,\1->spritePriority.b1 = 0;,False
 (\w*)->spritePriority =.*\1->spritePriority & 199 \| 8\);,\1->spritePriority.b1 = 1;,False
 (\w*)->spritePriority =.*\1->spritePriority & 199 \| 0x10\);,\1->spritePriority.b1 = 2;,False
 (\w*)->spritePriority =.*\1->spritePriority & 199 \| 0x18\);,\1->spritePriority.b1 = 3;,False
-(\w*)->spritePriority = .*\1->spritePriority & 0xf8\);,\1->spritePriority.b0 = 0;,False
-(\w*)->spritePriority = .*\1->spritePriority & 0xf8 \| (.)\);,\1->spritePriority.b0 = \2;,False
+(\w*)->spritePriority = .*\1->spritePriority & 0xf8;,\1->spritePriority.b0 = 0;,False
+(\w*)->spritePriority = .*\1->spritePriority & 0xf8 \| (.);,\1->spritePriority.b0 = \2;,False
 (\w*)->spritePriority = .*\1->spritePriority \| 7\);,\1->spritePriority.b0 = 7;,False
-(\w*)->spriteRendering = .*\1->spriteRendering & 0xf3 \| 4\);,\1->spriteRendering.alphaBlend = 1;,False
-(\w*)->spriteRendering = .*\1->spriteRendering & 0x3f\);,\1->spriteRendering.b3 = 0;,False
-(\w*)->spriteRendering = .*\1->spriteRendering & 0x3f \| 0x40\);,\1->spriteRendering.b3 = 1;,False
-(\w*)->spriteRendering = .*\1->spriteRendering \| 3\);,\1->spriteRendering.b0 = 3;,False
-(\w*)->spriteRendering = .*\1->spriteRendering \| 0xc0\);,\1->spriteRendering.b3 = 3;,False
+(\w*)->spriteRendering = .*\1->spriteRendering & 0xf3 \| 4;,\1->spriteRendering.alphaBlend = 1;,False
+(\w*)->spriteRendering = .*\1->spriteRendering & 0x3f;,\1->spriteRendering.b3 = 0;,False
+(\w*)->spriteRendering = .*\1->spriteRendering & 0x3f \| 0x40;,\1->spriteRendering.b3 = 1;,False
+(\w*)->spriteRendering = .*\1->spriteRendering \| 3;,\1->spriteRendering.b0 = 3;,False
+(\w*)->spriteRendering = .*\1->spriteRendering \| 0xc0;,\1->spriteRendering.b3 = 3;,False
 (\w*)->palette = \1->palette & 0xf0;,\1->palette.b.b0 = 0;,False
 (\w*)->palette = \1->palette & 0xf0 \| (.);,\1->palette.b.b0 = \2;,False
 \((\w*)\*\)0x0,NULL,False
@@ -58,7 +62,6 @@ undefined,u8,False
 "_call_via_r1\((\w*), \(&(\w*)\)\[(\S*)\]\);",\2[\3](\1);,False
 "_call_via_r2\((\w*), (\w*), \*\(u32\*\)\(&(\w*) \+ (?:\(u32\))?(\S*) \* 4\)\);","\3[\4](\1, \2);",False
 \(s32\)\(-(\S*) \| \1\) >> 0x1f,BOOLCAST(\1),False
-(\S*) \= \1 (\S) (\S*);,\1 \2= \3;,False
 '\\x([0-9a-f]+)',0x\1,False
 '\\0',0,False
 0x01,1,False
@@ -72,9 +75,12 @@ undefined,u8,False
 0x08,8,False
 '\\b',8,False
 0x09,9,False
-'\\v,0xb,False
+'\\t',9,False
+'\\v',0xb,False
 '\\r',0xd,False
 ' ',0x20,False
+'\$',0x24,False
+'%',0x25,False
 '&',0x26,False
 '\(',0x28,False
 '\\'',0x27,False
@@ -84,22 +90,35 @@ undefined,u8,False
 '!',0x21,False
 '-',0x2d,False
 '0',0x30,False
+'6',0x36,False
 '8',0x38,False
 '<',0x3c,False
 '=',0x3d,False
 '@',0x40,False
+'A',0x41,False
+'D',0x44,False
+'E',0x45,False
+'F',0x46,False
+'G',0x47,False
 'H',0x48,False
+'I',0x49,False
 'K',0x4b,False
 'P',0x50,False
 'Z',0x5a,False
 '`',0x60,False
 'a',0x61,False
+'d',0x64,False
 'n',0x6e,False
+'r',0x72,False
 'x',0x78,False
 'y',0x79,False
+'z',0x7a,False
+'\|',0x7c,False
 '}',0x7d,False
-\(this->manager\),this->manager,False
-\(this->base\)\.,super->,False
-\&this->base,super,False
-(\w*)->spriteSettings = \(\w*\)\(\(u8\)\1->spriteSettings & 0xfc\);,\1->spriteSettings.draw = 0;,False
-(\w*)->spriteSettings = \(\w*\)\(\(u8\)\1->spriteSettings & 0xfc \| 1\);,\1->spriteSettings.draw = 1;,False
+(\w*)->spriteSettings = \((\(u8\))?\1->spriteSettings & 0xfc\);,\1->spriteSettings.draw = 0;,False
+(\w*)->spriteSettings = \((\(u8\))?\1->spriteSettings & 0xfc \| 1\);,\1->spriteSettings.draw = 1;,False
+(\S*) \= \1 (\S) (\S*);,\1 \2= \3;,False
+\+= -,-= ,False
+ \+\=\ 1\;,++;,False
+ \-\=\ 1\;,--;,False
+gPlayerEntity.base,gPlayerEntity,False
