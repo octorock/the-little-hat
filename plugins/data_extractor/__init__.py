@@ -1779,7 +1779,7 @@ class DataExtractorPlugin:
         if match is not None:
             return DataType(0, match.group('name'), match.group('type'), 0, 0, '')
 
-        match = re.search('(extern )?(const )?(?P<type>\S+) (const )?(?P<name>\w+)\[(?P<count>\w+)?\];', type)
+        match = re.search('(extern )?(const )?(?P<type>\S+) (\*?const )?(?P<name>\w+)\[(?P<count>\w+)?\];', type)
         if match is not None:
             return DataType(1, match.group('name'), match.group('type'), match.group('count'), 0, '')
 
