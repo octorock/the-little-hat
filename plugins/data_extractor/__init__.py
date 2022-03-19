@@ -1587,9 +1587,12 @@ class DataExtractorPlugin:
         if not ok:
             return
         print(type_str)
-
+        text = ''
         try:
-            text = self.extract_data(type_str, self.current_controller.symbols, self.current_controller.rom)
+            for line in type_str.split(';'):
+                line = line.strip()
+                if line != "":
+                    text += self.extract_data(line + ';', self.current_controller.symbols, self.current_controller.rom) + '\n'
         except Exception as e:
             traceback.print_exc()
             self.api.show_error(self.name, str(e))
@@ -1779,7 +1782,7 @@ class DataExtractorPlugin:
         if match is not None:
             return DataType(0, match.group('name'), match.group('type'), 0, 0, '')
 
-        match = re.search('(extern )?(const )?(?P<type>\S+) (\*?const )?(?P<name>\w+)\[(?P<count>\w+)?\];', type)
+        match = re.search('(extern )?(const )?(?P<type>\S+) (const )?(?P<name>\w+)\[(?P<count>\w+)?\];', type)
         if match is not None:
             return DataType(1, match.group('name'), match.group('type'), match.group('count'), 0, '')
 
