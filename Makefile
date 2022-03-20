@@ -11,11 +11,11 @@ UI_FILES =  $(notdir $(wildcard $(RESOURCE_DIR)/*.ui))
 RESOURCES = $(notdir $(wildcard $(RESOURCE_DIR)/*.qrc))
 
 ifeq ($(OS),Windows_NT)
-	PYUIC = python3 venv/Scripts/pyside6-uic.exe
-	PYRCC = python3 venv/Scripts/pyside6-rcc.exe
+	PYUIC = venv/Scripts/python3 venv/Scripts/pyside6-uic.exe
+	PYRCC = venv/Scripts/python3 venv/Scripts/pyside6-rcc.exe
 else
-	PYUIC = python3 venv/bin/pyside6-uic
-	PYRCC = python3 venv/bin/pyside6-rcc
+	PYUIC = venv/bin/python3 venv/bin/pyside6-uic
+	PYRCC = venv/bin/python3 venv/bin/pyside6-rcc
 endif
  
  

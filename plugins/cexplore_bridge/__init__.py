@@ -2,7 +2,7 @@ import traceback
 
 from PySide6.QtGui import QKeySequence
 from plugins.cexplore_bridge.ghidra import improve_decompilation
-from plugins.cexplore_bridge.code import find_globals, get_code, split_code, store_code
+from plugins.cexplore_bridge.code import extract_USA_asm, find_globals, get_code, split_code, store_code
 from PySide6.QtCore import QThread, Qt, Signal
 from PySide6.QtWidgets import QApplication, QDialog, QDialogButtonBox, QDockWidget
 from plugins.cexplore_bridge.link import generate_cexplore_url
@@ -209,7 +209,7 @@ class BridgeDock(QDockWidget):
             #self.apply_function_type(self.ui.lineEditFunctionName.text().strip(), signature)
 
         if NO_CONFIRMS or self.api.show_question('CExplore Bridge', f'Replace code in CExplore with {self.ui.lineEditFunctionName.text().strip()}?'):
-            self.server_worker.slot_send_asm_code(asm)
+            self.server_worker.slot_send_asm_code(extract_USA_asm(asm))
             self.server_worker.slot_send_c_code(src)
             if not NO_CONFIRMS:
                 self.api.show_message(
@@ -310,6 +310,8 @@ class BridgeDock(QDockWidget):
             self.server_worker.slot_add_c_code(code)
         except requests.exceptions.RequestException as e:
             self.api.show_error('CExplore Bridge', 'Could not reach Ghidra server. Did you start the script?')
+        except Exception as e:
+            self.api.show_error('CExplore Bridge', 'An unknown error occured: ' + str(e))
 
     def slot_upload_and_decompile(self) -> None:
         # Upload, but don't include the function.

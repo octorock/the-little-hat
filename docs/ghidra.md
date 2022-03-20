@@ -17,10 +17,12 @@ Compiler: default
 Import using the format `Executable and Linking Format (ELF)`.  
 ![Import dialog](img/import.png)
 
-Let it auto-analyze the file. (This takes a while).
+Now click on the elf file in the project view to update the code browser. Click Yes that you want to auto-analyze the file. Uncheck the `DWARF` analyzer and let it auto-analyze the file. (This takes a while).
 
 ## Import data types
-Switch to *The Little Hat* and activate the `Ghidra Bridge` plugin. Then click on <kbd>Tools | Plugins | Export headers to Ghidra</kbd>.
+Switch to *The Little Hat* and click on the <kbd>Tools | Settings</kbd> menu. In the Plugins tab activate the `Ghidra Bridge` plugin.
+
+Then click on <kbd>Tools | Plugins | Export headers to Ghidra</kbd>.
 
 Switch to Ghidra and click on
 <kbd>File | Parse C Source...</kbd>.

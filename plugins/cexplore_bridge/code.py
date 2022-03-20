@@ -207,3 +207,50 @@ def find_globals() -> List[Tuple[str, str]]:
                     if match is not None:
                         globals.append((match.group(1), match.group(2)))
     return globals
+
+# Only extract the code for the USA version from the asm code
+def extract_USA_asm(asm: str) -> str:
+    script_lines = asm.split('\n')
+    output_lines = []
+    ifdef_stack = [True]
+
+    for line in script_lines:
+        stripped = line.strip()
+
+        if '.ifdef' in stripped:
+            if not ifdef_stack[-1]:
+                ifdef_stack.append(False)
+                #output_lines.append(line)
+                continue
+            # TODO check variant
+            is_usa = stripped.split(' ')[1] == 'USA'
+            ifdef_stack.append(is_usa)
+            #output_lines.append(line)
+            continue
+        if '.ifndef' in stripped:
+            if not ifdef_stack[-1]:
+                ifdef_stack.append(False)
+                output_lines.append(line)
+                continue
+            is_usa = stripped.split(' ')[1] == 'USA'
+            ifdef_stack.append(not is_usa)
+            #output_lines.append(line)
+            continue
+        if '.else' in stripped:
+            if ifdef_stack[-2]:
+                # If the outermost ifdef is not true, this else does not change the validiness of this ifdef
+                ifdef_stack[-1] = not ifdef_stack[-1]
+            #output_lines.append(line)
+            continue
+        if '.endif' in stripped:
+            ifdef_stack.pop()
+            #output_lines.append(line)
+            continue
+
+        if not ifdef_stack[-1]:
+            # Not defined for this variant
+            #output_lines.append(line)
+            continue
+
+        output_lines.append(line)
+    return '\n'.join(output_lines)
