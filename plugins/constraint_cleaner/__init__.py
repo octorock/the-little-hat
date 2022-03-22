@@ -8,6 +8,7 @@ from tlh.data.database import get_constraint_database
 class ConstraintCleanerPlugin:
     name = 'Constraint Cleaner'
     description = 'Cleans up duplicate constraints\nand disables redundant constraints'
+    hidden = True
 
     def __init__(self, api: PluginApi) -> None:
         self.api = api

@@ -10,6 +10,7 @@ from tlh.data.database import get_pointer_database
 class ShiftabilityTesterPlugin:
     name = 'Shiftability Tester'
     description = 'Tests whether a rom with .space inside it was\nshifted correctly.'
+    hidden = True
 
     def __init__(self, api: PluginApi) -> None:
         self.api = api

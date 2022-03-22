@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from PySide6.QtGui import QKeySequence
 from plugins.data_extractor.assets import get_all_asset_configs, read_assets, write_assets
+from plugins.data_extractor.data_types import parse_type
 from plugins.data_extractor.gba_lz77 import GBALZ77, DecompressionError
 from plugins.data_extractor.read_data import Reader, load_json_files, read_var
 from plugins.data_extractor.structs import generate_struct_definitions
@@ -24,21 +25,7 @@ import json
 
 DEV_ACTIONS = False
 
-@dataclass
-class DataType:
-    '''
-    0: Single data
-    1: Arrays of data
-    2: Arrays of arrays of data
-    3: Arrays of function pointers
-    4: Arrays of arrays of puncion pointers
-    '''
-    regex: int
-    name: str
-    type: str
-    count: int
-    count2: int
-    params: str
+
 @dataclass
 class Asset:
     name: str
@@ -124,7 +111,7 @@ class DataExtractorPlugin:
             menu.addAction('Create asset lists', self.slot_create_asset_lists)
             menu.addAction('tmp remove', self.slot_tmp2)
             menu.addAction('Sprite Test', self.slot_sprite_test)
-        menu.addAction('Test modify asset list', self.test_asset_list_modification)
+            menu.addAction('Test modify asset list', self.test_asset_list_modification)
 
 
     def slot_copy_as_incbin(self) -> None:
@@ -1526,7 +1513,7 @@ class DataExtractorPlugin:
 
 
     def extract_data(self, code: str, symbols: SymbolList, rom: Rom) -> str:
-        type = self.parse_type(code)
+        type = parse_type(code)
 
         if type is None:
             raise Exception(f'Could not parse type of `{code}`')
@@ -1553,7 +1540,7 @@ class DataExtractorPlugin:
                 if symbol.length % 4 != 0:
                     raise Exception('Incorrect data length')
 
-                text = 'const ' + type.type + ' ' + type.name + '[] = {'
+                text = 'const ' + type.type + (' const' if type.inner_const else '') + ' ' + type.name + '[] = {'
                 for i in range(symbol.address, symbol.address+symbol.length, 4):
                     pointer = rom.get_pointer(i)
                     if pointer == 0:
@@ -1595,6 +1582,7 @@ class DataExtractorPlugin:
         print(type_str)
         text = ''
         try:
+            # Split at ; to be able to parse multiple definition lines at once.
             for line in type_str.split(';'):
                 line = line.strip()
                 if line != "":
@@ -1783,28 +1771,6 @@ class DataExtractorPlugin:
         # with open('/tmp/teset.s', 'w') as file:
         #     file.writelines(out_lines)
 
-    def parse_type(self, type: str) -> DataType:
-        match = re.search('(extern )?(const )?(?P<type>\S+) (?P<name>\w+);', type)
-        if match is not None:
-            return DataType(0, match.group('name'), match.group('type'), 0, 0, '')
-
-        match = re.search('(extern )?(const )?(?P<type>\S+) (const )?(?P<name>\w+)\[(?P<count>\w+)?\];', type)
-        if match is not None:
-            return DataType(1, match.group('name'), match.group('type'), match.group('count'), 0, '')
-
-        match = re.search('(extern )?(const )?(?P<type>\S+) (?P<name>\w+)\[(?P<count>\w+)?\]\[(?P<count2>\w+)?\];', type)
-        if match is not None:
-            return DataType(2, match.group('name'), match.group('type'), match.group('count'), match.group('count2'), '')
-
-        match = re.search('(extern )?(const )?void \(\*(const )?(?P<name>\w+)\[(?P<count>\w+)?\]\)\((?P<params>.*)\);', type)
-        if match is not None:
-            return DataType(3, match.group('name'), '', match.group('count'), 0, match.group('params'))
-
-        match = re.search('(extern )?(const )?void \(\*(const )?(?P<name>\w+)\[(?P<count>\w+)?\]\[(?P<count2>\w+)\]\)\((?P<params>.*)\);', type)
-        if match is not None:
-            return DataType(4, match.group('name'), '', match.group('count'), match.group('count2'), match.group('params'))
-
-        return None
 
 
 

@@ -30,6 +30,7 @@ def incbin_line(addr, length) -> str:
 class PointerExtractorPlugin:
     name = 'Pointer Extractor'
     description = 'Extracts marked pointers from .incbins'
+    hidden = True
 
     def __init__(self, api: PluginApi) -> None:
         self.api = api
