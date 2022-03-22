@@ -1,3 +1,4 @@
+from typing import Dict, List
 from PySide6.QtWidgets import QMessageBox
 from tlh.data.rom import get_rom
 from tlh.hexviewer.controller import HexViewerController
@@ -22,7 +23,7 @@ class DockManager:
         self.parent = parent
         self.dock_count = 0
         self.hex_viewer_manager = HexViewerManager(parent)
-        self.docks: dict[str, Dock] = {}
+        self.docks: Dict[str, Dock] = {}
 
     def add_hex_editor(self, rom_variant: RomVariant):
         '''
@@ -95,7 +96,7 @@ class DockManager:
 
         self.hex_viewer_manager.unlink_all()
 
-        linked_controllers: list[HexViewerController] = []
+        linked_controllers: List[HexViewerController] = []
 
         print(to_spawn)
         # Close docks that are no longer open

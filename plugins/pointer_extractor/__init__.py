@@ -1,3 +1,4 @@
+from typing import Dict, List
 from tlh.data.pointer import Pointer
 from sortedcontainers.sortedlist import SortedKeyList
 from tlh.const import ROM_OFFSET, RomVariant
@@ -54,7 +55,7 @@ class PointerExtractorPlugin:
         self.incbins = IntervalTree(incbins)
         self.api.show_message('Pointer Extractor', f'{len(incbins)} .incbins found')
 
-    def find_incbins(self, path: str) -> list[Interval]:
+    def find_incbins(self, path: str) -> List[Interval]:
         incbins = []
         with open(path, 'r') as file:
             for line in file:
@@ -87,7 +88,7 @@ class PointerExtractorPlugin:
 
         pointers = get_pointer_database().get_pointers(RomVariant.USA)
 
-        to_extract: dict[str, SortedKeyList[Pointer]] = {}
+        to_extract: Dict[str, SortedKeyList[Pointer]] = {}
 
         for pointer in pointers:
             found = self.incbins.at(pointer.address)

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, Optional
 from tlh.const import RomVariant
 from tlh import settings
 
@@ -23,7 +23,7 @@ class Rom:
 
 
 # Rom data is read only, so we only need to read it once
-roms: dict[RomVariant, Rom] = {}
+roms: Dict[RomVariant, Rom] = {}
 
 # TODO invalidate roms when settings change?
 # necessary? Once we have a valid rom, there will be no changes

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, Optional
 from tlh.const import ROM_OFFSET, RomVariant
 from tlh import settings
 from sortedcontainers import SortedKeyList
@@ -13,7 +13,7 @@ class Symbol:
     file: str = None
     length: int = 0
 
-symbols: dict[RomVariant, SortedKeyList[Symbol]] = {}
+symbols: Dict[RomVariant, SortedKeyList[Symbol]] = {}
 
 def are_symbols_loaded(rom_variant: RomVariant) -> bool:
     return rom_variant in symbols

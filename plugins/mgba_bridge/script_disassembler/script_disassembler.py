@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import struct
-from typing import Tuple
+from typing import List, Tuple
 from plugins.mgba_bridge.script_disassembler.utils import barray_to_u16_hex, u16_to_hex
 from plugins.mgba_bridge.script_disassembler.definitions import get_pointer, commands, parameters, get_script_label, used_labels
 
@@ -136,11 +136,11 @@ def disassemble_command(ctx: Context, add_all_annotations=False) -> Tuple[int, I
     return (1, Instruction(commandStartAddress, 'TODO'))
 
 
-def disassemble_script(input_bytes, script_addr, add_all_annotations=False) -> Tuple[int, list[Instruction]]:
+def disassemble_script(input_bytes, script_addr, add_all_annotations=False) -> Tuple[int, List[Instruction]]:
     ctx = Context(0, input_bytes, script_addr)
 
     foundEnd = False
-    instructions: list[Instruction] = []
+    instructions: List[Instruction] = []
     while True:
         # End of file (there need to be at least two bytes remaining for the next operation id)
         if ctx.ptr >= len(ctx.data) - 1:

@@ -1,5 +1,6 @@
 from csv import DictReader, DictWriter
 from os import path
+from typing import Dict, List
 
 from sortedcontainers.sortedlist import SortedKeyList
 from tlh.data.symbols import Symbol, SymbolList
@@ -50,7 +51,7 @@ class ConstraintDatabase(QObject):
         super().__init__(parent=parent)
         self.constraints = self._read_constraints()
 
-    def get_constraints(self) -> list[Constraint]:
+    def get_constraints(self) -> List[Constraint]:
         return self.constraints
 
     def add_constraint(self, constraint: Constraint) -> None:
@@ -63,7 +64,7 @@ class ConstraintDatabase(QObject):
         if constraint.enabled:
             self.constraints_changed.emit()
 
-    def add_constraints(self, constraints: list[Constraint]) -> None:
+    def add_constraints(self, constraints: List[Constraint]) -> None:
         self.constraints += constraints
         if settings.is_auto_save():
             self._write_constraints()
@@ -75,7 +76,7 @@ class ConstraintDatabase(QObject):
                 self.constraints_changed.emit()
                 break
 
-    def remove_constraints(self, constraints: list[Constraint]) -> None:
+    def remove_constraints(self, constraints: List[Constraint]) -> None:
         for constraint in constraints:
             self.constraints.remove(constraint)
         if settings.is_auto_save():
@@ -88,7 +89,7 @@ class ConstraintDatabase(QObject):
                 self.constraints_changed.emit()
                 break
 
-    def _read_constraints(self) -> list[Constraint]:
+    def _read_constraints(self) -> List[Constraint]:
         constraints = []
         try:
             with open(get_file_in_database('constraints.csv'), 'r') as file:
@@ -187,7 +188,7 @@ class PointerDatabase(QObject):
             pass
         self.pointers_changed.emit()
 
-    def add_pointers(self, pointers: list[Pointer]) -> None:
+    def add_pointers(self, pointers: List[Pointer]) -> None:
         for pointer in pointers:
             self.pointers[pointer.rom_variant].append(pointer)
         if settings.is_auto_save():
@@ -197,7 +198,7 @@ class PointerDatabase(QObject):
             pass
         self.pointers_changed.emit()
 
-    def remove_pointers(self, pointers: list[Pointer]) -> None:
+    def remove_pointers(self, pointers: List[Pointer]) -> None:
         for pointer in pointers:
             self.pointers[pointer.rom_variant].remove(pointer)
         if settings.is_auto_save():
@@ -208,7 +209,7 @@ class PointerDatabase(QObject):
         self.pointers_changed.emit()
 
 
-    def _read_pointers(self) -> list[Pointer]:
+    def _read_pointers(self) -> List[Pointer]:
         pointers = []
         try:
             with open(get_file_in_database('pointers.csv'), 'r') as file:
@@ -265,7 +266,7 @@ class AnnotationDatabase(QObject):
         super().__init__(parent=parent)
         self.annotations = self._read_annotations()
 
-    def get_annotations(self) -> list[Annotation]:
+    def get_annotations(self) -> List[Annotation]:
         return self.annotations
 
     def add_annotation(self, annotation: Annotation) -> None:
@@ -277,7 +278,7 @@ class AnnotationDatabase(QObject):
             pass
         self.annotations_changed.emit()
 
-    def add_annotations(self, annotations: list[Annotation]) -> None:
+    def add_annotations(self, annotations: List[Annotation]) -> None:
         self.annotations += annotations
         if settings.is_auto_save():
             self._write_annotations()
@@ -286,7 +287,7 @@ class AnnotationDatabase(QObject):
             pass
         self.annotations_changed.emit()
 
-    def _read_annotations(self) -> list[Annotation]:
+    def _read_annotations(self) -> List[Annotation]:
         annotations = []
         try:
             with open(get_file_in_database('annotations.csv'), 'r') as file:
@@ -347,8 +348,8 @@ class SymbolDatabase(QObject):
     def get_symbols(self, rom_variant: RomVariant) -> SymbolList:
         return self.symbols[rom_variant]
 
-    def _read_symbols(self) -> dict[RomVariant, SymbolList]:
-        symbol_dict: dict[RomVariant, SymbolList] = {}
+    def _read_symbols(self) -> Dict[RomVariant, SymbolList]:
+        symbol_dict: Dict[RomVariant, SymbolList] = {}
         for rom_variant in ALL_ROM_VARIANTS:
             symbols_csv_path = get_file_in_database(f'symbols_{rom_variant}.csv')
             if path.isfile(symbols_csv_path):

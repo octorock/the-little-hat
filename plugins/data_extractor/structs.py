@@ -2,8 +2,9 @@ import json
 import sys
 import typing
 from dataclasses import dataclass
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Set
 from weakref import ReferenceType, ref
+from attr import define
 
 import pycparser
 import pycparser.c_ast
@@ -286,41 +287,93 @@ if __name__ == '__main__':
     main()
 
 
+def collect_all_headers() -> List[str]:
+    headers = []
+    include_folder = os.path.join(settings.get_repo_location(), 'include')
+    for root, dirs, files in os.walk(include_folder):
+        for file in files:
+            header_path = os.path.relpath(os.path.join(root, file), include_folder)
+            headers.append(header_path)
+    return headers
+
 def generate_struct_definitions() -> None:
+
+    headers = collect_all_headers()
+
     with open('tmp/test.c', 'w') as file:
-        file.write(
-'''
-#include "sound.h"
-#include "coord.h"
-#include "effects.h"
-#include "enemy.h"
-#include "entity.h"
-#include "fileselect.h"
-#include "flags.h"
-#include "functions.h"
-#include "game.h"
-#include "global.h"
-#include "item.h"
-#include "main.h"
-#include "manager.h"
-#include "menu.h"
-#include "npc.h"
-#include "object.h"
-#include "player.h"
-#include "room.h"
-#include "save.h"
-#include "screen.h"
-#include "script.h"
-#include "sprite.h"
-#include "structures.h"
-#include "message.h"
-#include "tiles.h"
-#include "common.h"
-'''
-)
+        file.write('#define NENT_DEPRECATED\n')
+        for header in headers:
+            file.write(f'#include "{header}"\n')
+
     repo_location = settings.get_repo_location()
     # Preprocess file
     subprocess.check_call(['cc', '-E', '-I',  os.path.join(repo_location, 'tools/agbcc'), '-I', os.path.join(repo_location, 'tools/agbcc/include'), '-iquote', os.path.join(repo_location, 'include'), '-nostdinc', '-undef', '-DUSA', '-DREVISION=0', '-DENGLISH', 'tmp/test.c', '-o', 'tmp/test.i'])
 
     parse_to_json('tmp/test.i', get_file_in_database(os.path.join('data_extractor', 'structs.json')))
 
+    # generate_decomp_me_context(headers)
+
+def collect_defines(path: str) -> str:
+    result = ''
+    with open(os.path.join(settings.get_repo_location(), 'include', path), 'r') as file:
+        next_line_belongs_to_define = False
+        first_define = True
+        defined_names = set()
+        if 'isagbprint' in path:
+            defined_names.add('AGBPrintInit()')
+            defined_names.add('AGBPutc(cChr)')
+            defined_names.add('AGBPrint(pBuf)')
+            defined_names.add('AGBPrintf(pBuf,')
+            defined_names.add('AGBPrintFlush1Block()')
+            defined_names.add('AGBPrintFlush()')
+            defined_names.add('AGBAssert(pFile,')
+
+        for line in file:
+            trimmed_line = line.strip()
+            if next_line_belongs_to_define or trimmed_line.startswith('#define'):
+                if first_define:
+                    first_define = False
+                    continue
+
+
+                if not next_line_belongs_to_define:
+                    # Only use the first define for a name
+                    name = trimmed_line.split(' ')[1]
+                    if name in defined_names:
+                        continue
+                    defined_names.add(name)
+
+                result += line
+                if trimmed_line.endswith('\\'):
+                    next_line_belongs_to_define = True
+                else:
+                    next_line_belongs_to_define = False
+    return result
+
+def generate_decomp_me_context(headers: List[str]) -> None:
+    TMP_FILE = '/tmp/test.c'
+    CONTEXT_FILE = 'tmp/decompme-context.c'
+    with open(TMP_FILE, 'w') as output:
+        output.write('#define NULL 0\n')
+        for header in headers:
+            output.write(collect_defines(header))
+        # Remove empty lines and cc -E comments
+        with open('tmp/test.i', 'r') as file:
+            for line in file:
+                if line.strip() != '' and not line.startswith('#'):
+                    output.write(line)
+
+    # Format with clang-format
+    FORMAT_FILE = '/tmp/.clang-format'
+    if not os.path.isfile(FORMAT_FILE):
+        # Need to copy the .clang-format file due to https://stackoverflow.com/a/46374122
+        subprocess.call(['cp', os.path.join(settings.get_repo_location(), '.clang-format'), FORMAT_FILE])
+    subprocess.call(['clang-format', '--style=file', '-i', TMP_FILE])
+
+    lines = []
+    with open(TMP_FILE, 'r') as file:
+        lines = file.readlines()
+
+    lines = map(lambda x: x.replace('    ', '\t'), lines)
+    with open(CONTEXT_FILE, 'w') as file:
+        file.writelines(lines)

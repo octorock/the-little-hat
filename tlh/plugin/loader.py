@@ -27,7 +27,7 @@ class Plugin:
         return self.pkg_name + ':' + self.class_name
 
 
-plugins: list[Plugin] = []
+plugins: List[Plugin] = []
 api: PluginApi = None
 
 
@@ -118,7 +118,7 @@ def disable_plugin(plugin: Plugin) -> None:
     plugin.enabled = False
 
 
-def get_plugins() -> list[Plugin]:
+def get_plugins() -> List[Plugin]:
     return plugins
 
 

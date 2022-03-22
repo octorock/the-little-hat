@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 from tlh.data.symbols import Symbol, SymbolList
 from tlh.hexviewer.display_byte import DisplayByte
 from tlh.hexviewer.ui.hex_area import KeyType
@@ -230,7 +231,7 @@ class HexViewerController(QObject):
             return ''
         return '%08X' % (local_address + ROM_OFFSET)
 
-    def get_bytes(self, from_index: int, to_index: int) -> list[DisplayByte]:
+    def get_bytes(self, from_index: int, to_index: int) -> List[DisplayByte]:
         return list(map(
             self.get_display_byte_for_virtual_address,
             range(from_index, to_index)
@@ -281,7 +282,7 @@ class HexViewerController(QObject):
     def is_pointer(self, local_address: int) -> bool:
         return len(self.pointers.get_pointers_at(local_address)) > 0
 
-    def get_pointers_at(self, virtual_address: int) -> list[Pointer]:
+    def get_pointers_at(self, virtual_address: int) -> List[Pointer]:
         local_address = self.address_resolver.to_local(virtual_address)
         if local_address == -1:
             return []

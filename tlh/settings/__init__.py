@@ -3,7 +3,7 @@ from tlh.const import RomVariant
 from PySide6.QtCore import QSettings, Signal
 from getpass import getuser
 import multiprocessing
-from typing import Optional
+from typing import List, Optional
 import os
 
 settings = QSettings('octorock', 'the-little-hat')
@@ -167,7 +167,7 @@ def set_session_layout(layout: Layout) -> None:
     settings.endGroup()
 
 
-def get_layouts() -> list[Layout]:
+def get_layouts() -> List[Layout]:
     layouts = []
     size = settings.beginReadArray('layouts')
     for i in range(size):
@@ -182,7 +182,7 @@ def get_layouts() -> list[Layout]:
     return layouts
 
 
-def set_layouts(layouts: list[Layout]):
+def set_layouts(layouts: List[Layout]):
     settings.beginWriteArray('layouts')
     for i in range(len(layouts)):
         settings.setArrayIndex(i)

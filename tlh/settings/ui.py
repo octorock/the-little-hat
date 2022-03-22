@@ -13,7 +13,7 @@ from tlh.ui.ui_settings import Ui_dialogSettings
 
 
 class LayoutModel(QAbstractListModel):
-    def __init__(self, layouts: list[settings.Layout], parent: typing.Optional[PySide6.QtCore.QObject]) -> None:
+    def __init__(self, layouts: typing.List[settings.Layout], parent: typing.Optional[PySide6.QtCore.QObject]) -> None:
         super().__init__(parent=parent)
         self.layouts = layouts
 

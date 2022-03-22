@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 import os
 from pprint import pprint
-from typing import Optional
+from typing import Dict, List, Optional, Set, Tuple
 
 from PySide6.QtGui import QKeySequence
 from plugins.data_extractor.assets import get_all_asset_configs, read_assets, write_assets
@@ -528,9 +528,9 @@ class DataExtractorPlugin:
         lines = []
         lines.append('gPaletteGroups::\n')
 
-        group_lines: list[str] = []
-        palette_pointers: set[int] = set()
-        palette_offsets: list[int] = []
+        group_lines: List[str] = []
+        palette_pointers: Set[int] = set()
+        palette_offsets: List[int] = []
 
 
         i = 0
@@ -570,9 +570,9 @@ class DataExtractorPlugin:
 
         print('done')
 
-    def extract_palette_group(self, pointer: int, symbol: Symbol) -> tuple[list[str], list[int]]:
-        lines: list[str] = []
-        palette_indices: list[int] = []
+    def extract_palette_group(self, pointer: int, symbol: Symbol) -> Tuple[List[str], List[int]]:
+        lines: List[str] = []
+        palette_indices: List[int] = []
         reader = self.get_reader_for_symbol(symbol)
         continue_loading_palette_sets = True
         lines.append(f'\n{symbol.name}::\n')
@@ -711,12 +711,12 @@ class DataExtractorPlugin:
         #     file.writelines(self.replacements)
 
         # Now extract all assets belonging to areas
-        self.assets:list[Asset] = []
+        self.assets:List[Asset] = []
         self.extract_area_tilesets()
         assets_symbol = self.current_controller.symbols.find_symbol_by_name('gMapData')
         self.print_assets_list(assets_symbol, self.assets)
 
-    def print_assets_list(self, assets_symbol: Symbol, assets:list[Asset]) -> None:
+    def print_assets_list(self, assets_symbol: Symbol, assets:List[Asset]) -> None:
         # Show assets and empty space
         assets.sort(key=lambda x:x.offset)
         last_used_offset = 0
@@ -943,7 +943,7 @@ class DataExtractorPlugin:
             traceback.print_exc()
             self.api.show_error(self.name, 'Error in extracting entity list')
 
-    def extract_entity_list(self, symbol: Symbol) -> list[str]:
+    def extract_entity_list(self, symbol: Symbol) -> List[str]:
         if symbol is None:
             return
         #print('entity list ', symbol)
@@ -1049,7 +1049,7 @@ class DataExtractorPlugin:
             traceback.print_exc()
             self.api.show_error(self.name, 'Error in extracting tile entity list')
 
-    def extract_tile_entity_list(self, symbol: Symbol) -> list[str]:
+    def extract_tile_entity_list(self, symbol: Symbol) -> List[str]:
         if symbol is None:
             return
         print('tile entity list ', symbol)
@@ -1089,7 +1089,7 @@ class DataExtractorPlugin:
             traceback.print_exc()
             self.api.show_error(self.name, 'Error in extracting delayed entity list')
 
-    def extract_delayed_entity_list(self, symbol: Symbol) -> list[str]:
+    def extract_delayed_entity_list(self, symbol: Symbol) -> List[str]:
         if symbol is None:
             return
         data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length + 0x100)
@@ -1150,7 +1150,7 @@ class DataExtractorPlugin:
             traceback.print_exc()
             self.api.show_error(self.name, 'Error in extracting exit region list')
 
-    def extract_exit_region_list(self, symbol: Symbol) -> list[str]:
+    def extract_exit_region_list(self, symbol: Symbol) -> List[str]:
         if symbol is None:
             return
         data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length + 0x100)
@@ -1211,7 +1211,7 @@ class DataExtractorPlugin:
             traceback.print_exc()
             self.api.show_error(self.name, 'Error in extracting exit region list')
 
-    def extract_exit(self, symbol: Symbol) -> list[str]:
+    def extract_exit(self, symbol: Symbol) -> List[str]:
         if symbol is None:
             return
         data = self.current_controller.rom.get_bytes(symbol.address, symbol.address+symbol.length + 0x100)
@@ -1384,7 +1384,7 @@ class DataExtractorPlugin:
         (decompressed_data, compressed_length) = GBALZ77.decompress(compressed_data)
         return compressed_length
 
-    def extract_gfx_group(self, symbol: Symbol, group_index: int) -> list[str]:
+    def extract_gfx_group(self, symbol: Symbol, group_index: int) -> List[str]:
         print(symbol)
         reader = self.get_reader_for_symbol(symbol)
         self.replacements.append((symbol.name, f'gGfxGroup_{group_index}'))
@@ -1493,7 +1493,7 @@ class DataExtractorPlugin:
         #     file.writelines(animation_lines)
         #     file.writelines(lines)
 
-    def extract_animation(self, symbol: Symbol, new_name: str) -> list[str]:
+    def extract_animation(self, symbol: Symbol, new_name: str) -> List[str]:
         reader = self.get_reader_for_symbol(symbol)
         lines = []
         print(new_name)
@@ -1556,8 +1556,11 @@ class DataExtractorPlugin:
                 text = 'const ' + type.type + ' ' + type.name + '[] = {'
                 for i in range(symbol.address, symbol.address+symbol.length, 4):
                     pointer = rom.get_pointer(i)
-                    pointer_symbol = symbols.get_symbol_at(pointer - ROM_OFFSET)
-                    text += '&' + pointer_symbol.name + ', '
+                    if pointer == 0:
+                        text += 'NULL, '
+                    else:
+                        pointer_symbol = symbols.get_symbol_at(pointer - ROM_OFFSET)
+                        text += '&' + pointer_symbol.name + ', '
                 text += '};'
             else:
                 res = read_var(reader, type.type + '[]')
@@ -1569,8 +1572,11 @@ class DataExtractorPlugin:
             text = 'void (*const ' + type.name + '[])(' + type.params + ') = {'
             for i in range(symbol.address, symbol.address+symbol.length, 4):
                 pointer = rom.get_pointer(i)
-                pointer_symbol = symbols.get_symbol_at(pointer - ROM_OFFSET)
-                text += pointer_symbol.name + ', '
+                if pointer == 0:
+                    text += 'NULL, '
+                else:
+                    pointer_symbol = symbols.get_symbol_at(pointer - ROM_OFFSET)
+                    text += pointer_symbol.name + ', '
             text += '};'
         else:
             raise Exception(f'Unimplemented type for regex {type.regex}')
@@ -2007,7 +2013,7 @@ class DataExtractorPlugin:
 
     def slot_create_asset_lists(self) -> None:
         if not hasattr(self, 'all_assets'):
-            self.all_assets: dict[str, list[Asset]] = {}
+            self.all_assets: Dict[str, List[Asset]] = {}
         
         self.extract_gfx_groups()
         self.extract_figurine_data()

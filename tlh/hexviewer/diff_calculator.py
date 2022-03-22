@@ -1,3 +1,4 @@
+from typing import List
 from tlh.const import RomVariant
 from tlh.data.constraints import ConstraintManager
 from tlh.data.rom import get_rom
@@ -14,11 +15,11 @@ class NoDiffCalculator(AbstractDiffCalculator):
 
 
 class LinkedDiffCalculator(AbstractDiffCalculator):
-    def __init__(self, constraint_manager: ConstraintManager, variants: list[RomVariant]) -> None:
+    def __init__(self, constraint_manager: ConstraintManager, variants: List[RomVariant]) -> None:
         self.constraint_manager = constraint_manager
         self.variants = variants
 
-    def set_variants(self, variants: list[RomVariant]) -> None:
+    def set_variants(self, variants: List[RomVariant]) -> None:
         self.variants = variants
 
     def is_diffing(self, virtual_address: int) -> bool:

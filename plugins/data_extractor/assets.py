@@ -1,4 +1,5 @@
 import json
+from typing import List
 from tlh import settings
 import os
 
@@ -49,7 +50,7 @@ class Assets:
                 self.assets.insert(i, asset)
                 break
 
-def get_all_asset_configs() -> list[str]:
+def get_all_asset_configs() -> List[str]:
     return [x for x in os.listdir(os.path.join(settings.get_repo_location(), 'assets')) if x.endswith('.json')]
 
 def read_assets(name: str) -> Assets:

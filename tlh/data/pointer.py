@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 from tlh.const import RomVariant
 from intervaltree import IntervalTree, Interval
 
@@ -13,7 +14,7 @@ class Pointer:
 
 
 class PointerList:
-    def __init__(self, pointers: list[Pointer], rom_variant: RomVariant) -> None:
+    def __init__(self, pointers: List[Pointer], rom_variant: RomVariant) -> None:
         intervals = []
 
         for pointer in pointers:
@@ -22,7 +23,7 @@ class PointerList:
 
         self.tree = IntervalTree(intervals)
 
-    def get_pointers_at(self, index: int) -> list[Pointer]:
+    def get_pointers_at(self, index: int) -> List[Pointer]:
         pointers = []
         for interval in self.tree.at(index):
             pointers.append(interval.data)
@@ -37,5 +38,5 @@ class PointerList:
     def __iter__(self):
         return map(lambda x: x.data, self.tree.__iter__())
 
-    def get_sorted_pointers(self) -> list[Pointer]:
+    def get_sorted_pointers(self) -> List[Pointer]:
         return map(lambda x: x.data, sorted(self.tree))

@@ -1,3 +1,4 @@
+from typing import Dict, List, Set, Tuple
 from tlh.const import RomVariant
 from dataclasses import dataclass
 from sortedcontainers import SortedKeyList
@@ -40,9 +41,9 @@ class RomRelations:
 
         # We basically want a SortedKeyList. However there are two different keys we need to access using bisect, local_address and virtual_address.
         # So instead we need to store sorted key lists for local and virtual addresses as well, see https://stackoverflow.com/a/27673073.
-        self.relations: list[RomRelation] = []
-        self.keys_local: list[int] = []
-        self.keys_virtual: list[int] = []
+        self.relations: List[RomRelation] = []
+        self.keys_local: List[int] = []
+        self.keys_virtual: List[int] = []
 
     def add_relation(self, local_address: int, virtual_address: int):
         if local_address > virtual_address:
@@ -68,7 +69,7 @@ class RomRelations:
             return self.relations[index]
         return None
 
-    def get_prev_and_next_relation_for_virtual_address(self, virtual_address: int) -> tuple[RomRelation, RomRelation]:
+    def get_prev_and_next_relation_for_virtual_address(self, virtual_address: int) -> Tuple[RomRelation, RomRelation]:
         index = bisect_right(self.keys_virtual, virtual_address) - 1
 
         prev = None
@@ -103,7 +104,7 @@ class NoConstraintManager:
     virtual and local addresses now are the same
     """
 
-    def set_variants(self, variants: set[RomVariant]) -> None:
+    def set_variants(self, variants: Set[RomVariant]) -> None:
         pass
 
     def reset(self):
@@ -112,7 +113,7 @@ class NoConstraintManager:
     def add_constraint(self, constraint: Constraint) -> None:
         pass
 
-    def add_all_constraints(self, constraints: list[Constraint]) -> None:
+    def add_all_constraints(self, constraints: List[Constraint]) -> None:
         pass
 
     def rebuild_relations(self) -> None:
@@ -129,17 +130,17 @@ class NoConstraintManager:
 
 
 class ConstraintManager:
-    def __init__(self, variants: set[RomVariant]) -> None:
+    def __init__(self, variants: Set[RomVariant]) -> None:
         """
         Pass a set of all RomVariants that should be linked using this constraint manager
         """
         self.variants = variants
-        self.constraints: list[Constraint] = []
-        self.rom_relations: dict[RomVariant, RomRelations] = {}
+        self.constraints: List[Constraint] = []
+        self.rom_relations: Dict[RomVariant, RomRelations] = {}
         for variant in variants:
             self.rom_relations[variant] = RomRelations(variant)
 
-    def set_variants(self, variants: set[RomVariant]) -> None:
+    def set_variants(self, variants: Set[RomVariant]) -> None:
         self.variants = variants
         self.rom_relations = {}
         for variant in variants:
@@ -156,7 +157,7 @@ class ConstraintManager:
             self.constraints.append(constraint)
         # TODO add #self.rebuild_relations()
 
-    def add_all_constraints(self, constraints: list[Constraint]) -> None:
+    def add_all_constraints(self, constraints: List[Constraint]) -> None:
         for constraint in constraints:
 
             if constraint.romA in self.variants and constraint.romB in self.variants:
@@ -174,8 +175,8 @@ class ConstraintManager:
         Builds relations between local addresses for each variation and the virtual address based on the constraints
         """
 
-        local_addresses: dict[str, int] = {}
-        local_blockers: dict[str, list[Blocker]] = {}
+        local_addresses: Dict[str, int] = {}
+        local_blockers: Dict[str, List[Blocker]] = {}
         local_blockers_count = 0
         for variant in self.variants:
             self.rom_relations[variant].clear()
@@ -273,7 +274,7 @@ class ConstraintManager:
                 local_blockers_copy[variant] = local_blockers[variant].copy()
 
             # We cannot fully be sure that a blocker is resolved as a constraint might be added afterwards that stops the resolution of this blocker
-            possibly_resolved_blockers: dict[RomVariant, list[Blocker]] = {}
+            possibly_resolved_blockers: Dict[RomVariant, List[Blocker]] = {}
             for variant in self.variants:
                 possibly_resolved_blockers[variant] = []
 
@@ -543,7 +544,7 @@ class ConstraintList:
     '''
     List of constraints for a single rom variant
     '''
-    def __init__(self, constraints: list[Constraint], rom_variant: RomVariant) -> None:
+    def __init__(self, constraints: List[Constraint], rom_variant: RomVariant) -> None:
 
         self.constraints = SortedKeyList(key=lambda x:x.addr)
 
@@ -554,7 +555,7 @@ class ConstraintList:
             elif constraint.romB == rom_variant:
                 self.constraints.add(RomConstraint(constraint.addressB, constraint))
 
-    def get_constraints_at(self, local_address: int) -> list[Constraint]:
+    def get_constraints_at(self, local_address: int) -> List[Constraint]:
         constraints = []
         index = self.constraints.bisect_key_left(local_address)
 

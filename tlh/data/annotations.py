@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 from tlh.const import RomVariant
 from PySide6.QtGui import QColor
 from intervaltree import Interval, IntervalTree
@@ -13,7 +14,7 @@ class Annotation:
     note: str = ''
 
 class AnnotationList:
-    def __init__(self, annotations: list[Annotation], rom_variant: RomVariant) -> None:
+    def __init__(self, annotations: List[Annotation], rom_variant: RomVariant) -> None:
         intervals = []
 
         for annotation in annotations:
@@ -22,7 +23,7 @@ class AnnotationList:
 
         self.tree = IntervalTree(intervals)
 
-    def get_annotations_at(self, index: int) -> list[Annotation]:
+    def get_annotations_at(self, index: int) -> List[Annotation]:
         annotations = []
         for interval in self.tree.at(index):
             annotations.append(interval.data)

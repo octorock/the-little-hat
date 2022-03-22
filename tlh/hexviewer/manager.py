@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QMessageBox
 from tlh import settings
@@ -27,9 +27,9 @@ class HexViewerManager(QObject):
 
     def __init__(self, parent) -> None:
         super().__init__(parent=parent)
-        self.controllers: list[HexViewerController] = []
-        self.linked_controllers: list[HexViewerController] = []
-        self.linked_variants: list[RomVariant] = []
+        self.controllers: List[HexViewerController] = []
+        self.linked_controllers: List[HexViewerController] = []
+        self.linked_variants: List[RomVariant] = []
 
         self.contextmenu_handlers = []
 
@@ -65,7 +65,7 @@ class HexViewerManager(QObject):
             self.unlink(controller)
         self.controllers.remove(controller)
 
-    def get_controllers_for_variant(self, rom_variant: RomVariant) -> list[HexViewerController]:
+    def get_controllers_for_variant(self, rom_variant: RomVariant) -> List[HexViewerController]:
         result = []
         for controller in self.controllers:
             if controller.rom_variant == rom_variant:
@@ -87,7 +87,7 @@ class HexViewerManager(QObject):
         self.linked_variants = []
         self.update_constraint_manager()
 
-    def link_multiple(self, linked_controllers: list[HexViewerController]) -> None:
+    def link_multiple(self, linked_controllers: List[HexViewerController]) -> None:
         '''
         Links all passed controllers
         '''

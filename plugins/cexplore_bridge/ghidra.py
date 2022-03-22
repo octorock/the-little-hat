@@ -3,6 +3,7 @@ import os
 from dataclasses import dataclass
 import re
 import subprocess
+from typing import List
 from tlh.data.database import get_file_in_database
 from tlh import settings
 
@@ -47,7 +48,7 @@ with open(get_file_in_database('ghidra.csv'), 'w') as f:
         })
 '''
 
-def read_replacements_from_file() -> list[Replacement]:
+def read_replacements_from_file() -> List[Replacement]:
     replacements = []
     with open(get_file_in_database('ghidra.csv'), 'r') as f:
         reader = DictReader(f)

@@ -13,7 +13,7 @@ from tlh.hexviewer.edit_annotation_dialog import EditAnnotationDialog
 from tlh.hexviewer.edit_constraint_dialog import EditConstraintDialog
 from tlh.hexviewer.edit_pointer_dialog import EditPointerDialog
 from tlh import settings
-from typing import Optional
+from typing import List, Optional
 
 
 class KeyType(Enum):
@@ -54,8 +54,8 @@ class HexAreaWidget (QWidget):
         self.label_length = 100
         self.is_dragging_to_select = False
 
-        self.display_data: list[DisplayByte] = []
-        self.display_labels: list[str] = []
+        self.display_data: List[DisplayByte] = []
+        self.display_labels: List[str] = []
 
         # TODO make configurable
         self.font = QFont('DejaVu Sans Mono, Courier, Monospace', 12)
