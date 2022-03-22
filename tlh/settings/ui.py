@@ -103,6 +103,7 @@ class SettingsDialog(QDialog):
         self.ui.checkBoxHighlight8Bytes.setChecked(settings.is_highlight_8_bytes())
         self.ui.spinBoxBytesPerLine.setValue(settings.get_bytes_per_line())
         self.ui.checkBoxAutoSave.setChecked(settings.is_auto_save())
+        self.ui.checkBoxUseConstraints.setChecked(settings.is_using_constraints())
 
         self.ui.lineEditRepoLocation.setText(settings.get_repo_location())
         self.ui.toolButtonRepoLocation.clicked.connect(self.edit_repo_location)
@@ -215,6 +216,7 @@ class SettingsDialog(QDialog):
         settings.set_highlight_8_bytes(self.ui.checkBoxHighlight8Bytes.isChecked())
         settings.set_bytes_per_line(self.ui.spinBoxBytesPerLine.value())
         settings.set_auto_save(self.ui.checkBoxAutoSave.isChecked())
+        settings.set_is_using_constrings(self.ui.checkBoxUseConstraints.isChecked())
         settings.set_repo_location(self.ui.lineEditRepoLocation.text())
         settings.set_build_command(self.ui.lineEditBuildCommand.text())
         settings.set_tidy_command(self.ui.lineEditTidyCommand.text())

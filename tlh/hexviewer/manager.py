@@ -4,7 +4,7 @@ from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QMessageBox
 from tlh import settings
 from tlh.const import ROM_OFFSET, ROM_SIZE, RomVariant
-from tlh.data.constraints import Constraint, ConstraintManager, InvalidConstraintError
+from tlh.data.constraints import Constraint, ConstraintManager, InvalidConstraintError, NoConstraintManager
 from tlh.data.database import get_constraint_database, get_pointer_database
 from tlh.data.pointer import Pointer
 from tlh.data.rom import get_rom
@@ -33,8 +33,11 @@ class HexViewerManager(QObject):
 
         self.contextmenu_handlers = []
 
-        self.constraint_manager = ConstraintManager({})
-        get_constraint_database().constraints_changed.connect(self.update_constraints)
+        if settings.is_using_constraints():
+            self.constraint_manager = ConstraintManager({})
+            get_constraint_database().constraints_changed.connect(self.update_constraints)
+        else:
+            self.constraint_manager = NoConstraintManager()
 
         self.linked_diff_calculator = LinkedDiffCalculator(
             self.constraint_manager, self.linked_variants)
@@ -166,20 +169,21 @@ class HexViewerManager(QObject):
         self.update_constraints()
 
     def update_constraints(self):
-        print('update constraints')
-        print(self.linked_variants)
-        self.constraint_manager.reset()
-        if len(self.linked_variants) > 1:
-            print('Add constraints')
-            try:
-                self.constraint_manager.add_all_constraints(
-                    get_constraint_database().get_constraints())
-            except InvalidConstraintError as e:
-                print(e)
-                QMessageBox.critical(self.parent(), 'Constraint Error', 'The current constraints are not valid.')
-        for controller in self.linked_controllers:
-            controller.request_repaint()
-            controller.setup_scroll_bar()
+        if settings.is_using_constraints():
+            print('update constraints')
+            print(self.linked_variants)
+            self.constraint_manager.reset()
+            if len(self.linked_variants) > 1:
+                print('Add constraints')
+                try:
+                    self.constraint_manager.add_all_constraints(
+                        get_constraint_database().get_constraints())
+                except InvalidConstraintError as e:
+                    print(e)
+                    QMessageBox.critical(self.parent(), 'Constraint Error', 'The current constraints are not valid.')
+            for controller in self.linked_controllers:
+                controller.request_repaint()
+                controller.setup_scroll_bar()
 
     def slot_move_linked_start_offset(self, virtual_address: int) -> None:
         for controller in self.linked_controllers:

@@ -97,6 +97,37 @@ class Blocker:
     rom_address: int
 
 
+class NoConstraintManager:
+    """
+    Class that replaces the ConstraintManager when no constraints are loaded.
+    virtual and local addresses now are the same
+    """
+
+    def set_variants(self, variants: set[RomVariant]) -> None:
+        pass
+
+    def reset(self):
+        pass
+
+    def add_constraint(self, constraint: Constraint) -> None:
+        pass
+
+    def add_all_constraints(self, constraints: list[Constraint]) -> None:
+        pass
+
+    def rebuild_relations(self) -> None:
+        pass
+
+    def to_local(self, variant: RomVariant, virtual_address: int) -> int:
+        return virtual_address
+
+    def to_virtual(self, variant: RomVariant, local_address: int) -> int:
+        return local_address
+
+    def print_relations(self) -> None:
+        pass
+
+
 class ConstraintManager:
     def __init__(self, variants: set[RomVariant]) -> None:
         """

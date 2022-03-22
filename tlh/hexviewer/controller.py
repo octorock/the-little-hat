@@ -114,14 +114,16 @@ class HexViewerController(QObject):
         self.constraints: ConstraintList = None
         self.symbols: SymbolList = None
 
-        self.update_pointers()
-        get_pointer_database().pointers_changed.connect(self.slot_update_pointers)
+        if settings.is_using_constraints():
+            self.update_pointers()
+            get_pointer_database().pointers_changed.connect(self.slot_update_pointers)
 
         self.update_annotations()
         get_annotation_database().annotations_changed.connect(self.slot_update_annotations)
 
-        self.update_constraints()
-        get_constraint_database().constraints_changed.connect(self.slot_update_constraints)
+        if settings.is_using_constraints():
+            self.update_constraints()
+            get_constraint_database().constraints_changed.connect(self.slot_update_constraints)
 
         self.update_symbols()
         get_symbol_database().symbols_changed.connect(self.slot_update_symbols)
@@ -131,8 +133,9 @@ class HexViewerController(QObject):
         self.status_bar.setText('loaded')
 
     def update_pointers(self):
-        pointer_database = get_pointer_database()
-        self.pointers = pointer_database.get_pointers(self.rom_variant)
+        if settings.is_using_constraints():
+            pointer_database = get_pointer_database()
+            self.pointers = pointer_database.get_pointers(self.rom_variant)
 
     def slot_update_pointers(self) -> None:
         self.update_pointers()
@@ -148,9 +151,10 @@ class HexViewerController(QObject):
         self.request_repaint()
 
     def update_constraints(self):
-        constraint_database = get_constraint_database()
-        constraints = constraint_database.get_constraints()
-        self.constraints = ConstraintList(constraints, self.rom_variant)
+        if settings.is_using_constraints():
+            constraint_database = get_constraint_database()
+            constraints = constraint_database.get_constraints()
+            self.constraints = ConstraintList(constraints, self.rom_variant)
 
     def slot_update_constraints(self) -> None:
         self.update_constraints()
@@ -251,8 +255,10 @@ class HexViewerController(QObject):
         # if annotation_color is not None:
         #     background = annotation_color
         # elif
-        
-        pointers = self.pointers.get_pointers_at(local_address)
+        pointers = []
+
+        if self.pointers is not None:
+            pointers = self.pointers.get_pointers_at(local_address)
 
         if len(pointers) > 0:
             background = self.pointer_color
@@ -266,7 +272,7 @@ class HexViewerController(QObject):
             background,
             self.is_selected(virtual_address),
             self.annotations.get_annotations_at(local_address),
-            self.constraints.get_constraints_at(local_address),
+            self.constraints.get_constraints_at(local_address) if self.constraints is not None else [],
             pointers
         )
         # self.display_byte_cache[virtual_address] = display_byte

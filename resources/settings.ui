@@ -20,7 +20,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tabGeneral">
       <attribute name="title">
@@ -131,6 +131,23 @@
           <widget class="QCheckBox" name="checkBoxAutoSave">
            <property name="toolTip">
             <string>Automatically saves pointers, constraints and annotations when they are saved</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0">
+          <widget class="QLabel" name="label_19">
+           <property name="text">
+            <string>Load Constraints</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="1">
+          <widget class="QCheckBox" name="checkBoxUseConstraints">
+           <property name="toolTip">
+            <string>Check to load the constraints between different variants and the pointers inside of roms. (requires IMMEDIATE restart)</string>
            </property>
            <property name="text">
             <string/>
@@ -361,8 +378,8 @@ Use / to define submenus</string>
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>550</width>
-            <height>347</height>
+            <width>196</width>
+            <height>36</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayoutPlugins">
@@ -370,7 +387,6 @@ Use / to define submenus</string>
             <widget class="QLabel" name="label_13">
              <property name="font">
               <font>
-               <family>Open Sans</family>
                <pointsize>10</pointsize>
                <bold>true</bold>
               </font>
@@ -390,7 +406,6 @@ Use / to define submenus</string>
              </property>
              <property name="font">
               <font>
-               <family>Open Sans</family>
                <pointsize>10</pointsize>
                <italic>false</italic>
                <bold>true</bold>
@@ -411,7 +426,6 @@ Use / to define submenus</string>
              </property>
              <property name="font">
               <font>
-               <family>Open Sans</family>
                <pointsize>10</pointsize>
                <bold>true</bold>
               </font>

@@ -76,6 +76,12 @@ def is_auto_save() -> bool:
 def set_auto_save(auto_save: bool) -> None:
     settings.setValue('auto_save', auto_save)
 
+def is_using_constraints() -> bool:
+    return str(settings.value('use_constraints', False)).lower() == 'true'
+
+def set_is_using_constrings(use_constraints: bool) -> None:
+    settings.setValue('use_constraints', use_constraints)
+
 # ROMs
 
 def get_rom(variant: RomVariant) -> Optional[str]:
