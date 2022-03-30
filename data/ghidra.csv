@@ -88,6 +88,7 @@ undefined,u8,False
 '\(',0x28,False
 '\)',0x29,False
 '\\'',0x27,False
+'\*',0x2a,False
 '_',0x5f,False
 '\\n',0xa,False
 '\\f',0xc,False

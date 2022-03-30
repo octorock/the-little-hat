@@ -13,6 +13,11 @@ class Replacement:
     replacement: str
     dotall: bool
 
+@dataclass
+class FunctionSignature:
+    function: str
+    signature: str
+
 def clang_format(input: str) -> None:
     '''
     Write the code into a temporary file, run clang-format on it and then read the code back.
@@ -55,6 +60,14 @@ def read_replacements_from_file() -> List[Replacement]:
         for row in reader:
             replacements.append(Replacement(row['source'], row['replacement'], row['dotall'] == 'True'))
     return replacements
+
+def read_signatures_from_file() -> List[FunctionSignature]:
+    signatures = []
+    with open(get_file_in_database('signatures.csv'), 'r') as f:
+        reader = DictReader(f)
+        for row in reader:
+            signatures.append(FunctionSignature(row['function'], row['signature']))
+    return signatures
 
 
 def improve_decompilation(code: str) -> str:

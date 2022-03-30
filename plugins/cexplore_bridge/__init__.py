@@ -1,7 +1,7 @@
 import traceback
 
 from PySide6.QtGui import QKeySequence
-from plugins.cexplore_bridge.ghidra import improve_decompilation
+from plugins.cexplore_bridge.ghidra import improve_decompilation, read_signatures_from_file
 from plugins.cexplore_bridge.code import extract_USA_asm, find_globals, get_code, split_code, store_code
 from PySide6.QtCore import QThread, Qt, Signal
 from PySide6.QtWidgets import QApplication, QDialog, QDialogButtonBox, QDockWidget
@@ -206,7 +206,7 @@ class BridgeDock(QDockWidget):
         if NO_CONFIRMS:
             # For pros also directly go to the function in Ghidra and apply the signature
             self.slot_goto()
-            #self.apply_function_type(self.ui.lineEditFunctionName.text().strip(), signature)
+            #self.apply_function_signature(self.ui.lineEditFunctionName.text().strip(), signature)
 
         if NO_CONFIRMS or self.api.show_question('CExplore Bridge', f'Replace code in CExplore with {self.ui.lineEditFunctionName.text().strip()}?'):
             self.server_worker.slot_send_asm_code(extract_USA_asm(asm))
@@ -326,6 +326,15 @@ class BridgeDock(QDockWidget):
             if not self.apply_global_type(name, type):
                 success = False
                 break
+
+        # Also apply function signatures from file
+        if success:
+            signatures = read_signatures_from_file()
+            for signature in signatures:
+                if not self.apply_function_signature(signature.function, signature.signature):
+                    success = False
+                    break
+
         if success:
             self.api.show_message('CExplore Bridge', 'Applied all global types.')
 
@@ -341,7 +350,7 @@ class BridgeDock(QDockWidget):
             self.api.show_error('CExplore Bridge', 'Could not reach Ghidra server. Did you start the script?')
             return False
 
-    def apply_function_type(self, name: str, signature: str) -> bool:
+    def apply_function_signature(self, name: str, signature: str) -> bool:
         try:
             r = requests.get('http://localhost:10242/functionType/' + name + '/' + signature)
             if r.status_code != 200:
