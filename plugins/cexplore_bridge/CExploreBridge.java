@@ -1,9 +1,9 @@
 //Bridge to The Little Hat and CExplore
 //@author octorock
 //@category _NEW_
-//@keybinding 
+//@keybinding
 //@menupath Tools.CExplore Bridge
-//@toolbar 
+//@toolbar
 
 // Adapted from https://github.com/radareorg/ghidra-r2web
 // Get previous DecompileOptions from https://github.com/NationalSecurityAgency/ghidra/issues/1520
@@ -104,7 +104,7 @@ public class CExploreBridge extends GhidraScript {
 				public void run() {
 					server.stop(1);
 				};
-			}).start();			
+			}).start();
 		}
 	}
 
@@ -211,7 +211,7 @@ public class CExploreBridge extends GhidraScript {
 		return parseAddress(text);
 	}
 
-	public void applyTypeForGlobal(String address, String type) throws Exception {
+	public void applyTypeForGlobal(String address, String type, String elements) throws Exception {
 		var dataTypes = getDataTypes(type);
 		if (dataTypes.length > 1) {
 			throw new RuntimeException(dataTypes.length + " data types for " + type);
@@ -222,6 +222,10 @@ public class CExploreBridge extends GhidraScript {
 		}
 		var dataType = dataTypes[0];
 		var addr = parseSymbolOrAddress(address);
+		var elementsValue = Integer.decode(elements);
+		if (elementsValue > 0) {
+			dataType = new ArrayDataType(dataType, elementsValue, 0);
+		}
 
 		start();
 		DataUtilities.createData(getCurrentProgram(), addr, dataType, 0, false,
@@ -251,17 +255,17 @@ public class CExploreBridge extends GhidraScript {
 			applyFunctionSignature(arr[0], arr[1]);
 			return new Response(200, "Applied function signature");
 		}
-		
+
 	}
 
 	class GlobalTypeHandler extends BaseHandler {
 		@Override
 		public CExploreBridge.Response handle(String data) throws Exception {
 			String[] arr = data.split("/");
-			if (arr.length != 2) {
-				throw new IllegalArgumentException("symbol_name/data_type");
+			if (arr.length != 3) {
+				throw new IllegalArgumentException("symbol_name/data_type/elements");
 			}
-			applyTypeForGlobal(arr[0], arr[1]);
+			applyTypeForGlobal(arr[0], arr[1], arr[2]);
 			return new Response(200, "Applied data type to global.");
 		}
 	}

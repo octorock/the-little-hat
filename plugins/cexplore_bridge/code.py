@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import List, Optional, Tuple
 from tlh.settings import get_repo_location
 import os
@@ -197,15 +198,42 @@ def store_code(name: str, includes: str, header: str, src: str, matching: bool) 
     return (False, '')
 
 
-def find_globals() -> List[Tuple[str, str]]:
+@dataclass
+class TypeDefinition:
+    dataType: str
+    name: str
+    length: str # might be a macro
+
+def find_globals() -> List[TypeDefinition]:
     globals = []
     for (root, dirs, files) in os.walk(os.path.join(get_repo_location(), 'include')):
         for file in files:
+            defines = {}
             with open(os.path.join(root, file), 'r') as f:
                 for line in f:
                     match = re.match(r'extern (\w*) (\w*);', line)
                     if match is not None:
-                        globals.append((match.group(1), match.group(2)))
+                        globals.append(TypeDefinition(match.group(1), match.group(2), '0'))
+                    else:
+                        match = re.match(r'extern (\w*) (\w*)\[(\w+)\];', line)
+                        if match is not None:
+                            elements = match.group(3)
+                            try:
+                                elements = int(elements, 0)
+                            except ValueError:
+                                if elements in defines:
+                                    elements = defines[elements]
+                                else:
+                                    raise Exception(f'Unknown array length {elements} for {line}')
+                            globals.append(TypeDefinition(match.group(1), match.group(2), str(elements)))
+                        else:
+                            match = re.match(r'#define (\w*) (\w*)', line)
+                            if match is not None:
+                                value = match.group(2)
+                                try:
+                                    defines[match.group(1)] = int(value, 0)
+                                except ValueError:
+                                    pass
     return globals
 
 # Only extract the code for the USA version from the asm code

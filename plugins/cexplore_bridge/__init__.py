@@ -2,7 +2,7 @@ import traceback
 
 from PySide6.QtGui import QKeySequence
 from plugins.cexplore_bridge.ghidra import improve_decompilation, read_signatures_from_file
-from plugins.cexplore_bridge.code import extract_USA_asm, find_globals, get_code, split_code, store_code
+from plugins.cexplore_bridge.code import TypeDefinition, extract_USA_asm, find_globals, get_code, split_code, store_code
 from PySide6.QtCore import QThread, Qt, Signal
 from PySide6.QtWidgets import QApplication, QDialog, QDialogButtonBox, QDockWidget
 from plugins.cexplore_bridge.link import generate_cexplore_url
@@ -322,8 +322,8 @@ class BridgeDock(QDockWidget):
     def slot_global_types(self) -> None:
         globals = find_globals()
         success = True
-        for (type, name) in globals:
-            if not self.apply_global_type(name, type):
+        for definition in globals:
+            if not self.apply_global_type(definition):
                 success = False
                 break
 
@@ -338,10 +338,11 @@ class BridgeDock(QDockWidget):
         if success:
             self.api.show_message('CExplore Bridge', 'Applied all global types.')
 
-    def apply_global_type(self, name: str, type: str) -> bool:
+    def apply_global_type(self, definition: TypeDefinition) -> bool:
         try:
-            print('http://localhost:10242/globalType/' + name + '/' + type)
-            r = requests.get('http://localhost:10242/globalType/' + name + '/' + type)
+            url = 'http://localhost:10242/globalType/' + definition.name + '/' + definition.dataType + '/' + definition.length
+            print(url)
+            r = requests.get(url)
             if r.status_code != 200:
                 self.api.show_error('CExplore Bridge', r.text)
                 return False
@@ -352,7 +353,9 @@ class BridgeDock(QDockWidget):
 
     def apply_function_signature(self, name: str, signature: str) -> bool:
         try:
-            r = requests.get('http://localhost:10242/functionType/' + name + '/' + signature)
+            url = 'http://localhost:10242/functionType/' + name + '/' + signature
+            print(url)
+            r = requests.get(url)
             if r.status_code != 200:
                 self.api.show_error('CExplore Bridge', r.text)
                 return False
