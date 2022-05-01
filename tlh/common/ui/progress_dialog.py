@@ -18,3 +18,6 @@ class ProgressDialog(QDialog):
 
     def set_progress(self, value: int) -> None:
         self.ui.progressBar.setValue(value)
+
+    def get_abort_signal(self):
+        return self.ui.buttonBox.button(QDialogButtonBox.Abort).clicked

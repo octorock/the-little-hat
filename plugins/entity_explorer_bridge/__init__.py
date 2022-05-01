@@ -1,5 +1,10 @@
-from PySide6.QtCore import QThread, Qt
+from dataclasses import dataclass
+import json
+from typing import Any, List, Optional, Union
+import PySide6
+from PySide6.QtCore import QThread, Qt, QAbstractListModel, QObject, Signal
 from PySide6.QtWidgets import QDockWidget, QFileDialog
+from tlh.common.ui.close_dock import CloseDock
 from tlh.plugin.api import PluginApi
 from tlh.ui.ui_plugin_entity_explorer_bridge_dock import Ui_BridgeDock
 from plugins.entity_explorer_bridge.server import ServerWorker
@@ -10,6 +15,7 @@ from watchdog.events import PatternMatchingEventHandler
 import threading
 import os
 from datetime import datetime
+import subprocess
 
 class EntityExplorerPlugin:
     name = 'Entity Explorer'
@@ -33,7 +39,7 @@ class EntityExplorerPlugin:
         self.api.main_window.addDockWidget(Qt.LeftDockWidgetArea, self.dock)
 
 
-class BridgeDock(QDockWidget):
+class BridgeDock(CloseDock):
 
     def __init__(self, parent, api: PluginApi) -> None:
         super().__init__('', parent)
@@ -56,11 +62,11 @@ class BridgeDock(QDockWidget):
         # Initially load from repo folder
         self.ui.lineEditLoadFolder.setText(settings.get_repo_location())
 
-        self.visibilityChanged.connect(self.slot_visibility_changed)
+        self.signal_closed.connect(self.slot_close)
 
-    def slot_visibility_changed(self, visible: bool) -> None:
-        if not visible and self.server_thread is not None:
-            self.slot_stop_server()
+
+    def slot_close(self) -> None:
+        self.slot_stop_server()
 
     def slot_server_running(self, running: bool) -> None:
         if running:

@@ -5,6 +5,7 @@ from werkzeug.datastructures import is_immutable
 from plugins.mgba_bridge.script_disassembler.script_disassembler import disassemble_script
 from plugins.mgba_bridge.server import ServerWorker
 from tlh import settings
+from tlh.common.ui.close_dock import CloseDock
 from tlh.const import ROM_OFFSET, RomVariant
 from tlh.plugin.api import PluginApi
 from tlh.data.database import get_symbol_database
@@ -39,7 +40,7 @@ class MGBABridgePlugin:
         self.api.main_window.addDockWidget(Qt.LeftDockWidgetArea, self.dock)
 
 
-class BridgeDock(QDockWidget):
+class BridgeDock(CloseDock):
 
     def __init__(self, parent, api: PluginApi) -> None:
         super().__init__('', parent)
@@ -57,11 +58,10 @@ class BridgeDock(QDockWidget):
 
         self.ui.labelConnectionStatus.setText('Server not yet running.')
 
-        self.visibilityChanged.connect(self.slot_visibility_changed)
+        self.signal_closed.connect(self.slot_closed)
 
-    def slot_visibility_changed(self, visible: bool) -> None:
-        if not visible and self.server_thread is not None:
-            self.slot_stop_server()
+    def slot_closed(self) -> None:
+        self.slot_stop_server()
 
     def slot_server_running(self, running: bool) -> None:
         if running:

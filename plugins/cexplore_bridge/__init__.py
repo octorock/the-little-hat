@@ -6,6 +6,7 @@ from plugins.cexplore_bridge.code import TypeDefinition, extract_USA_asm, find_g
 from PySide6.QtCore import QThread, Qt, Signal
 from PySide6.QtWidgets import QApplication, QDialog, QDialogButtonBox, QDockWidget
 from plugins.cexplore_bridge.link import generate_cexplore_url
+from tlh.common.ui.close_dock import CloseDock
 from tlh.const import RomVariant
 from tlh.data.database import get_symbol_database
 from tlh.data.rom import get_rom
@@ -120,7 +121,7 @@ class CExploreBridgePlugin:
                             result.append((os.path.relpath(os.path.join(root,file), src_folder), match))
         return result
 
-class BridgeDock(QDockWidget):
+class BridgeDock(CloseDock):
 
     def __init__(self, parent, api: PluginApi) -> None:
         super().__init__('', parent)
@@ -147,13 +148,10 @@ class BridgeDock(QDockWidget):
 
         self.enable_function_group(False)
         self.ui.labelConnectionStatus.setText('Server not yet running.')
-        self.visibilityChanged.connect(self.slot_close)
+        self.signal_closed.connect(self.slot_close)
 
-    def slot_close(self, visibility: bool) -> None:
-        # TODO temporarily disable until a good way to detect dock closing is found
-        pass
-        #if not visibility and self.server_thread is not None:
-        #    self.slot_stop_server()
+    def slot_close(self) -> None:
+        self.slot_stop_server()
 
     def slot_server_running(self, running: bool) -> None:
         if running:

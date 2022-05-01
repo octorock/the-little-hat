@@ -4,12 +4,12 @@ bidict==0.21.2
 certifi==2020.12.5
 chardet==4.0.0
 click==8.0.0
-Flask==2.0.0
+Flask==2.1.1
 future==0.18.2
 idna==2.10
 iniconfig==1.1.1
 intervaltree==3.1.0
-itsdangerous==2.0.1
+itsdangerous==2.1.2
 Jinja2==3.0.1
 lzstring==1.0.4
 MarkupSafe==2.0.1
