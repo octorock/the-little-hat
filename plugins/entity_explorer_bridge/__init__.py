@@ -17,6 +17,11 @@ import os
 from datetime import datetime
 import subprocess
 
+# PATHS for the entity search. TODO Make configurable
+MGBA_PATH = '/home/octorock/git/mgba/build/qt/mgba-qt'
+SAVES_PATH = '/home/octorock/save_games'
+JSON_PATH = '/home/octorock/save_games_json'
+
 class EntityExplorerPlugin:
     name = 'Entity Explorer'
     description = 'Connects to Entity Explorer instance for\nsave state transfer'
@@ -64,6 +69,11 @@ class BridgeDock(CloseDock):
 
         self.signal_closed.connect(self.slot_close)
 
+        # Entity search
+        self.ui.pushButtonSearchEntity.clicked.connect(self.slot_search_entity)
+        self.ui.lineEditType.returnPressed.connect(self.slot_search_entity)
+        self.ui.listViewFoundEntities.setVisible(False)
+        self.ui.listViewFoundEntities.doubleClicked.connect(self.slot_start_mgba)
 
     def slot_close(self) -> None:
         self.slot_stop_server()
@@ -204,3 +214,130 @@ class BridgeDock(CloseDock):
                 name = datetime.now().strftime('%Y-%m-%d_%H_%M_%S_%f_') + name
                 with open(os.path.join(self.ui.lineEditSaveFolder.text(), name), 'wb') as output:
                     output.write(bytes)
+
+
+    def slot_search_entity(self) -> None:
+        kinds = [3, 4, 6, 7 ,8 ,9]
+        kind = kinds[self.ui.comboBoxKind.currentIndex()]
+        type = 0
+        try:
+            type = int(self.ui.lineEditType.text(), 0)
+        except ValueError:
+            self.api.show_error(EntityExplorerPlugin.name, 'Need to enter a number for the entity type.')
+            return
+
+        save_games:List[SaveGame] = []
+
+        self.progress_dialog = self.api.get_progress_dialog(EntityExplorerPlugin.name, 'Searching for entity...', True)
+        self.progress_dialog.show()
+        self.progress_dialog.get_abort_signal().connect(lambda : (self.worker.abort(), self.thread.quit()))
+
+        self.thread = QThread()
+        self.worker = SearchEntityWorker(kind, type)
+        self.worker.moveToThread(self.thread)
+
+        self.worker.signal_progress.connect(lambda progress: self.progress_dialog.set_progress(progress))
+        self.worker.signal_done.connect(self.slot_found_entities)
+        self.worker.signal_fail.connect(lambda message: (
+            self.thread.quit(),
+            self.progress_dialog.close(),
+            self.api.show_error(EntityExplorerPlugin.name, message)
+        ))
+
+        self.thread.started.connect(self.worker.process)
+        self.thread.start()
+
+    def slot_found_entities(self) -> None:
+        self.thread.quit()
+        self.progress_dialog.close()
+        self.save_games = self.worker.save_games
+        self.ui.listViewFoundEntities.setModel(SaveGameModel(self.save_games, self))
+        self.ui.listViewFoundEntities.setVisible(len(self.save_games) > 0)
+        self.api.show_message(EntityExplorerPlugin.name, f'{len(self.save_games)} entities found.')
+
+
+    def slot_start_mgba(self) -> None:
+
+        elf_path = os.path.join(settings.get_repo_location(), 'tmc.elf')
+        save_game = self.save_games[self.ui.listViewFoundEntities.currentIndex().row()]
+        print(save_game)
+        subprocess.Popen([MGBA_PATH, '-t', save_game.save_path, elf_path], cwd=os.path.dirname(MGBA_PATH))
+
+class SearchEntityWorker(QObject):
+    signal_progress = Signal(int)
+    signal_done = Signal()
+    signal_fail = Signal()
+
+    def __init__(self, kind, id):
+        super().__init__()
+        self.kind = kind
+        self.id = id
+        self.is_aborted = False
+
+    def process(self) -> None:
+        try:
+
+            self.save_games: List[SaveGame] = []
+            print(f'Searching for kind {self.kind} id {self.id}')
+
+            json_files = []
+
+            for root, dirs, files in os.walk(JSON_PATH):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    json_files.append((file,file_path))
+
+            count = len(json_files)
+            i = 0
+            progress = 0
+            for (file, file_path) in json_files:
+                if self.is_aborted:
+                    return
+                data = json.load(open(file_path, 'r'))
+                times = 0
+                for list in data:
+                    for entity in list:
+                        if self.kind == 9: # Manager
+                            if 'subtype' in entity and entity['type'] == 9 and entity['subtype'] == self.id:
+                                times += 1
+                        else:
+                            if 'kind' in entity and entity['kind'] == self.kind and entity['id'] == self.id:
+                                times += 1
+
+                if times > 0:
+                    save_path = file_path.replace('save_games_json', 'save_games').replace('.json', '.ss1')
+                    name = os.path.join(os.path.basename(os.path.dirname(file_path)), file.replace('.json', '')) + ' ' + str(times)
+                    self.save_games.append(SaveGame(name, save_path, times))
+                i += 1
+                new_progress = (i*100) // count
+                if new_progress != progress:
+                    progress = new_progress
+                    self.signal_progress.emit(new_progress)
+
+            self.save_games.sort(key = lambda x:x.name)
+            self.signal_done.emit()
+        except Exception as e:
+            print(e)
+            self.signal_fail.emit('Caught exception')
+
+    def abort(self):
+        self.is_aborted = True
+
+@dataclass
+class SaveGame:
+    name: str
+    save_path: str
+    times: int
+
+class SaveGameModel(QAbstractListModel):
+    def __init__(self, save_games: List[SaveGame], parent: Optional[PySide6.QtCore.QObject] = ...) -> None:
+        super().__init__(parent)
+        self.save_games = save_games
+
+    def rowCount(self, parent: Union[PySide6.QtCore.QModelIndex, PySide6.QtCore.QPersistentModelIndex] = ...) -> int:
+        return len(self.save_games)
+
+    def data(self, index: Union[PySide6.QtCore.QModelIndex, PySide6.QtCore.QPersistentModelIndex], role: int = ...) -> Any:
+        if role == Qt.DisplayRole:
+            return self.save_games[index.row()].name
+        return None
