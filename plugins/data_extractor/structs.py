@@ -2,7 +2,7 @@ import json
 import sys
 import typing
 from dataclasses import dataclass
-from typing import Dict, Optional, List, Set
+from typing import Any, Dict, Optional, List, Set
 from weakref import ReferenceType, ref
 from attr import define
 
@@ -150,6 +150,26 @@ def get_anon_name(decl):
         return f'anon_union_{decl.coord}'
     raise ValueError('anon of non struct or union')
 
+def const_evaluate_int(dim: Any) -> int:
+    '''Constant evaluate the size of an array.'''
+    if isinstance(dim, pycparser.c_ast.Constant):
+        if dim.type == 'int':
+            return int(dim.value, 0)
+        else:
+            raise ValueError(f'Can not handle constants of type {dim.type}.')
+    if isinstance(dim, pycparser.c_ast.BinaryOp):
+        if dim.op == '+':
+            return const_evaluate_int(dim.left) + const_evaluate_int(dim.right)
+        elif dim.op == '-':
+                return const_evaluate_int(dim.left) - const_evaluate_int(dim.right)
+        elif dim.op == '*':
+                return const_evaluate_int(dim.left) * const_evaluate_int(dim.right)
+        elif dim.op == '/':
+                return const_evaluate_int(dim.left) / const_evaluate_int(dim.right)
+        else:
+            raise ValueError(f'Could not const evaluate binary operator {dim.op}.')
+
+    raise ValueError(f'Could not const evaluate {type(dim)}.')
 
 def get_type_str(type):
     if isinstance(type, pycparser.c_ast.TypeDecl):
@@ -157,7 +177,7 @@ def get_type_str(type):
     if isinstance(type, pycparser.c_ast.IdentifierType):
         return IdentifierType(' '.join(type.names))
     if isinstance(type, pycparser.c_ast.ArrayDecl):
-        return ArrayType(get_type_str(type.type), int(type.dim.value, 0))
+        return ArrayType(get_type_str(type.type), const_evaluate_int(type.dim))
     if isinstance(type, pycparser.c_ast.PtrDecl):
         if isinstance(type.type, pycparser.c_ast.FuncDecl):
             ftype = type.type

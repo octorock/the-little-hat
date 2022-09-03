@@ -5,7 +5,8 @@ from pprint import pprint
 from typing import Dict, List, Optional, Set, Tuple
 
 from PySide6.QtGui import QKeySequence
-from plugins.data_extractor.assets import get_all_asset_configs, read_assets, write_assets
+from plugins.data_extractor.assets import Assets, get_all_asset_configs, read_assets, write_assets
+from plugins.data_extractor.assets_modification import Asset, insert_new_assets_to_list
 from plugins.data_extractor.data_types import parse_type
 from plugins.data_extractor.gba_lz77 import GBALZ77, DecompressionError
 from plugins.data_extractor.read_data import Reader, load_json_files, read_var
@@ -26,13 +27,6 @@ import json
 DEV_ACTIONS = False
 
 
-@dataclass
-class Asset:
-    name: str
-    type: str
-    offset: int
-    size: int
-    compressed: bool
 
 def opt_param(name: str, default: str, value: str) -> str:
     if value != default:
@@ -710,6 +704,7 @@ class DataExtractorPlugin:
         previous_asset = None
 
         # TMP fix sizes of fixed_gfx_assets
+        '''
         for i in range(len(assets)):
             asset = assets[i]
             if asset.offset < last_used_offset:
@@ -717,9 +712,10 @@ class DataExtractorPlugin:
                     pass
                 else:
                     #assets[i-1].type += '_size_changed_from_' + hex(assets[i-1].size)
+                    print(f'Adapted offset of {assets[i-1].name} from {assets[i-1].size} to {asset.offset-assets[i-1].offset}')
                     assets[i-1].size = asset.offset-assets[i-1].offset
-                    print('Adapted offset of ' + assets[i-1].name)
             last_used_offset = asset.offset+asset.size
+        '''
         last_used_offset = 0
         align_bytes = 0
         empty_bytes = 0
@@ -1512,7 +1508,7 @@ class DataExtractorPlugin:
         return symbol
 
 
-    def extract_data(self, code: str, symbols: SymbolList, rom: Rom) -> str:
+    def extract_data(self, code: str, symbols: SymbolList, rom: Rom, modifier = lambda x:x) -> str:
         type = parse_type(code)
 
         if type is None:
@@ -1529,6 +1525,7 @@ class DataExtractorPlugin:
 
         if type.regex == 0:
             res = read_var(reader, type.type)
+            res = modifier(res)
             text = 'const ' + type.type + ' ' + type.name + ' = ' + self.get_struct_init(res) + ';';
         elif type.regex == 1:
             if type.type == 'u8':
@@ -1551,6 +1548,7 @@ class DataExtractorPlugin:
                 text += '};'
             else:
                 res = read_var(reader, type.type + '[]')
+                res = modifier(res)
                 text = 'const ' + type.type + ' ' + type.name + '[] = ' + self.get_struct_init(res) + ';';
         elif type.regex == 3:
             if symbol.length % 4 != 0:
@@ -1605,11 +1603,43 @@ class DataExtractorPlugin:
         return res
 
     def slot_tmp(self) -> None:
+
+        self.replacements = []
         self.gfx_assets = []
         # self.extract_palette_groups()
         #self.extract_fixed_type_gfx_data()
         #self.extract_extra_frame_offsets()
         #self.extract_frame_obj_lists()
+
+        EXTRACT_DATA = False
+        if EXTRACT_DATA:
+            self.extract_bg_animations()
+
+            self.assets_symbol = self.current_controller.symbols.find_symbol_by_name('gGlobalGfxAndPalettes')
+            # self.print_assets_list(self.assets_symbol, self.gfx_assets)
+
+            variant_names = {
+                RomVariant.CUSTOM: 'USA',
+                RomVariant.CUSTOM_EU: 'EU',
+                RomVariant.CUSTOM_JP: 'JP',
+                RomVariant.CUSTOM_DEMO_USA: 'DEMO_USA',
+                RomVariant.CUSTOM_DEMO_JP: 'DEMO_JP',
+            }
+
+
+            current_assets = read_assets('gfx.json')
+            new_assets = insert_new_assets_to_list(current_assets, self.assets_symbol, self.gfx_assets, variant_names[self.current_controller.rom_variant])
+            with open('/tmp/assets/assets.json', 'w') as file:
+                json.dump(new_assets.assets, file, indent=2)
+        else:
+
+            self.assets_symbol = self.current_controller.symbols.find_symbol_by_name('gGlobalGfxAndPalettes')
+            # Extract the actual definitions
+            self.extract_bg_animations_code()
+
+        # TODO Rebuild this in a way where it reads in the existing assets list
+        # then adds
+
 
 	# .4byte gSpriteAnimation_FileScreenObjects
 	# .4byte 00000000
@@ -1628,12 +1658,13 @@ class DataExtractorPlugin:
 
 	# .4byte gSpriteAnimation_Vaati_1
 
-        self.replacements = []
-        animation_ptr = self.current_controller.symbols.find_symbol_by_name('gSpriteAnimation_Vaati_1')
-        self.extract_animation_list(animation_ptr)
+        # animation_ptr = self.current_controller.symbols.find_symbol_by_name('gSpriteAnimation_Vaati_1')
+        # self.extract_animation_list(animation_ptr)
         with open('/tmp/replacements.s', 'w') as file:
             file.writelines(self.replacements)
 
+
+        print('done')
 
         return
 
@@ -1772,7 +1803,140 @@ class DataExtractorPlugin:
         #     file.writelines(out_lines)
 
 
+    ######### bg animations #########
 
+    def extract_bg_animations(self) -> None:
+        self.count = 0
+        self.total_size = 0
+        symbol = self.current_controller.symbols.find_symbol_by_name('gUnk_080B7278')
+        reader = self.get_reader_for_symbol(symbol)
+        bg_anim_count = 0
+        while reader.cursor < symbol.length:
+            frame_list = self.read_symbol(reader)
+            self.extract_bg_frame_list(bg_anim_count, frame_list)
+            bg_anim_count += 1
+
+    def extract_bg_frame_list(self, anim_id: int, symbol: Symbol) -> None:
+        reader = self.get_reader_for_symbol(symbol)
+        bg_frame_count = 0
+        while reader.cursor < symbol.length:
+            bg_gfx = self.read_symbol(reader)
+            unk4_ = reader.read_u32()
+            #print(anim_id, bg_frame_count, bg_gfx)
+            if bg_gfx:
+                self.extract_bg_frame(anim_id, bg_frame_count, bg_gfx)
+            bg_frame_count += 1
+
+    def extract_bg_frame(self, anim_id: int, frame_id: int, symbol: Symbol) -> None:
+        reader = self.get_reader_for_symbol(symbol)
+        entry_count = 0
+        while reader.cursor < symbol.length:
+            vramOffset = reader.read_u16()
+            gfxSize = reader.read_u8()
+            unk_3 = reader.read_u8()
+            gfxOffset = reader.read_u32()
+            if (unk_3 & 16) != 0:
+                #print('>>> PALETTE')
+                #print(gfxOffset, gfxSize, vramOffset)
+                if entry_count > 0:
+                    self.gfx_assets.append(Asset(f'bgAnim_{anim_id}_{frame_id}_{entry_count}', 'palette', gfxOffset, gfxSize * 32, False))
+                else:
+                    self.gfx_assets.append(Asset(f'bgAnim_{anim_id}_{frame_id}', 'palette', gfxOffset, gfxSize * 32, False))
+                pass
+            else:
+                if entry_count > 0:
+                    self.gfx_assets.append(Asset(f'bgAnim_{anim_id}_{frame_id}_{entry_count}', 'gfx', gfxOffset, gfxSize * 32, False))
+                else:
+                    self.gfx_assets.append(Asset(f'bgAnim_{anim_id}_{frame_id}', 'gfx', gfxOffset, gfxSize * 32, False))
+                pass
+                # self.api.show_error('asdf', f'Unk unk_3 value: {unk_3}')
+                #print(gfxOffset, gfxSize, vramOffset, unk_3)
+            entry_count += 1
+        self.count += 1
+        self.total_size += gfxSize
+        #print(self.count, self.total_size)
+
+
+
+    def extract_bg_animations_code(self) -> None:
+        self.count = 0
+        self.total_size = 0
+        symbol = self.current_controller.symbols.find_symbol_by_name('gUnk_080B7278')
+        reader = self.get_reader_for_symbol(symbol)
+
+        self.bg_anim_data = []
+
+        bg_anim_count = 0
+        while reader.cursor < symbol.length:
+            frame_list = self.read_symbol(reader)
+            self.extract_bg_frame_list_code(bg_anim_count, frame_list)
+            bg_anim_count += 1
+
+        self.bg_anim_data.sort(key=lambda x:x['symbol'].address)
+
+        self.content = []
+        prev_addr = 0
+        for data in self.bg_anim_data:
+            if data['symbol'].address == prev_addr:
+                # Ignore duplicate symbols.
+                continue
+            prev_addr = data['symbol'].address
+            if data['type'] == 'list':
+                self.content.append(self.extract_bg_frame_list_actual(data['name'], data['symbol'])+'\n')
+            elif data['type'] == 'frame':
+                self.content.append(self.extract_bg_frame_actual(data['name'], data['symbol'])+'\n')
+            else:
+                raise Exception(f'Unknown type {data["type"]}')
+        with open('/tmp/assets/anims.c', 'w') as file:
+            file.writelines(self.content)
+
+    def extract_bg_frame_list_code(self, anim_id: int, symbol: Symbol) -> None:
+        self.bg_anim_data.append({'symbol': symbol, 'name': f'bgAnim_{anim_id}', 'type': 'list'})
+        reader = self.get_reader_for_symbol(symbol)
+        bg_frame_count = 0
+        while reader.cursor < symbol.length:
+            bg_gfx = self.read_symbol(reader)
+            unk4_ = reader.read_u32()
+            #print(anim_id, bg_frame_count, bg_gfx)
+            if bg_gfx:
+                self.extract_bg_frame_code(anim_id, bg_frame_count, bg_gfx)
+            bg_frame_count += 1
+
+    def extract_bg_frame_code(self, anim_id: int, frame_id: int, symbol: Symbol) -> None:
+        self.bg_anim_data.append({'symbol': symbol, 'name': f'bgAnimFrame_{anim_id}_{frame_id}', 'type': 'frame'})
+    
+    def extract_bg_frame_list_actual(self, name: str, symbol: Symbol) -> str:
+        def handle_data(data_array):
+            for data in data_array:
+                if data['gfx'].startswith('&'):
+                    data['gfx'] = data['gfx'][1:]
+            return data_array
+        return self.extract_data(f'const BgAnimationFrame {symbol.name}[];', self.current_controller.symbols, self.current_controller.rom, handle_data)
+
+    def extract_bg_frame_actual(self, name: str, symbol: Symbol) -> str:
+        def handle_data(data_array):
+            for data in data_array:
+                data['vramOffset'] = hex(data['vramOffset'])
+                addr = self.assets_symbol.address + data['gfxOffset']
+                symbol = self.current_controller.symbols.get_symbol_at(addr)
+
+                if data['unk_3'] == 16:
+                    data['unk_3'] = 'BG_ANIM_PALETTE'
+                elif data['unk_3'] == 128:
+                    data['unk_3'] = 'BG_ANIM_MULTIPLE'
+                elif data['unk_3'] == 144:
+                    data['unk_3'] = 'BG_ANIM_PALETTE | BG_ANIM_MULTIPLE'
+                elif data['unk_3'] == 0:
+                    data['unk_3'] = 'BG_ANIM_DEFAULT'
+                else:
+                    raise Exception(f'Unknown unk_3 {data["unk_3"]}')
+                #print(data)
+                data['gfxOffset'] = 'offset_' + symbol.name
+            return data_array
+        result = self.extract_data(f'const BgAnimationGfx {symbol.name}[];', self.current_controller.symbols, self.current_controller.rom, handle_data)
+        return result
+
+    ######### bg animations end #########
 
     def get_struct_init(self, obj: any) -> str:
         text = '{ '
@@ -1812,17 +1976,110 @@ class DataExtractorPlugin:
 
 
     def test_asset_list_modification(self) -> None:
-        # Align map assets
-        assets = read_assets('map.json')
+        # Add figurine layers
+        assets = read_assets('gfx.json')
         for asset in assets.assets:
-            if 'path' in asset:
-                start = asset['start']
-                if start % 4 != 0:
-                    diff = 4 - start % 4;
-                    asset['start'] = start + diff;
-                    asset['size'] -= diff;
+            if 'type' in asset:
+                if asset['type'] == 'gfx':
+                    match = re.match(r'gfx/figurines/gFigurineGfx(\w*).4bpp', asset['path'])
+                    if match:
+                        with open(f'/tmp/fig{match.group(1)}.json', 'r') as file:
+                            asset['layers'] = json.load(file)
+                            asset['type'] = 'metasprite'
 
-        write_assets('map.json', assets)
+
+        write_assets('gfx.json', assets)
+
+        # # List palettes
+        # assets = read_assets('gfx.json')
+        # palettes = []
+        # for asset in assets.assets:
+        #     if 'type' in asset:
+        #         if asset['type'] == 'palette':
+        #             match = re.match(r'palettes/(\w*).gbapal', asset['path'])
+        #             if match:
+        #                 palettes.append(match.group(1))
+        # with open('/tmp/palettes.txt', 'w') as file:
+        #     file.write('[')
+        #     for palette in palettes:
+        #         file.write('"'+palette+'", ')
+        #     file.write(']')
+
+
+        ## Split up palettes
+        # assets = read_assets('gfx.json')
+        # out_assets = []
+        # includes = []
+
+        # in_palettes = True
+        # last_palette_id = 0
+        # for asset in assets.assets:
+        #     if not in_palettes:
+        #         out_assets.append(asset)
+        #         continue
+        #     if 'path' in asset:
+
+        #         if asset['path'] == 'assets/gfx_unknown_16.bin':
+        #             in_palettes = False
+        #             out_assets.append(asset)
+        #             continue
+
+        #         if asset['size'] != 32:
+        #             includes.append(f'> {asset["path"]}"')
+        #             print(f'got {asset["size"]//32} palettes')
+        #             if asset['type'] == 'palette':
+        #                 print(asset['path'])
+        #                 for i in range(0, asset["size"]//32):
+        #                     path = asset['path'].replace('.gbapal', f'_{i}.gbapal')
+        #                     out_assets.append({
+        #                         'path': path,
+        #                         'start': asset['start'] + i*32,
+        #                         'size': 32,
+        #                         'type': 'palette'
+        #                     })
+        #                     includes.append(f'\t.incbin "{path}"')
+        #             else:
+        #                 for i in range(0, asset["size"]//32):
+        #                     last_palette_id += 1
+        #                     # print(f'palettes/gPalette_{last_palette_id}.gbapal')
+        #                     path = f'palettes/gPalette_{last_palette_id}.gbapal'
+        #                     out_assets.append({
+        #                         'path': path,
+        #                         'start': asset['start'] + i*32,
+        #                         'size': 32,
+        #                         'type': 'palette'
+        #                     })
+        #                     includes.append(f'\t.incbin "{path}"')
+        #             print(asset['type'])
+        #             if asset['size'] % 32 != 0:
+        #                 print(asset['path'])
+        #                 print(asset['size'])
+
+        #             continue
+
+        #         if asset['type'] == 'palette':
+        #             match = re.match(r'palettes/gPalette_(\w*).gbapal', asset['path'])
+        #             if match:
+        #                 last_palette_id = int(match.group(1))
+
+        #     out_assets.append(asset)
+        # write_assets('gfx_mod.json', Assets(out_assets))
+
+        # with open('/tmp/includes.txt', 'w') as file:
+        #     for include in includes:
+        #         file.write(include+'\n')
+
+        ## Align map assets
+        # assets = read_assets('map.json')
+        # for asset in assets.assets:
+        #     if 'path' in asset:
+        #         start = asset['start']
+        #         if start % 4 != 0:
+        #             diff = 4 - start % 4;
+        #             asset['start'] = start + diff;
+        #             asset['size'] -= diff;
+
+        # write_assets('map.json', assets)
 
         # Add sizes and headerOffsets to the sounds
         #assets = read_assets('sounds.json')
@@ -1980,12 +2237,16 @@ class DataExtractorPlugin:
     def slot_create_asset_lists(self) -> None:
         if not hasattr(self, 'all_assets'):
             self.all_assets: Dict[str, List[Asset]] = {}
-        
-        self.extract_gfx_groups()
-        self.extract_figurine_data()
-        self.extract_sprites()
-        self.extract_frame_obj_lists()
-        self.extract_extra_frame_offsets()
+
+        self.assets_symbol = self.current_controller.symbols.find_symbol_by_name('gGlobalGfxAndPalettes')
+        self.gfx_assets = []
+
+        # self.extract_gfx_groups()
+        # self.extract_figurine_data()
+        # self.extract_sprites()
+        # self.extract_frame_obj_lists()
+        # self.extract_extra_frame_offsets()
+        self.extract_bg_animations()
 
         # print gfx asset
         self.print_assets_list(self.assets_symbol, self.gfx_assets)
@@ -1994,6 +2255,58 @@ class DataExtractorPlugin:
         # TODO fetch palettes from this?
         # -> not needed as those refer to palette groups which already are extracted?
         #self.extract_area_table()
+
+
+        # Load already existing assets for this variant.
+        # Ignore unknown spaces.
+        old_assets = read_assets('gfx.json')
+
+
+        variant_names = {
+            RomVariant.CUSTOM: 'USA',
+            RomVariant.CUSTOM_EU: 'EU',
+            RomVariant.CUSTOM_JP: 'JP',
+            RomVariant.CUSTOM_DEMO_USA: 'DEMO_USA',
+            RomVariant.CUSTOM_DEMO_JP: 'DEMO_JP',
+        }
+
+        start_offsets = {
+            RomVariant.CUSTOM: 0x5A2E80,
+            RomVariant.CUSTOM_EU: 0x5A23D0,
+            RomVariant.CUSTOM_JP: 0x5A2B20,
+            RomVariant.CUSTOM_DEMO_USA: 0x5A38B0,
+            RomVariant.CUSTOM_DEMO_JP: 0x5A2B18
+        }
+
+
+        offsets = {}
+        for variant in CUSTOM_ROM_VARIANTS:
+            offsets[variant_names[variant]] = 0
+        for asset in old_assets.assets:
+            if 'offsets' in asset:
+                for key in asset['offsets']:
+                    offsets[key] = asset['offsets'][key]
+            if 'path' in asset:
+                if asset['path'].startswith('assets/gfx_unknown'):
+                    # Ignore completely unknown assets, they will be rebuilt anyways.
+                    continue
+                if 'variants' in asset:
+                    if not variant_names[self.current_controller.rom_variant] in asset['variants']:
+                        # This asset is not for the current variant.
+                        continue
+                self.assets.append(
+                    Asset(
+                        asset['path'], # TODO needed?
+                        asset['type'] if 'type' in asset else 'unknown',
+                        # Calculate back to offset from graphics start.
+                        offsets[variant_names[self.current_controller.rom_variant]] + asset['start'] - start_offsets[self.current_controller.rom_variant],
+                        asset['size'],
+                        False, # TODO do we need the compressed state anywhere here?
+                        existing=True,
+                        path=asset['path']
+                    )
+                )
+
 
         # Sort the assets and remove duplicates
         # Always the last duplicate will remain in the array
@@ -2004,26 +2317,28 @@ class DataExtractorPlugin:
         asset_list = []
         last_used_offset = 0
         empty_index = 0
+        previous_asset_unknown = None
         for key in sorted(assets.keys()):
             asset = assets[key]
 
-
-            # Handle known asset types
-            if asset.type == 'tileset_gfx':
-                asset.type = 'tileset'
-                if asset.compressed:
-                    asset.path = 'tilesets/' + asset.name + '.4bpp.lz'
+            # For new variants, but the path.
+            if asset.path is None:
+                # Handle known asset types
+                if asset.type == 'tileset_gfx':
+                    asset.type = 'tileset'
+                    if asset.compressed:
+                        asset.path = 'tilesets/' + asset.name + '.4bpp.lz'
+                    else:
+                        asset.path = 'tilesets/' + asset.name + '.4bpp'
+                elif asset.type == 'gfx':
+                    if asset.compressed:
+                        asset.path = 'gfx/' + asset.name + '.4bpp.lz'
+                    else:
+                        asset.path = 'gfx/' + asset.name + '.4bpp'
+                elif asset.type == 'palette':
+                    asset.path = 'palettes/' + asset.name + '.gbapal'
                 else:
-                    asset.path = 'tilesets/' + asset.name + '.4bpp'
-            elif asset.type == 'gfx':
-                if asset.compressed:
-                    asset.path = 'gfx/' + asset.name + '.4bpp.lz'
-                else:
-                    asset.path = 'gfx/' + asset.name + '.4bpp'
-            elif asset.type == 'palette':
-                asset.path = 'palettes/' + asset.name + '.gbapal'
-            else:
-                asset.path = 'assets/' + asset.name + '.bin'
+                    asset.path = 'assets/' + asset.name + '.bin'
 
 
 
@@ -2035,12 +2350,22 @@ class DataExtractorPlugin:
                     # TODO make sure there are actually 0s
                     asset_list.append(Asset(f'align', 'align', last_used_offset, size, False))
                 else:
-                    unk_asset = Asset(f'unknown_{empty_index}', 'unknown', last_used_offset, size, False)
-                    unk_asset.path = f'assets/unknown_{empty_index}.bin'
+                    unk_asset = Asset(f'gfx_unknown_{empty_index}', 'unknown', last_used_offset, size, False)
+                    unk_asset.path = f'assets/gfx_unknown_{empty_index}.bin'
                     asset_list.append(unk_asset)
                     empty_index += 1
+            elif asset.offset < last_used_offset:
+                print(f'Current offset: {asset.offset} last used: {last_used_offset}')
+                if not previous_asset_unknown:
+                    print(asset_list[-1])
+                    raise Exception(f'Overlap for asset {asset.name} where previous asset is not unknown')
+                new_size = asset.offset - asset_list[-1].offset
+                print(f'!!!! OVERLAP: {asset.name} reduces the size of {asset_list[-1].name} from {asset_list[-1].size} to {new_size}.')
+                asset_list[-1].size = new_size
+
             # TODO adapt overlapping
             last_used_offset = last_used_offset = asset.offset+asset.size
+            previous_asset_unknown = asset.type == 'unknown'
             asset_list.append(asset)
         self.all_assets[self.current_controller.rom_variant] = asset_list
 
@@ -2107,15 +2432,23 @@ class DataExtractorPlugin:
                 if name is None:
                     name = asset.name
                 else:
-                    assert(name == asset.name)
-                    # TODO somehow handle new or missing files
+                    if name != asset.name:
+                        print(f'Files are not the same between the variants {name} != {asset.name}')
+                        # TODO for now just assume this asset does not exist in this variant.
+                        # TODO This currently assumes that USA(CUSTOM) is build first and then the asset list for EU
+                        indices[variant] -= 1
+                        continue
+
+                        raise Exception(f'Files are not the same between the variants {name} != {asset.name}')
+                        assert(name == asset.name)
+                        # TODO somehow handle new or missing files
 
             if asset.type == 'align':
                 for variant in variants:
                     indices[variant] += 1
                 continue
 
-            print(name)
+            #print(name)
             # Determine the sizes
             sizes = {}
             for variant in variants:
@@ -2140,7 +2473,7 @@ class DataExtractorPlugin:
                 assets.append({'offsets': changed_offsets})
 
 
-            print('Sizes: ' + (', '.join(map(lambda x:str(x), sizes.keys()))))
+            #print('Sizes: ' + (', '.join(map(lambda x:str(x), sizes.keys()))))
 
             if len(sizes.keys()) == 1:
                 # asset = self.all_assets[variants[0]][indices[variants[0]]]
@@ -2163,7 +2496,7 @@ class DataExtractorPlugin:
                         'size': asset.size,
                         'type': asset.type,
                     })
-                    print(assets[-1])
+                    #print(assets[-1])
 
                 # May need to add new offsets
                 # asset = self.all_assets[RomVariant.CUSTOM][indices[RomVariant.CUSTOM]]
@@ -2186,7 +2519,7 @@ class DataExtractorPlugin:
                 indices[variant] += 1
 
 
-        print(json.dumps(assets, indent=2))
+        #print(json.dumps(assets, indent=2))
 
         with open('/tmp/assets.json', 'w') as file:
             json.dump(assets, file, indent=2)

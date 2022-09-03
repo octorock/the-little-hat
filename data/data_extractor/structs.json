@@ -434,8 +434,8 @@
       "unk1": "u8",
       "unk2": "u8",
       "unk3": "u8",
-      "unk4": "u8",
-      "unk5": "u8",
+      "textId": "u8",
+      "textCategory": "u8",
       "unk6": "u8",
       "unk7": "u8"
     }
@@ -571,27 +571,19 @@
     "members": {
       "prev": "Manager*",
       "next": "Manager*",
+      "kind": "u8",
+      "id": "u8",
       "type": "u8",
-      "subtype": "u8",
-      "unk_0a": "u8",
-      "unk_0b": "u8",
+      "type2": "u8",
       "action": "u8",
-      "unk_0d": "u8",
-      "unk_0e": "u8",
-      "unk_0f": "u8",
-      "unk_10": "u8",
-      "unk_11": "u8[3]",
-      "parent": "Manager*",
-      "unk_18": "u8[8]"
-    }
-  },
-  "Manager11": {
-    "type": "struct",
-    "members": {
-      "manager": "Manager",
-      "unk_20": "u8[28]",
-      "unk_3c": "u16",
-      "unk_3e": "u16"
+      "subAction": "u8",
+      "timer": "u8",
+      "subtimer": "u8",
+      "flags": "u8",
+      "unused": "u8[3]",
+      "parent": "Entity*",
+      "child": "Entity*",
+      "unused2": "u8[4]"
     }
   },
   "EnemyDefinition": {
@@ -969,6 +961,33 @@
       "tracks": "MusicPlayerTrack*",
       "nTracks": "u8",
       "unk_A": "u16"
+    }
+  },
+  "TilePuzzleManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u8[8]",
+      "own_tile": "u16",
+      "unk_2a": "u8[2]",
+      "player_previous_tile": "u16",
+      "player_current_tile": "u16",
+      "unk_30": "u8[6]",
+      "width": "u8",
+      "height": "u8",
+      "x": "s16",
+      "y": "s16",
+      "flag_succeeded": "u16",
+      "flag_reset": "u16"
+    }
+  },
+  "FlagAndOperatorManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u8[28]",
+      "unk_3c": "u16",
+      "unk_3e": "u16"
     }
   },
   "OctorokBossEntity": {
@@ -1495,6 +1514,227 @@
       "myHeap": "void*"
     }
   },
+  "GenericEntityData": {
+    "type": "struct",
+    "members": {
+      "field_0x68": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x6a": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x6c": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x6e": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x70": {
+        "type": "union",
+        "members": {
+          "WORD": "s32",
+          "WORD_U": "u32",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "s16",
+              "HI": "s16"
+            }
+          },
+          "HALF_U": {
+            "type": "struct",
+            "members": {
+              "LO": "u16",
+              "HI": "u16"
+            }
+          },
+          "BYTES": {
+            "type": "struct",
+            "members": {
+              "byte0": "u8",
+              "byte1": "u8",
+              "byte2": "u8",
+              "byte3": "u8"
+            }
+          }
+        }
+      },
+      "field_0x74": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x76": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x78": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x7a": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x7c": {
+        "type": "union",
+        "members": {
+          "WORD": "s32",
+          "WORD_U": "u32",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "s16",
+              "HI": "s16"
+            }
+          },
+          "HALF_U": {
+            "type": "struct",
+            "members": {
+              "LO": "u16",
+              "HI": "u16"
+            }
+          },
+          "BYTES": {
+            "type": "struct",
+            "members": {
+              "byte0": "u8",
+              "byte1": "u8",
+              "byte2": "u8",
+              "byte3": "u8"
+            }
+          }
+        }
+      },
+      "field_0x80": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x82": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "cutsceneBeh": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      },
+      "field_0x86": {
+        "type": "union",
+        "members": {
+          "HWORD": "u16",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "u8",
+              "HI": "u8"
+            }
+          }
+        }
+      }
+    }
+  },
   "GenericEntity": {
     "type": "struct",
     "members": {
@@ -1741,12 +1981,32 @@
       "unk_6": "u8[2]"
     }
   },
+  "PlayerMacroEntry": {
+    "type": "struct",
+    "members": {
+      "flags": "u16",
+      "keys": "u16"
+    }
+  },
+  "PlayerInput": {
+    "type": "struct",
+    "members": {
+      "heldInput": "u16",
+      "newInput": "u16",
+      "field_0x94": "u32",
+      "playerMacroWaiting": "u16",
+      "playerMacroHeldKeys": "u16",
+      "playerMacro": "PlayerMacroEntry*"
+    }
+  },
   "PlayerState": {
     "type": "struct",
     "members": {
-      "field_0x0": "u8[2]",
+      "prevAnim": "u8",
+      "grab_status": "u8",
       "jump_status": "u8",
-      "field_0x3": "u8[2]",
+      "shield_status": "u8",
+      "attack_status": "u8",
       "heldObject": "u8",
       "pushedObject": "u8",
       "field_0x7": "u8",
@@ -1754,11 +2014,11 @@
       "field_0xa": "u8",
       "keepFacing": "u8",
       "queued_action": "u8",
-      "field_0xd": "u8",
-      "field_0xe": "u8",
+      "direction": "u8",
+      "itemAnimPriority": "u8",
       "hurtBlinkSpeed": "u8",
       "field_0x10": "u8",
-      "field_0x11": "u8",
+      "surfacePositionSameTimer": "u8",
       "floor_type": "u8",
       "floor_type_last": "u8",
       "field_0x14": "u8",
@@ -1771,7 +2031,8 @@
       "gustJarSpeed": "u8",
       "dash_state": "u8",
       "field_0x1f": "u8[3]",
-      "field_0x22": "u16[2]",
+      "tilePosition": "u16",
+      "tileType": "u16",
       "swim_state": "u8",
       "field_0x27": "u8[5]",
       "item": "Entity*",
@@ -1779,34 +2040,35 @@
       "field_0x34": "u8",
       "field_0x35": "u8",
       "field_0x36": "u8",
-      "field_0x37": "u8",
+      "surfaceTimer": "u8",
       "field_0x38": "u8",
       "field_0x39": "u8",
       "field_0x3a": "u8",
       "field_0x3b": "u8",
-      "field_0x3c": "u8[2]",
+      "field_0x3c": "u8",
+      "moleMittsState": "u8",
       "swordDamage": "u8 : 2",
       "filler14": "u8 : 6",
-      "field_0x3f": "u8",
-      "path_memory": "u8[64]",
+      "spriteOffsetY": "s8",
+      "path_memory": "u32[16]",
       "speed_modifier": "u16",
-      "field_0x82": "u8[9]",
+      "field_0x82": "u8",
+      "playerPalette": "u8",
+      "lilypad": "Entity*",
+      "field_0x88": "u8",
+      "remainingDiveTime": "u8",
+      "field_0x8a": "u8",
       "controlMode": "u8",
       "vel_x": "u16",
       "vel_y": "u16",
-      "field_0x90": "u16",
-      "field_0x92": "u16",
-      "field_0x94": "u32",
-      "field_0x98": "u16",
-      "field_0x9a": "u16",
-      "field_0x9c": "u32",
+      "playerInput": "PlayerInput",
       "chargeState": "ChargeState",
       "framestate": "u8",
       "framestate_last": "u8",
-      "field_0xaa": "u8",
-      "field_0xab": "u8",
+      "attachedBeetleCount": "u8",
+      "lastSwordMove": "u8",
       "skills": "u16",
-      "field_0xae": "u16"
+      "pad": "u8[2]"
     }
   },
   "Stats": {
@@ -1833,20 +2095,30 @@
       "charmTimer": "u16",
       "picolyteTimer": "u16",
       "effectTimer": "u16",
-      "filler4": "u8[4]"
+      "filler4": "u8[6]"
     }
   },
   "ItemBehavior": {
     "type": "struct",
     "members": {
       "field_0x0": "u8",
-      "behaviorID": "u8",
+      "behaviorId": "u8",
       "field_0x2": "u8[2]",
       "stateID": "u8",
-      "field_0x5": "u8[10]",
-      "field_0xf": "u8",
-      "field_0x10": "u16",
-      "field_0x12": "u8[6]",
+      "field_0x5": "u8",
+      "field_0x6": "u8",
+      "timer": "u8",
+      "subtimer": "u8",
+      "priority": "u8",
+      "playerAnimationState": "u8",
+      "direction": "u8",
+      "playerAnimIndex": "u8",
+      "playerFrameDuration": "u8",
+      "playerFrame": "u8",
+      "animPriority": "u8",
+      "animIndex": "u16",
+      "playerFrameIndex": "u8",
+      "field_0x13": "u8[5]",
       "field_0x18": "Entity*"
     }
   },
@@ -1860,7 +2132,7 @@
       "language": "u8",
       "name": "u8[6]",
       "invalid": "u8",
-      "_f": "u8"
+      "initialized": "u8"
     }
   },
   "struct_02000040": {
@@ -1986,28 +2258,6 @@
     "members": {
       "unk_00": "u16",
       "unk_02": "u8[14]"
-    }
-  },
-  "Dialog": {
-    "type": "struct",
-    "members": {
-      "flag": "u32 : 12",
-      "flagType": "u32 : 4",
-      "type": "u32 : 4",
-      "unk": "u32 : 1",
-      "data": {
-        "type": "union",
-        "members": {
-          "indices": {
-            "type": "struct",
-            "members": {
-              "a": "u16",
-              "b": "u16"
-            }
-          },
-          "func": "void(*)(Entity*)"
-        }
-      }
     }
   },
   "PriorityHandler": {
@@ -2180,7 +2430,7 @@
       "draw_border": "u8 : 1",
       "border_type": "u8 : 4",
       "fill_type": "u8",
-      "_15": "u8",
+      "charColor": "u8",
       "_16": "u8",
       "stylized": "u8"
     }
@@ -2205,6 +2455,20 @@
     "members": {
       "tile": "s16",
       "position": "s16"
+    }
+  },
+  "ItemDefinition": {
+    "type": "struct",
+    "members": {
+      "isOnlyActiveFirstFrame": "bool8",
+      "priority": "u8",
+      "createFunc": "u8",
+      "playerItemId": "u8",
+      "frameIndex": "u16",
+      "animPriority": "u8",
+      "isChangingAttackStatus": "bool8",
+      "isUseableAsMinish": "bool8",
+      "pad": "u8[3]"
     }
   },
   "Message": {
@@ -2319,10 +2583,120 @@
       "unk7": "u8"
     }
   },
+  "struct_080FE320": {
+    "type": "struct",
+    "members": {
+      "evt_type": "u8",
+      "entity_idx": "u8",
+      "area": "u8",
+      "room": "u8",
+      "_4": "u16",
+      "_6": "u16",
+      "x": "u16",
+      "y": "u16",
+      "_c": "u16",
+      "_e": "u16",
+      "_10": "u8",
+      "_11": "u8",
+      "flag": "u16"
+    }
+  },
+  "LcdControls": {
+    "type": "struct",
+    "members": {
+      "displayControl": "u16",
+      "filler2": "u8[2]",
+      "unk4": "u16",
+      "displayControlMask": "u16"
+    }
+  },
+  "BgSettings": {
+    "type": "struct",
+    "members": {
+      "control": "u16",
+      "xOffset": "u16",
+      "yOffset": "u16",
+      "updated": "u16",
+      "tilemap": "void*"
+    }
+  },
+  "BgAffSettings": {
+    "type": "struct",
+    "members": {
+      "control": "u16",
+      "xOffset": "s16",
+      "yOffset": "s16",
+      "updated": "u16",
+      "tilemap": "void*"
+    }
+  },
+  "BgTransformationSettings": {
+    "type": "struct",
+    "members": {
+      "dx": "u16",
+      "dmx": "u16",
+      "dy": "u16",
+      "dmy": "u16",
+      "xPointLeastSig": "u16",
+      "xPointMostSig": "u16",
+      "yPointLeastSig": "u16",
+      "yPointMostSig": "u16"
+    }
+  },
+  "BgControls": {
+    "type": "struct",
+    "members": {
+      "bg2": "BgTransformationSettings",
+      "bg3": "BgTransformationSettings",
+      "window0HorizontalDimensions": "u16",
+      "window1HorizontalDimensions": "u16",
+      "window0VerticalDimensions": "u16",
+      "window1VerticalDimensions": "u16",
+      "windowInsideControl": "u16",
+      "windowOutsideControl": "u16",
+      "mosaicSize": "u16",
+      "layerFXControl": "u16",
+      "alphaBlend": "u16",
+      "layerBrightness": "u16"
+    }
+  },
+  "VBlankDMA": {
+    "type": "struct",
+    "members": {
+      "ready": "bool8",
+      "readyBackup": "bool8",
+      "unused": "u16",
+      "src": "u16*",
+      "dest": "u16*",
+      "size": "u32"
+    }
+  },
+  "Screen": {
+    "type": "struct",
+    "members": {
+      "lcd": "LcdControls",
+      "bg0": "BgSettings",
+      "bg1": "BgSettings",
+      "bg2": "BgAffSettings",
+      "bg3": "BgAffSettings",
+      "controls": "BgControls",
+      "vBlankDMA": "VBlankDMA"
+    }
+  },
+  "OAMCommand": {
+    "type": "struct",
+    "members": {
+      "x": "s16",
+      "y": "s16",
+      "_4": "u16",
+      "_6": "u16",
+      "_8": "u16"
+    }
+  },
   "LayerStruct": {
     "type": "struct",
     "members": {
-      "bgControlPtr": "u16*",
+      "bgSettings": "BgSettings*",
       "mapData": "u16[4096]",
       "collisionData": "u8[4096]",
       "mapDataClone": "u16[4096]",
@@ -2347,6 +2721,16 @@
       "properties": "void**"
     }
   },
+  "struct_area_28": {
+    "type": "struct",
+    "members": {
+      "textBaseIndex": "u8",
+      "textIndexOffset": "u8",
+      "currentHint": "u8",
+      "unk2b": "u8",
+      "ezloHintTexts": "u16[8]"
+    }
+  },
   "Area": {
     "type": "struct",
     "members": {
@@ -2355,7 +2739,8 @@
       "unk": "u8",
       "dungeon_idx": "u8",
       "localFlagOffset": "u16",
-      "filler": "u8[4]",
+      "flag_bank": "u8",
+      "filler": "u8[3]",
       "lightLevel": "u16",
       "lightType": "u8",
       "unk_0c_0": "u8 : 1",
@@ -2369,16 +2754,15 @@
       "portal_type": "u8",
       "portal_mode": "u8",
       "portal_in_use": "bool8",
-      "unk1A": "u8",
+      "portal_timer": "u8",
       "filler2": "u8[13]",
-      "inventoryGfxIdx": "u8",
-      "filler4": "u8[19]",
+      "unk28": "struct_area_28",
       "roomResInfos": "RoomResInfo[64]",
       "currentRoomInfo": "RoomResInfo",
       "pCurrentRoomInfo": "RoomResInfo*",
       "bgm": "u32",
       "queued_bgm": "u32",
-      "filler5": "u8[32]",
+      "filler6": "u8[32]",
       "transitionManager": "void*",
       "onEnter": "void(*)()",
       "onExit": "void(*)()"
@@ -2527,14 +2911,14 @@
     "members": {
       "field_0x0": "u8",
       "filler_0x1": "u8",
-      "field_0x2": "u8",
+      "randomDropsDisabled": "bool8",
       "field_0x3": "u8",
       "field_0x4": "u8",
       "filler1": "u8[1]",
       "shopItemType": "u8",
       "shopItemType2": "u8",
       "field_0x8": "u8",
-      "field_0x9": "u8",
+      "fight_bgm": "u8",
       "unk2": "u8",
       "filler2": "u8",
       "lightLevel": "s16",
@@ -2572,7 +2956,7 @@
       "spritePtr": "u32"
     }
   },
-  "struct_030010EC": {
+  "MinecartData": {
     "type": "struct",
     "members": {
       "tilePos": "u16",
@@ -2583,7 +2967,7 @@
       "field_0x7": "u8"
     }
   },
-  "struct_0300110C": {
+  "ArmosData": {
     "type": "struct",
     "members": {
       "data": "u16[32]",
@@ -2634,14 +3018,14 @@
       "field_0x3c": "u8",
       "field_0x3d": "u8",
       "field_0x3e": "u16",
-      "hurtType": "u16",
+      "field_0x40": "u16",
       "field_0x42": "u16",
       "field_0x44": "u16",
       "field_0x46": "u16",
       "field_0x48": "u16",
       "field_0x4a": "u16",
-      "minecart_data": "struct_030010EC[4]",
-      "armos_data": "struct_0300110C"
+      "minecart_data": "MinecartData[4]",
+      "armos_data": "ArmosData"
     }
   },
   "ScreenTransitionData": {
@@ -2655,19 +3039,20 @@
       "area": "u8",
       "room": "u8",
       "playerLayer": "u8",
-      "field_0xe": "u8",
+      "spawn_type": "u8",
       "playerState": "u8",
-      "transitionSFX": "u16"
+      "transitionSFX": "u16",
+      "pad": "u16"
     }
   },
   "TileEntity": {
     "type": "struct",
     "members": {
       "type": "u8",
-      "_1": "u8",
+      "localFlag": "u8",
       "_2": "u8",
       "_3": "u8",
-      "_4": "u16",
+      "tilePos": "u16",
       "_6": "u8",
       "_7": "u8"
     }
@@ -2679,7 +3064,7 @@
       "commandIndex": "u16",
       "commandSize": "u8",
       "flags": "u8",
-      "unk_08": "u8"
+      "fadeSpeed": "u8"
     }
   },
   "SaveFile": {
@@ -2693,7 +3078,9 @@
       "saw_staffroll": "u8",
       "unk7": "u8",
       "global_progress": "u8",
-      "field_0x9": "u8[55]",
+      "field_0x9": "u8[23]",
+      "field_0x20": "u16",
+      "field_0x22": "u8[30]",
       "windcrests": "u32",
       "filler44": "u8[12]",
       "unk50": "u32",
@@ -2704,7 +3091,8 @@
       "filler86": "u8[2]",
       "saved_status": "PlayerRoomStatus",
       "stats": "Stats",
-      "fillerD0": "u8[70]",
+      "fillerD0": "u8[34]",
+      "inventory": "u8[36]",
       "didAllFusions": "u8",
       "unk117": "u8",
       "unk118": "u8[19]",
@@ -2715,10 +3103,47 @@
       "unk24E": "u8[14]",
       "flags": "u8[512]",
       "unk45C": "u8[16]",
-      "unk46C": "u8[32]",
+      "unk46C": "u8[16]",
+      "unk47C": "u8[16]",
       "timers": "u32[7]",
       "demo_timer": "u32",
       "filler4ac": "u8[8]"
+    }
+  },
+  "Dialog": {
+    "type": "struct",
+    "members": {
+      "flag": "u32 : 12",
+      "flagType": "DialogFlagType : 4",
+      "type": "DialogType : 4",
+      "fromSelf": "u32 : 1",
+      "data": {
+        "type": "union",
+        "members": {
+          "indices": {
+            "type": "struct",
+            "members": {
+              "a": "u16",
+              "b": "u16"
+            }
+          },
+          "func": "void(*)(Entity*)"
+        }
+      }
+    }
+  },
+  "NPCStruct": {
+    "type": "struct",
+    "members": {
+      "id": "u8",
+      "type": "u8",
+      "type2": "u8",
+      "collisionLayer": "u8",
+      "x": "u16",
+      "y": "u16",
+      "script": "u16*",
+      "timer": "u16",
+      "progressBitfield": "u16"
     }
   },
   "Main": {
@@ -2736,19 +3161,7 @@
       "pauseCount": "u8",
       "pauseInterval": "u8",
       "pad": "u8",
-      "ticks": {
-        "type": "union",
-        "members": {
-          "HWORD": "u16",
-          "HALF": {
-            "type": "struct",
-            "members": {
-              "LO": "u8",
-              "HI": "u8"
-            }
-          }
-        }
-      }
+      "ticks": "u16"
     }
   },
   "UI": {
@@ -2762,163 +3175,20 @@
       "field_0x5": "u8",
       "field_0x6": "u8",
       "pauseFadeIn": "u8",
-      "isLoading": "u16",
+      "fadeType": "u16",
       "fadeInTime": "u16",
-      "fillerC": "u8[16]",
-      "unk_1c": "RoomControls",
-      "unk_2e": "u8[864]"
-    }
-  },
-  "Manager6WarpData": {
-    "type": "struct",
-    "members": {
-      "posX": "u16",
-      "posY": "u16",
-      "width": "u8",
-      "height": "u8",
-      "unk_06": "u8",
-      "unk_07": {
-        "type": "union",
-        "members": {
-          "all": "u8",
-          "b": {
-            "type": "struct",
-            "members": {
-              "layer": "u8 : 2",
-              "unk1": "u8 : 2",
-              "unk2": "u8 : 1",
-              "unk3": "u8 : 3"
-            }
-          }
-        }
-      }
-    }
-  },
-  "Manager6": {
-    "type": "struct",
-    "members": {
-      "manager": "Manager",
-      "warpList": "Manager6WarpData*"
-    }
-  },
-  "ManagerA": {
-    "type": "struct",
-    "members": {
-      "manager": "Manager",
-      "x": "u16",
-      "y": "u16",
-      "rx": "u16",
-      "ry": "u16",
-      "unk_28": "u8[13]",
-      "msg_height": "u8",
-      "msg_idx": "u16",
-      "x_raw": "u8",
-      "y_raw": "u8",
-      "rx_raw": "u8",
-      "ry_raw": "u8",
-      "flag1": "u16",
-      "flag2": "u16"
-    }
-  },
-  "ManagerB": {
-    "type": "struct",
-    "members": {
-      "manager": "Manager",
-      "unk_20": "u8",
-      "unk_21": "u8[20]",
-      "unk_35": "u8",
-      "unk_36": "u8[4]",
-      "unk_3a": "u16",
-      "unk_3c": "u16",
-      "unk_3e": "u16"
-    }
-  },
-  "ManagerBHelper": {
-    "type": "struct",
-    "members": {
-      "manager": "Manager",
-      "enemies": "Entity*[8]"
-    }
-  },
-  "ManagerE": {
-    "type": "struct",
-    "members": {
-      "manager": "Manager",
-      "unk_20": "u8[24]",
-      "unk_38": "s16",
-      "unk_3a": "s16",
-      "unk_3c": "u16",
-      "unk_3e": "u16"
-    }
-  },
-  "ManagerF": {
-    "type": "struct",
-    "members": {
-      "manager": "Manager",
-      "unk_20": "u8[24]",
-      "unk_38": "s16",
-      "unk_3a": "s16",
-      "unk_3c": "u16",
-      "unk_3e": "u16"
-    }
-  },
-  "Manager10": {
-    "type": "struct",
-    "members": {
-      "manager": "Manager",
-      "unk_20": "u8",
-      "unk_21": "u8",
-      "unk_22": "u8",
-      "unk_23": "u8",
-      "filler_0x24": "u8[28]"
-    }
-  },
-  "DiggingCaveEntrance": {
-    "type": "struct",
-    "members": {
-      "unk_00": "u16",
-      "source_room": "u8",
-      "unk_03": "u8",
-      "target_area": "u8",
-      "target_room": "u8",
-      "unk_06": "u16"
-    }
-  },
-  "struct_03004030": {
-    "type": "struct",
-    "members": {
-      "unk_00": "DiggingCaveEntrance*",
-      "unk_04": "u16",
-      "unk_06": "u16",
-      "isDiggingCave": "u8",
-      "unk_09": "u8",
-      "unk_0a": "u8",
-      "unk_0b": "u8"
-    }
-  },
-  "Manager24": {
-    "type": "struct",
-    "members": {
-      "manager": "Manager",
-      "field_0x20": "u8[21]",
-      "field_0x35": "u8",
-      "field_0x36": "u8",
-      "field_0x37": "u8",
-      "x": "s16",
-      "y": "u16",
-      "tile": "u16",
-      "field_0x3e": "u16"
-    }
-  },
-  "UnkManager26HelperStruct": {
-    "type": "struct",
-    "members": {
-      "unk_00": "u8",
-      "unk_01": "u8",
-      "unk_02": "u8",
-      "unk_03": "u8",
-      "unk_04": "u16",
-      "unk_06": "u16"
+      "controlMode": "u8",
+      "unk_d": "u8",
+      "unk_e": "u8",
+      "unk_f": "u8",
+      "currentRoomProperties": "void**",
+      "mapBottomBgSettings": "BgSettings*",
+      "mapTopBgSettings": "BgSettings*",
+      "roomControls": "RoomControls",
+      "gfxSlotList": "GfxSlotList",
+      "palettes": "Palette[16]",
+      "unk_2a8": "u8[256]",
+      "activeScriptInfo": "ActiveScriptInfo"
     }
   },
   "MenuControls": {
@@ -2977,6 +3247,7 @@
         "members": {
           "i": "s32",
           "h": "u16[2]",
+          "sh": "s16[2]",
           "a": "u8[4]"
         }
       },
@@ -3151,89 +3422,15 @@
       "unk_80": "u8[8]"
     }
   },
-  "LcdControls": {
+  "struct_08127F94": {
     "type": "struct",
     "members": {
-      "displayControl": "u16",
-      "filler2": "u8[2]",
-      "unk4": "u16",
-      "displayControlMask": "u16"
-    }
-  },
-  "BgSettings": {
-    "type": "struct",
-    "members": {
-      "control": "u16",
-      "xOffset": "u16",
-      "yOffset": "u16",
-      "updated": "u16",
-      "tilemap": "void*"
-    }
-  },
-  "BgAffSettings": {
-    "type": "struct",
-    "members": {
-      "control": "u16",
-      "xOffset": "s16",
-      "yOffset": "s16",
-      "updated": "u16",
-      "tilemap": "void*"
-    }
-  },
-  "BgTransformationSettings": {
-    "type": "struct",
-    "members": {
-      "dx": "u16",
-      "dmx": "u16",
-      "dy": "u16",
-      "dmy": "u16",
-      "xPointLeastSig": "u16",
-      "xPointMostSig": "u16",
-      "yPointLeastSig": "u16",
-      "yPointMostSig": "u16"
-    }
-  },
-  "BgControls": {
-    "type": "struct",
-    "members": {
-      "bg2": "BgTransformationSettings",
-      "bg3": "BgTransformationSettings",
-      "window0HorizontalDimensions": "u16",
-      "window1HorizontalDimensions": "u16",
-      "window0VerticalDimensions": "u16",
-      "window1VerticalDimensions": "u16",
-      "windowInsideControl": "u16",
-      "windowOutsideControl": "u16",
-      "mosaicSize": "u16",
-      "layerFXControl": "u16",
-      "alphaBlend": "u16",
-      "layerBrightness": "u16"
-    }
-  },
-  "Screen": {
-    "type": "struct",
-    "members": {
-      "lcd": "LcdControls",
-      "bg0": "BgSettings",
-      "bg1": "BgSettings",
-      "bg2": "BgAffSettings",
-      "bg3": "BgAffSettings",
-      "controls": "BgControls",
-      "_6c": "u8",
-      "_6d": "u8",
-      "_70": "void*",
-      "_74": "u32",
-      "_78": "u32"
-    }
-  },
-  "OAMCommand": {
-    "type": "struct",
-    "members": {
-      "x": "s16",
-      "y": "s16",
-      "_4": "u16",
-      "_6": "u16",
-      "_8": "u16"
+      "_0": "u8",
+      "_1": "u8",
+      "_2": "u8",
+      "_3": "u8",
+      "_4": "u8",
+      "_6": "u16"
     }
   },
   "FuseInfo": {
@@ -3243,9 +3440,9 @@
       "action": "u8",
       "_2": "u8",
       "_3": "u8",
-      "_4": "u8",
+      "prevUpdatePriority": "u8",
       "_5": "u8",
-      "_6": "u16",
+      "textIndex": "u16",
       "_8": "u16",
       "_a": "u16",
       "ent": "Entity*"
@@ -3263,6 +3460,15 @@
       "_5": "u8[2]"
     }
   },
+  "struct_gUnk_080B3D20": {
+    "type": "struct",
+    "members": {
+      "unk0": "u8",
+      "unk1": "u8",
+      "unk2": "u8",
+      "unk3": "u8"
+    }
+  },
   "ChooseFileState": {
     "type": "struct",
     "members": {
@@ -3275,7 +3481,7 @@
       "unk_0x10": "s16",
       "unk_0x12": "u16",
       "fillerB": "u8[12]",
-      "unk_0x20": "u8",
+      "unk_0x20": "s8",
       "fillerC": "u8[15]"
     }
   },
@@ -3292,6 +3498,751 @@
       "unk7": "u8",
       "saveStatus": "s8[3]",
       "saves": "SaveFile[3]"
+    }
+  },
+  "WeatherChangeManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u8",
+      "unk_21": "u8",
+      "unk_22": "u8",
+      "unk_23": "u8",
+      "filler_0x24": "u8[28]"
+    }
+  },
+  "VaatiAppearingManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "u32",
+      "field_0x24": "u32",
+      "field_0x28": "u32"
+    }
+  },
+  "TempleOfDropletsManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u8",
+      "unk_21": "u8",
+      "unk_22": "u8",
+      "unk_23": "u8",
+      "unk_24": "u16",
+      "unk_26": "u16",
+      "unk_28": "void*",
+      "unk_2c": "u16",
+      "unk_2e": "u8[6]",
+      "unk_34": "s16",
+      "unk_36": "s16",
+      "unk_38": "s16",
+      "unk_3a": "s16",
+      "unk_3c": "u16",
+      "unk_3e": "u16"
+    }
+  },
+  "FloatingPlatformManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager"
+    }
+  },
+  "RepeatedSoundManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager"
+    }
+  },
+  "GoronMerchantShopManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "itemActive": "u8[3]"
+    }
+  },
+  "CloudOverlayManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "u16"
+    }
+  },
+  "LightRayManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "gfxGroup": "u8",
+      "unk_21": "u8",
+      "unk_22": "u8",
+      "unk_23": "u8",
+      "unk_24": "u8",
+      "unk_25": "u8[15]",
+      "unk_34": "void*"
+    }
+  },
+  "ArmosInteriorManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager"
+    }
+  },
+  "MinishVillageTilesetManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u8",
+      "unk_21": "u8[31]"
+    }
+  },
+  "CloudStaircaseTransitionManager": {
+    "type": "struct",
+    "members": {
+      "base": {
+        "type": "struct",
+        "members": {
+          "prev": "Manager*",
+          "next": "Manager*",
+          "kind": "u8",
+          "id": "u8",
+          "type": "u8",
+          "type2": "u8",
+          "action": "u8",
+          "subAction": "u8",
+          "timer": "u8",
+          "subtimer": "u8",
+          "flags": "u8",
+          "unused": "u8[3]",
+          "parent": "Entity*",
+          "child": "Entity*",
+          "unused2": "u8[4]"
+        }
+      },
+      "field_0x20": "u8[22]",
+      "field_0x36": "u8",
+      "field_0x37": "u8",
+      "x": "s16",
+      "y": "s16",
+      "field_0x3c": "u16",
+      "field_0x3e": "u16"
+    }
+  },
+  "CameraTargetManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "u8[21]",
+      "field_0x35": "u8",
+      "field_0x36": "u8",
+      "field_0x37": "u8",
+      "field_0x38": "s16",
+      "field_0x3a": "s16",
+      "field_0x3c": "u16",
+      "field_0x3e": "u16"
+    }
+  },
+  "HyruleTownBellManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager"
+    }
+  },
+  "HorizontalMinishPathBackgroundManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u8",
+      "unk_21": "u8[23]",
+      "unk_38": "u32",
+      "unk_3c": "u32"
+    }
+  },
+  "Vaati3InsideArmManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "u16"
+    }
+  },
+  "RegionTriggerManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u8[20]",
+      "radiusX": "u16",
+      "radiusY": "u16",
+      "posX": "s16",
+      "posY": "s16",
+      "unk_3c": "u8[2]",
+      "playerInRegionFlag": "u16"
+    }
+  },
+  "RailIntersectionManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "u8[22]",
+      "field_0x36": "u8",
+      "field_0x37": "u8",
+      "field_0x38": "s16",
+      "field_0x3a": "u16",
+      "field_0x3c": "u8",
+      "field_0x3d": "u8",
+      "flags": "u16"
+    }
+  },
+  "LightLevelSetManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "u16",
+      "field_0x22": "u16",
+      "field_0x24": "u8[18]",
+      "field_0x36": "u8",
+      "field_0x37": "u8",
+      "field_0x38": "u16",
+      "field_0x3a": "u16",
+      "field_0x3c": "u16",
+      "field_0x3e": "u16"
+    }
+  },
+  "FallingItemManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "u8[21]",
+      "field_0x35": "u8",
+      "field_0x36": "u8",
+      "field_0x37": "u8",
+      "field_0x38": "s16",
+      "field_0x3a": "s16",
+      "field_0x3c": "u16",
+      "field_0x3e": "u16"
+    }
+  },
+  "Vaati3BackgroundManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager"
+    }
+  },
+  "BombableWallManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "u8[21]",
+      "field_0x35": "u8",
+      "field_0x36": "u8",
+      "field_0x37": "u8",
+      "x": "s16",
+      "y": "u16",
+      "tile": "u16",
+      "field_0x3e": "u16"
+    }
+  },
+  "TileChangeObserveManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "u8",
+      "field_0x21": "u8",
+      "field_0x22": "u8",
+      "field_0x23": "u8",
+      "field_0x24": "u8",
+      "field_0x25": "u8",
+      "field_0x26": "u8",
+      "field_0x27": "u8",
+      "initialTile": "u16",
+      "field_0x2a": "u8",
+      "field_0x2b": "u8",
+      "field_0x2c": "u8",
+      "field_0x2d": "u8",
+      "field_0x2e": "u8",
+      "field_0x2f": "u8",
+      "observedTile": "u16*",
+      "field_0x34": "u8",
+      "field_0x35": "u8",
+      "field_0x36": "u8",
+      "field_0x37": "u8",
+      "tilePosition": "u16",
+      "field_0x3a": "u16",
+      "field_0x3c": "u8",
+      "field_0x3d": "u8",
+      "flag": "u16"
+    }
+  },
+  "PushableFurnitureManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u8[8]",
+      "unk_28": "u8",
+      "unk_29": "u8",
+      "unk_2a": "u16"
+    }
+  },
+  "UnkPushableFurnitureManagerHelperStruct": {
+    "type": "struct",
+    "members": {
+      "unk_00": "u8",
+      "unk_01": "u8",
+      "unk_02": "u8",
+      "unk_03": "u8",
+      "unk_04": "u16",
+      "unk_06": "u16"
+    }
+  },
+  "MinishPortalManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u32",
+      "unk_24": "u32",
+      "unk_28": "u8[12]",
+      "unk_34": "u8",
+      "unk_35": "u8",
+      "unk_36": "u16",
+      "unk_38": "u16",
+      "unk_3a": "u16",
+      "unk_3c": "u16",
+      "unk_3e": "u16"
+    }
+  },
+  "SteamOverlayManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u16",
+      "unk_22": "u8",
+      "unk_23": "u8[1]",
+      "unk_24": "u8",
+      "unk_25": "u8[27]"
+    }
+  },
+  "EntitySpawnManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u8[24]",
+      "sound": "s16",
+      "spawnTimer": "s16",
+      "unk_3c": "u16",
+      "flag": "u16"
+    }
+  },
+  "StaticBackgroundManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "u32"
+    }
+  },
+  "MinishSizedEntranceManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "u32"
+    }
+  },
+  "AnimatedBackgroundManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager"
+    }
+  },
+  "Manager29": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u8[8]",
+      "unk_28": "u16*",
+      "unk_2c": "u16*",
+      "filler": "u8[4]",
+      "unk_34": "u8",
+      "unk_35": "u8",
+      "unk_36": "u8",
+      "unk_37": "u8",
+      "unk_38": "s16",
+      "unk_3a": "u16",
+      "unk_3c": "u16",
+      "unk_3e": "u16"
+    }
+  },
+  "PowBackgroundManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager"
+    }
+  },
+  "MiscManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u8[24]",
+      "unk_38": "s16",
+      "unk_3a": "s16",
+      "unk_3c": "u16",
+      "flags": "u16"
+    }
+  },
+  "LightManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk20": "s32"
+    }
+  },
+  "DiggingCaveEntranceManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager"
+    }
+  },
+  "DiggingCaveEntrance": {
+    "type": "struct",
+    "members": {
+      "sourceTilePosition": "u16",
+      "sourceRoom": "u8",
+      "type": "u8",
+      "targetArea": "u8",
+      "targetRoom": "u8",
+      "targetTilePosition": "u16"
+    }
+  },
+  "DiggingCaveEntranceTransition": {
+    "type": "struct",
+    "members": {
+      "entrance": "DiggingCaveEntrance*",
+      "offsetX": "u16",
+      "offsetY": "u16",
+      "isDiggingCave": "bool8",
+      "currentArea": "u8",
+      "previousArea": "u8",
+      "targetRoom": "u8"
+    }
+  },
+  "FightManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "prevBgm": "u8",
+      "unk_21": "u8[20]",
+      "unk_35": "u8",
+      "unk_36": "u8[4]",
+      "unk_3a": "u16",
+      "fightStartFlag": "u16",
+      "fightCompletedFlag": "u16"
+    }
+  },
+  "FightManagerHelper": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "enemies": "Entity*[8]"
+    }
+  },
+  "BridgeManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u8[8]",
+      "unk_28": "u16",
+      "unk_2a": "u16",
+      "unk_2c": "u16",
+      "unk_2e": "u16",
+      "unk_30": "u16",
+      "unk_32": "u16",
+      "unk_34": "u8[4]",
+      "x": "s16",
+      "y": "s16",
+      "unk_3c": "u16",
+      "flags": "u16"
+    }
+  },
+  "SpecialWarpManagerWarpData": {
+    "type": "struct",
+    "members": {
+      "posX": "u16",
+      "posY": "u16",
+      "width": "u8",
+      "height": "u8",
+      "roomProperty": "u8",
+      "unk_07": {
+        "type": "union",
+        "members": {
+          "all": "u8",
+          "b": {
+            "type": "struct",
+            "members": {
+              "layer": "u8 : 2",
+              "unk1": "u8 : 2",
+              "unk2": "u8 : 1",
+              "unk3": "u8 : 3"
+            }
+          }
+        }
+      }
+    }
+  },
+  "SpecialWarpManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "warpList": "SpecialWarpManagerWarpData*"
+    }
+  },
+  "EnterRoomTextboxManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u8",
+      "unk_21": "u8[19]",
+      "unk_34": "u16",
+      "unk_36": "u16",
+      "unk_38": "s16",
+      "unk_3A": "s16",
+      "unk_3C": "u16",
+      "unk_3E": "u16"
+    }
+  },
+  "RollingBarrelManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "s32",
+      "unk_24": {
+        "type": "union",
+        "members": {
+          "WORD": "s32",
+          "WORD_U": "u32",
+          "HALF": {
+            "type": "struct",
+            "members": {
+              "LO": "s16",
+              "HI": "s16"
+            }
+          },
+          "HALF_U": {
+            "type": "struct",
+            "members": {
+              "LO": "u16",
+              "HI": "u16"
+            }
+          },
+          "BYTES": {
+            "type": "struct",
+            "members": {
+              "byte0": "u8",
+              "byte1": "u8",
+              "byte2": "u8",
+              "byte3": "u8"
+            }
+          }
+        }
+      },
+      "unk_28": "u32",
+      "unk_2c": "u32",
+      "unk_30": "u8[16]"
+    }
+  },
+  "struct_08108228": {
+    "type": "struct",
+    "members": {
+      "unk_0": "u16",
+      "unk_2": "u16",
+      "unk_4": "u16",
+      "unk_6": "u16"
+    }
+  },
+  "MinishRaftersBackgroundManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_00": "u8[28]",
+      "unk_3c": "u32"
+    }
+  },
+  "HyruleTownTilesetManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "u8",
+      "field_0x21": "u8",
+      "field_0x22": "u8"
+    }
+  },
+  "Vaati3StartManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager"
+    }
+  },
+  "VerticalMinishPathBackgroundManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "u32[6]",
+      "field_0x38": "void*",
+      "field_0x3c": "void*"
+    }
+  },
+  "EnemyInteractionManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "d": {
+        "type": "struct",
+        "members": {
+          "enemies": "Entity*[8]"
+        }
+      }
+    }
+  },
+  "FlameManager": {
+    "type": "struct",
+    "members": {
+      "base": {
+        "type": "struct",
+        "members": {
+          "prev": "Manager*",
+          "next": "Manager*",
+          "kind": "u8",
+          "id": "u8",
+          "type": "u8",
+          "type2": "u8",
+          "action": "u8",
+          "subAction": "u8",
+          "timer": "u8",
+          "subtimer": "u8",
+          "flags": "u8",
+          "unused": "u8[3]",
+          "parent": "Entity*",
+          "child": "Entity*",
+          "unused2": "u8[4]"
+        }
+      },
+      "field_0x20": "u8[24]",
+      "field_0x38": "s16",
+      "field_0x3a": "s16"
+    }
+  },
+  "WaterfallBottomManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager"
+    }
+  },
+  "HouseSignManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "bitfield": "u32"
+    }
+  },
+  "DestructibleTileObserveManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager"
+    }
+  },
+  "DestructibleTileObserveManager_unk": {
+    "type": "struct",
+    "members": {
+      "field_0x0": "u8",
+      "tileLayer": "u8",
+      "flag": "u16",
+      "tilePos": "u16",
+      "tileType": "u16"
+    }
+  },
+  "MoveableObjectManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "u8[18]",
+      "unk_32": "u16",
+      "unk_34": "u8[2]",
+      "unk_36": "u8",
+      "unk_37": "u8",
+      "unk_38": "u16",
+      "unk_3a": "u16",
+      "unk_3c": "u16",
+      "flags": "u16"
+    }
+  },
+  "SecretManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "u8[24]",
+      "field_0x38": "s16",
+      "field_0x3a": "u8",
+      "field_0x3b": "u8",
+      "field_0x3c": "u16",
+      "field_0x3e": "u16"
+    }
+  },
+  "AngryStatueManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "field_0x20": "Entity*[4]",
+      "field_0x30": "u8",
+      "field_0x31": "u8",
+      "field_0x32": "u8",
+      "field_0x33": "u8",
+      "field_0x34": "u8",
+      "field_0x35": "u8",
+      "field_0x36": "u8",
+      "field_0x37": "u8",
+      "field_0x38": "u8",
+      "field_0x39": "u8",
+      "field_0x3a": "u8",
+      "field_0x3b": "u8",
+      "field_0x3c": "u8",
+      "field_0x3d": "u8",
+      "field_0x3e": "u16"
+    }
+  },
+  "EzloHintManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "x": "u16",
+      "y": "u16",
+      "rx": "u16",
+      "ry": "u16",
+      "unk_28": "u8[13]",
+      "msg_height": "u8",
+      "msg_idx": "u16",
+      "x_raw": "u8",
+      "y_raw": "u8",
+      "rx_raw": "u8",
+      "ry_raw": "u8",
+      "flag1": "u16",
+      "flag2": "u16"
+    }
+  },
+  "RainfallManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager"
+    }
+  },
+  "HoleManager": {
+    "type": "struct",
+    "members": {
+      "base": "Manager",
+      "unk_20": "s16",
+      "unk_22": "s16",
+      "unk_24": "u16",
+      "unk_26": "u16",
+      "unk_28": "u8[8]",
+      "unk_30": "u16",
+      "unk_32": "u16",
+      "unk_34": "u16",
+      "unk_36": "u16",
+      "unk_38": "u8[7]",
+      "unk_3f": "u8"
     }
   },
   "WinderEntity": {
