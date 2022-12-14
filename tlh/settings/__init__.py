@@ -11,19 +11,19 @@ settings = QSettings('octorock', 'the-little-hat')
 # TODO introduce caching of settings values
 
 # General
-def get_username():
+def get_username() -> str:
     return settings.value('username', getuser())
 
 
-def set_username(username):
+def set_username(username: str) -> None:
     settings.setValue('username', username)
 
 
-def get_repo_location():
+def get_repo_location() -> str:
     return settings.value('repo_location', '../tmc')
 
 
-def set_repo_location(repo):
+def set_repo_location(repo: str) -> None:
     settings.setValue('repo_location', repo)
 
 

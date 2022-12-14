@@ -28,7 +28,7 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
     - name: Execute tests
       run: |
-        python -m pytest       
+        python -m pytest
     - name: Lint code
       run: |
         # the GitHub editor is 127 chars wide
