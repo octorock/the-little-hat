@@ -84,6 +84,10 @@ def read_pointer(reader: Reader, type: str) -> any:
     pointer = reader.read_u32()
     if pointer == 0:
         return 'NULL'
+    # RAM
+    if pointer > 0x2000000 and pointer < 0x3ffffff:
+        return hex(pointer)
+
     symbol = reader.symbols.get_symbol_at(pointer - ROM_OFFSET)
     if symbol is None:
         raise Exception(f'Could not find symbol at {hex(pointer)}')

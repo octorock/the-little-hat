@@ -55,7 +55,7 @@ class TilemapDock(QDockWidget):
         self.ui.comboBoxMap.currentIndexChanged.connect(self.slot_map_change)
 
 
-        self.assets_folder = Path(settings.get_repo_location()) / 'build' / 'tmc' / 'assets' # TODO handle different variants?
+        self.assets_folder = Path(settings.get_repo_location()) / 'build' / 'USA' / 'assets' # TODO handle different variants?
 
         return
 
@@ -77,8 +77,10 @@ class TilemapDock(QDockWidget):
         #tileset_2_path = os.path.join(area_folder, 'tilesets', '1', 'gAreaTileset_MinishWoods_1_1.png')
         metatileset_path = os.path.join(area_folder, 'metatileset', 'gAreaMetaTileset_MinishWoods_top.bin')
         metatilemap_path = os.path.join(area_folder, 'rooms', '00_Main', 'gAreaRoomMap_MinishWoods_Main_top.bin')
+
+        # CHECK UNKNOWN MAPS, first decompress them via scripts/check_lz.py
         #metatileset_path = '/tmp/decompressed_0.bin'
-        #metatilemap_path = '/tmp/decompressed_1.bin'
+        metatilemap_path = '/tmp/decompressed_0.bin'
 
 
         #area_folder = os.path.join(assets_folder, 'maps', 'areas', '136_DarkHyruleCastle')
@@ -500,7 +502,7 @@ class PaletteSet:
 
 
 def read_palette_set(file: AsmDataFile, index: int) -> PaletteSet:
-    assets_folder = os.path.join(settings.get_repo_location(), 'build', 'tmc', 'assets') # TODO handle different variants?
+    assets_folder = os.path.join(settings.get_repo_location(), 'build', 'USA', 'assets') # TODO handle different variants?
 
     symbol_name = file.symbols['gPaletteGroups'].entries[index].attributes[0]
     symbol = file.symbols[symbol_name]

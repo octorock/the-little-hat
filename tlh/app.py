@@ -197,11 +197,11 @@ class MainWindow(QMainWindow):
     def load_symbols(self, rom_variant: RomVariant, silent: bool) -> None:
 
         maps = {
-            RomVariant.CUSTOM: 'tmc.map',
-            RomVariant.CUSTOM_EU: 'tmc_eu.map',
-            RomVariant.CUSTOM_JP: 'tmc_jp.map',
-            RomVariant.CUSTOM_DEMO_USA: 'tmc_demo_usa.map',
-            RomVariant.CUSTOM_DEMO_JP: 'tmc_demo_jp.map',
+            RomVariant.CUSTOM: 'build/USA/tmc.map',
+            RomVariant.CUSTOM_EU: 'build/EU/tmc_eu.map',
+            RomVariant.CUSTOM_JP: 'build/JP/tmc_jp.map',
+            RomVariant.CUSTOM_DEMO_USA: 'build/DEMO_USA/tmc_demo_usa.map',
+            RomVariant.CUSTOM_DEMO_JP: 'build/DEMO_JP/tmc_demo_jp.map',
         }
 
         map_file = path.join(settings.get_repo_location(), maps[rom_variant])
