@@ -67,6 +67,8 @@ class AsmDataFile:
                     # TODO handle ifs correctly
                     pass
                 elif len(line) > 0 and not line.startswith('@'): # entry
+                    # TODO remove everything after @ at the end of the line
+
                     #parts = line.split()
                     parts = list(filter(None, re.split(r'[\s,]', line)))
                     attributes = parts[1:]

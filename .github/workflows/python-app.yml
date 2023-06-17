@@ -2,7 +2,7 @@ name: Python application
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, tilemap-viewer ]
   pull_request:
     branches: [ main ]
 

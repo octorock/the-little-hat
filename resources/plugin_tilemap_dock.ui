@@ -11,33 +11,49 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Metasprite Viewer</string>
+   <string>Tilemap Viewer</string>
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QGridLayout" name="gridLayout_2">
-    <item row="2" column="0">
+    <item row="5" column="0" colspan="2">
+     <widget class="QGraphicsView" name="graphicsView_3"/>
+    </item>
+    <item row="3" column="0">
+     <widget class="QSpinBox" name="spinBoxRoomWidth"/>
+    </item>
+    <item row="4" column="0">
      <widget class="QGraphicsView" name="graphicsView"/>
     </item>
     <item row="0" column="0">
+     <widget class="QComboBox" name="comboBoxArea"/>
+    </item>
+    <item row="2" column="0">
      <widget class="QLabel" name="labelImageView">
       <property name="text">
        <string>TextLabel</string>
       </property>
      </widget>
     </item>
-    <item row="2" column="1">
+    <item row="0" column="1">
+     <widget class="QComboBox" name="comboBoxRoom"/>
+    </item>
+    <item row="4" column="1">
      <widget class="QGraphicsView" name="graphicsView_2"/>
     </item>
-    <item row="3" column="0" colspan="2">
-     <widget class="QGraphicsView" name="graphicsView_3"/>
-    </item>
-    <item row="1" column="0">
-     <widget class="QSpinBox" name="spinBoxRoomWidth"/>
-    </item>
-    <item row="1" column="1">
+    <item row="3" column="1">
      <widget class="QSpinBox" name="spinBoxRoomHeight">
       <property name="enabled">
        <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QComboBox" name="comboBoxMap"/>
+    </item>
+    <item row="1" column="1">
+     <widget class="QPushButton" name="pushButtonShowMap">
+      <property name="text">
+       <string>Show Map</string>
       </property>
      </widget>
     </item>

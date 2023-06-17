@@ -22,6 +22,7 @@ from plugins.data_extractor.incbins import export_incbins
 import re
 import traceback
 import json
+from plugins.tilemap_viewer.asm_data_file import AsmDataFile
 
 DEV_ACTIONS = False
 
@@ -120,7 +121,8 @@ class DataExtractorPlugin:
             menu.addAction('Extract Dungeon maps', self.slot_extract_dungeon_maps)
             menu.addAction('Extract Area metadata', self.slot_extract_area_metadata)
             menu.addAction('Fix Tilesets', self.slot_fix_tilesets)
-            menu.addAction('Fix paths', self.fix_paths)
+#            menu.addAction('Fix paths', self.fix_paths)
+            menu.addAction('Export configs', self.slot_export_configs)
 
 
     def slot_copy_as_incbin(self) -> None:
@@ -3099,7 +3101,7 @@ class DataExtractorPlugin:
     room_ids = [
 [ 'ROOM_MINISH_WOODS_MAIN' ],
 [ 'ROOM_MINISH_VILLAGE_MAIN', 'ROOM_MINISH_VILLAGE_SIDE_HOUSE_AREA', 'ROOM_MINISH_VILLAGE_2', 'ROOM_MINISH_VILLAGE_3' ],
-[ 'ROOM_HYRULE_TOWN_MAIN' ],
+[ 'ROOM_HYRULE_TOWN_MAIN', 'ROOM_HYRULE_TOWN_1' ],
 [ 'ROOM_HYRULE_FIELD_WESTERN_WOODS_SOUTH', 'ROOM_HYRULE_FIELD_SOUTH_HYRULE_FIELD', 'ROOM_HYRULE_FIELD_EASTERN_HILLLS_SOUTH', 'ROOM_HYRULE_FIELD_EASTERN_HILLLS_CENTER', 'ROOM_HYRULE_FIELD_EASTERN_HILLLS_NORTH', 'ROOM_HYRULE_FIELD_LON_LON_RANCH', 'ROOM_HYRULE_FIELD_NORTH_HYRULE_FIELD', 'ROOM_HYRULE_FIELD_TRILBY_HIGHLANDS', 'ROOM_HYRULE_FIELD_WESTERN_WOODS_NORTH', 'ROOM_HYRULE_FIELD_WESTERN_WOODS_CENTER' ],
 [ 'ROOM_CASTOR_WILDS_MAIN' ],
 [ 'ROOM_RUINS_ENTRANCE', 'ROOM_RUINS_BEANSTALK', 'ROOM_RUINS_TEKTITES', 'ROOM_RUINS_LADDER_TO_TEKTITES', 'ROOM_RUINS_FORTRESS_ENTRANCE', 'ROOM_RUINS_BELOW_FORTRESS_ENTRANCE' ],
@@ -3110,8 +3112,8 @@ class DataExtractorPlugin:
 [ 'ROOM_VEIL_FALLS_MAIN' ],
 [ 'ROOM_LAKE_HYLIA_MAIN', 'ROOM_LAKE_HYLIA_BEANSTALK' ],
 [ 'ROOM_LAKE_WOODS_CAVE_MAIN' ],
-[ 'ROOM_BEANSTALKS_CRENEL', 'ROOM_BEANSTALKS_LAKE_HYLIA', 'ROOM_BEANSTALKS_RUINS', 'ROOM_BEANSTALKS_EASTERN_HILLS', 'ROOM_BEANSTALKS_WESTERN_WOODS', 'ROOM_BEANSTALKS_5', 'ROOM_BEANSTALKS_6', 'ROOM_BEANSTALKS_7', 'ROOM_BEANSTALKS_8', 'ROOM_BEANSTALKS_9', 'ROOM_BEANSTALKS_a', 'ROOM_BEANSTALKS_b', 'ROOM_BEANSTALKS_c', 'ROOM_BEANSTALKS_d', 'ROOM_BEANSTALKS_e', 'ROOM_BEANSTALKS_f', 'ROOM_BEANSTALKS_CRENEL_CLIMB', 'ROOM_BEANSTALKS_LAKE_HYLIA_CLIMB', 'ROOM_BEANSTALKS_RUINS_CLIMB', 'ROOM_BEANSTALKS_EASTERN_HILLS_CLIMB', 'ROOM_BEANSTALKS_WESTERN_WOODS_CLIMB' ],
-[ 'ROOM_EMPTY_0' ],
+[ 'ROOM_BEANSTALKS_CRENEL', 'ROOM_BEANSTALKS_LAKE_HYLIA', 'ROOM_BEANSTALKS_RUINS', 'ROOM_BEANSTALKS_EASTERN_HILLS', 'ROOM_BEANSTALKS_WESTERN_WOODS', 'ROOM_BEANSTALKS_5', 'ROOM_BEANSTALKS_6', 'ROOM_BEANSTALKS_7', 'ROOM_BEANSTALKS_8', 'ROOM_BEANSTALKS_9', 'ROOM_BEANSTALKS_a', 'ROOM_BEANSTALKS_b', 'ROOM_BEANSTALKS_c', 'ROOM_BEANSTALKS_d', 'ROOM_BEANSTALKS_e', 'ROOM_BEANSTALKS_f', 'ROOM_BEANSTALKS_CRENEL_CLIMB', 'ROOM_BEANSTALKS_LAKE_HYLIA_CLIMB', 'ROOM_BEANSTALKS_RUINS_CLIMB', 'ROOM_BEANSTALKS_EASTERN_HILLS_CLIMB', 'ROOM_BEANSTALKS_WESTERN_WOODS_CLIMB', 'ROOM_BEANSTALKS_21', 'ROOM_BEANSTALKS_22', 'ROOM_BEANSTALKS_23', 'ROOM_BEANSTALKS_24', 'ROOM_BEANSTALKS_25', 'ROOM_BEANSTALKS_26', 'ROOM_BEANSTALKS_27', 'ROOM_BEANSTALKS_28', 'ROOM_BEANSTALKS_29', 'ROOM_BEANSTALKS_30', 'ROOM_BEANSTALKS_31', ],
+[ 'ROOM_EMPTY_0', 'ROOM_EMPTY_1' ],
 [ 'ROOM_HYRULE_DIG_CAVES_TOWN' ],
 [ 'ROOM_MELARIS_MINE_MAIN' ],
 [ 'ROOM_MINISH_PATHS_MINISH_VILLAGE', 'ROOM_MINISH_PATHS_BOW', 'ROOM_MINISH_PATHS_SCHOOLYARD', 'ROOM_MINISH_PATHS_LON_LON_RANCH', 'ROOM_MINISH_PATHS_LAKE_HYLIA' ],
@@ -3138,11 +3140,11 @@ class DataExtractorPlugin:
 [ 'ROOM_CRENEL_CAVES_BLOCK_PUSHING', 'ROOM_CRENEL_CAVES_PILLAR_CAVE', 'ROOM_CRENEL_CAVES_BRIDGE_SWITCH', 'ROOM_CRENEL_CAVES_EXIT_TO_MINES', 'ROOM_CRENEL_CAVES_GRIP_RING', 'ROOM_CRENEL_CAVES_FAIRY_FOUNTAIN', 'ROOM_CRENEL_CAVES_SPINY_CHU_PUZZLE', 'ROOM_CRENEL_CAVES_CHUCHU_POT_CHEST', 'ROOM_CRENEL_CAVES_WATER_HEART_PIECE', 'ROOM_CRENEL_CAVES_RUPEE_FAIRY_FOUINTAIN', 'ROOM_CRENEL_CAVES_HELMASAUR_HALLWAY', 'ROOM_CRENEL_CAVES_MUSHROOM_KEESE', 'ROOM_CRENEL_CAVES_LADDER_TO_SPRING_WATER', 'ROOM_CRENEL_CAVES_BOMB_BUSINESS_SCRUB', 'ROOM_CRENEL_CAVES_HERMIT', 'ROOM_CRENEL_CAVES_HINT_SCRUB', 'ROOM_CRENEL_CAVES_TO_GRAYBLADE' ],
 [ 'ROOM_MINISH_CRACKS_LON_LON_RANCH_NORTH', 'ROOM_MINISH_CRACKS_LAKE_HYLIA_EAST', 'ROOM_MINISH_CRACKS_HYRULE_CASTLE_GARDEN', 'ROOM_MINISH_CRACKS_MT_CRENEL', 'ROOM_MINISH_CRACKS_EAST_HYRULE_CASTLE', 'ROOM_MINISH_CRACKS_5', 'ROOM_MINISH_CRACKS_CASTOR_WILDS_BOW', 'ROOM_MINISH_CRACKS_RUINS_ENTRANCE', 'ROOM_MINISH_CRACKS_MINISH_WOODS_SOUTH', 'ROOM_MINISH_CRACKS_CASTOR_WILDS_NORTH', 'ROOM_MINISH_CRACKS_CASTOR_WILDS_WEST', 'ROOM_MINISH_CRACKS_CASTOR_WILDS_MIDDLE', 'ROOM_MINISH_CRACKS_RUINS_TEKTITE', 'ROOM_MINISH_CRACKS_CASTOR_WILDS_NEXT_TO_BOW', 'ROOM_MINISH_CRACKS_e', 'ROOM_MINISH_CRACKS_f', 'ROOM_MINISH_CRACKS_10', 'ROOM_MINISH_CRACKS_11', 'ROOM_MINISH_CRACKS_12', 'ROOM_MINISH_CRACKS_13', 'ROOM_MINISH_CRACKS_14', 'ROOM_MINISH_CRACKS_15', 'ROOM_MINISH_CRACKS_16', 'ROOM_MINISH_CRACKS_17' ],
 [ 'ROOM_HOUSE_INTERIORS_4_CARPENTER', 'ROOM_HOUSE_INTERIORS_4_SWIFTBLADE', 'ROOM_HOUSE_INTERIORS_4_RANCH_HOUSE_WEST', 'ROOM_HOUSE_INTERIORS_4_RANCH_HOUSE_EAST', 'ROOM_HOUSE_INTERIORS_4_FARM_HOUSE', 'ROOM_HOUSE_INTERIORS_4_MAYOR_LAKE_CABIN', 'ROOM_HOUSE_INTERIORS_4_6', 'ROOM_HOUSE_INTERIORS_4_7', 'ROOM_HOUSE_INTERIORS_4_8', 'ROOM_HOUSE_INTERIORS_4_9', 'ROOM_HOUSE_INTERIORS_4_a', 'ROOM_HOUSE_INTERIORS_4_b', 'ROOM_HOUSE_INTERIORS_4_c', 'ROOM_HOUSE_INTERIORS_4_d', 'ROOM_HOUSE_INTERIORS_4_e', 'ROOM_HOUSE_INTERIORS_4_f' ],
-[ 'ROOM_GREAT_FAIRIES_GRAVEYARD', 'ROOM_GREAT_FAIRIES_MINISH_WOODS', 'ROOM_GREAT_FAIRIES_CRENEL', 'ROOM_GREAT_FAIRIES_NOT_IMPLEMENTED' ],
+[ 'ROOM_GREAT_FAIRIES_GRAVEYARD', 'ROOM_GREAT_FAIRIES_MINISH_WOODS', 'ROOM_GREAT_FAIRIES_CRENEL', 'ROOM_GREAT_FAIRIES_NOT_IMPLEMENTED', 'ROOM_GREAT_FAIRIES_4', 'ROOM_GREAT_FAIRIES_5', 'ROOM_GREAT_FAIRIES_6', 'ROOM_GREAT_FAIRIES_7' ],
 [ 'ROOM_CASTOR_CAVES_SOUTH', 'ROOM_CASTOR_CAVES_NORTH', 'ROOM_CASTOR_CAVES_WIND_RUINS', 'ROOM_CASTOR_CAVES_DARKNUT', 'ROOM_CASTOR_CAVES_HEART_PIECE', 'ROOM_CASTOR_CAVES_5', 'ROOM_CASTOR_CAVES_6', 'ROOM_CASTOR_CAVES_7' ],
 [ 'ROOM_CASTOR_DARKNUT_MAIN', 'ROOM_CASTOR_DARKNUT_HALL' ],
 [ 'ROOM_ARMOS_INTERIORS_RUINS_ENTRANCE_NORTH', 'ROOM_ARMOS_INTERIORS_RUINS_ENTRANCE_SOUTH', 'ROOM_ARMOS_INTERIORS_RUINS_LEFT', 'ROOM_ARMOS_INTERIORS_RUINS_MIDDLE_LEFT', 'ROOM_ARMOS_INTERIORS_RUINS_MIDDLE_RIGHT', 'ROOM_ARMOS_INTERIORS_RUINS_RIGHT', 'ROOM_ARMOS_INTERIORS_6', 'ROOM_ARMOS_INTERIORS_RUINS_GRASS_PATH', 'ROOM_ARMOS_INTERIORS_8', 'ROOM_ARMOS_INTERIORS_FORTRESS_LEFT', 'ROOM_ARMOS_INTERIORS_FORTRESS_RIGHT' ],
-[ 'ROOM_TOWN_MINISH_HOLES_MAYORS_HOUSE', 'ROOM_TOWN_MINISH_HOLES_WEST_ORACLE', 'ROOM_TOWN_MINISH_HOLES_DR_LEFT', 'ROOM_TOWN_MINISH_HOLES_CARPENTER', 'ROOM_TOWN_MINISH_HOLES_CAFE', 'ROOM_TOWN_MINISH_HOLES_5', 'ROOM_TOWN_MINISH_HOLES_6', 'ROOM_TOWN_MINISH_HOLES_7', 'ROOM_TOWN_MINISH_HOLES_8', 'ROOM_TOWN_MINISH_HOLES_9', 'ROOM_TOWN_MINISH_HOLES_a', 'ROOM_TOWN_MINISH_HOLES_b', 'ROOM_TOWN_MINISH_HOLES_c', 'ROOM_TOWN_MINISH_HOLES_d', 'ROOM_TOWN_MINISH_HOLES_e', 'ROOM_TOWN_MINISH_HOLES_f', 'ROOM_TOWN_MINISH_HOLES_LIBRARY_BOOKSHELF', 'ROOM_TOWN_MINISH_HOLES_LIBRARY_BOOKS_HOUSE', 'ROOM_TOWN_MINISH_HOLES_REM_SHOE_SHOP', 'ROOM_TOWN_MINISH_HOLES_13' ],
+[ 'ROOM_TOWN_MINISH_HOLES_MAYORS_HOUSE', 'ROOM_TOWN_MINISH_HOLES_WEST_ORACLE', 'ROOM_TOWN_MINISH_HOLES_DR_LEFT', 'ROOM_TOWN_MINISH_HOLES_CARPENTER', 'ROOM_TOWN_MINISH_HOLES_CAFE', 'ROOM_TOWN_MINISH_HOLES_5', 'ROOM_TOWN_MINISH_HOLES_6', 'ROOM_TOWN_MINISH_HOLES_7', 'ROOM_TOWN_MINISH_HOLES_8', 'ROOM_TOWN_MINISH_HOLES_9', 'ROOM_TOWN_MINISH_HOLES_a', 'ROOM_TOWN_MINISH_HOLES_b', 'ROOM_TOWN_MINISH_HOLES_c', 'ROOM_TOWN_MINISH_HOLES_d', 'ROOM_TOWN_MINISH_HOLES_e', 'ROOM_TOWN_MINISH_HOLES_f', 'ROOM_TOWN_MINISH_HOLES_LIBRARY_BOOKSHELF', 'ROOM_TOWN_MINISH_HOLES_LIBRARY_BOOKS_HOUSE', 'ROOM_TOWN_MINISH_HOLES_REM_SHOE_SHOP', 'ROOM_TOWN_MINISH_HOLES_13', 'ROOM_TOWN_MINISH_HOLES_20', 'ROOM_TOWN_MINISH_HOLES_21', 'ROOM_TOWN_MINISH_HOLES_22', 'ROOM_TOWN_MINISH_HOLES_23', 'ROOM_TOWN_MINISH_HOLES_24', 'ROOM_TOWN_MINISH_HOLES_25', 'ROOM_TOWN_MINISH_HOLES_26', 'ROOM_TOWN_MINISH_HOLES_27', 'ROOM_TOWN_MINISH_HOLES_28', 'ROOM_TOWN_MINISH_HOLES_29', 'ROOM_TOWN_MINISH_HOLES_30', 'ROOM_TOWN_MINISH_HOLES_31', 'ROOM_TOWN_MINISH_HOLES_32', 'ROOM_TOWN_MINISH_HOLES_33', 'ROOM_TOWN_MINISH_HOLES_34', 'ROOM_TOWN_MINISH_HOLES_35', 'ROOM_TOWN_MINISH_HOLES_36', 'ROOM_TOWN_MINISH_HOLES_37', 'ROOM_TOWN_MINISH_HOLES_38',  'ROOM_TOWN_MINISH_HOLES_39', 'ROOM_TOWN_MINISH_HOLES_40', 'ROOM_TOWN_MINISH_HOLES_41', 'ROOM_TOWN_MINISH_HOLES_42', 'ROOM_TOWN_MINISH_HOLES_43', 'ROOM_TOWN_MINISH_HOLES_44', 'ROOM_TOWN_MINISH_HOLES_45', 'ROOM_TOWN_MINISH_HOLES_46', 'ROOM_TOWN_MINISH_HOLES_47', ],
 [ 'ROOM_MINISH_RAFTERS_CAFE', 'ROOM_MINISH_RAFTERS_STOCKWELL', 'ROOM_MINISH_RAFTERS_DR_LEFT', 'ROOM_MINISH_RAFTERS_BAKERY' ],
 [ 'ROOM_GORON_CAVE_STAIRS', 'ROOM_GORON_CAVE_MAIN' ],
 [ 'ROOM_WIND_TRIBE_TOWER_ENTRANCE', 'ROOM_WIND_TRIBE_TOWER_FLOOR_1', 'ROOM_WIND_TRIBE_TOWER_FLOOR_2', 'ROOM_WIND_TRIBE_TOWER_FLOOR_3' ],
@@ -3200,7 +3202,7 @@ class DataExtractorPlugin:
 [ 'ROOM_NULL_64_0' ],
 [ 'ROOM_NULL_65_0' ],
 [ 'ROOM_NULL_66_0' ],
-[ 'ROOM_67_0' ],
+[ 'ROOM_67_0', 'ROOM_67_1', 'ROOM_67_2', 'ROOM_67_3', 'ROOM_67_4', 'ROOM_67_5',],
 [ 'ROOM_ROYAL_CRYPT_0', 'ROOM_ROYAL_CRYPT_WATER_ROPE', 'ROOM_ROYAL_CRYPT_GIBDO', 'ROOM_ROYAL_CRYPT_3', 'ROOM_ROYAL_CRYPT_KEY_BLOCK', 'ROOM_ROYAL_CRYPT_5', 'ROOM_ROYAL_CRYPT_6', 'ROOM_ROYAL_CRYPT_MUSHROOM_PIT', 'ROOM_ROYAL_CRYPT_ENTRANCE' ],
 [ 'ROOM_NULL_69_0' ],
 [ 'ROOM_NULL_6A_0' ],
@@ -4013,3 +4015,242 @@ class DataExtractorPlugin:
 
         with open('/tmp/replacements.s', 'w') as file:
             file.writelines(replacements)
+
+    def slot_export_configs(self) -> None:
+        """Export config json files for the maps."""
+
+        assets_folder = os.path.join(get_repo_location(), 'build', 'tmc', 'assets') # TODO handle different variants?
+
+        area_configs = []
+        room_configs = []
+
+        for area, area_id in enumerate(self.area_ids):
+            area_configs.append({
+                'id': area,
+                'name': area_id,
+                'tilesets': [],
+                'metatileset': -1
+            })
+            room_configs.append([])
+            for room, room_id in enumerate(self.room_ids[area]):
+                room_configs[area].append({
+                    'id': room,
+                    'name': room_id,
+                    'area': area, # TODO can be implicit by parent folder?
+                    'maps': []
+                })
+
+
+        # Tilesets
+        tilesets_headers = AsmDataFile(os.path.join(get_repo_location(), 'data', 'map', 'tileset_headers.s'))
+        used_tilesets = {}
+        used_tilesets_tiles = {}
+
+        for area, entry in enumerate(tilesets_headers.symbols['gAreaTilesets'].entries):
+            symbol_name = entry.attributes[0]
+            if symbol_name == 'gAreaTilesets_Unused':
+                continue
+            if symbol_name in used_tilesets.keys():
+                # Reuse this tileset.
+                area_configs[area]['tileset_ref'] = used_tilesets[symbol_name]
+                continue
+            used_tilesets[symbol_name] = area
+
+            for tileset_id, entry in enumerate(tilesets_headers.symbols[symbol_name].entries):
+                tileset = tilesets_headers.symbols[entry.attributes[0]]
+                config = {
+                    'id': tileset_id,
+                    'area': area, # TODO can be implicit by parent folder?
+                    'tiles': []
+                }
+                for entry in tileset.entries:
+                    if entry.name == 'tileset_tiles':
+                        tiles_symbol = entry.attributes[0][7:]
+                        if tiles_symbol in used_tilesets_tiles.keys():
+                            config['tiles'].append({
+                                'ref': used_tilesets_tiles[tiles_symbol],                        
+                                'dest': entry.attributes[1],
+                                'compressed': entry.attributes[3] == '1'
+                            })
+                            continue
+                        config['tiles'].append({
+                            'src': tiles_symbol, # Remove offset_
+                            'dest': entry.attributes[1],
+                            'compressed': entry.attributes[3] == '1'
+                        })
+                        used_tilesets_tiles[tiles_symbol] = os.path.join(self.get_area_path(area), 'tilesets', str(tileset_id), tiles_symbol)
+                    elif entry.name == 'tileset_palette_set':
+                        config['palette_set'] = int(entry.attributes[0])
+                    else:
+                        raise Exception(f'Unknown tileset_headers entry type: {entry.name}.')
+                
+                config_path = os.path.join(assets_folder, self.get_area_path(area), 'tilesets', str(tileset_id), 'config.json')
+                self.write_config(config_path, config)
+               
+                area_configs[area]['tilesets'].append(tileset_id)
+
+        # Metatileset
+        metatilesets_headers = AsmDataFile(os.path.join(get_repo_location(), 'data', 'map', 'metatile_headers.s'))
+        used_metatilesets = {}
+        used_metatilesets_entries = {}
+        for area, entry in enumerate(metatilesets_headers.symbols['gAreaMetatiles'].entries):
+            symbol_name = entry.attributes[0]
+            if symbol_name == 'gAreaMetatiles_Unused':
+                continue
+            if symbol_name in used_metatilesets.keys():
+                # Reused metatileset.
+                area_configs[area]['metatileset'] = used_metatilesets[symbol_name]
+                continue
+            used_metatilesets[symbol_name] = area
+            config = {
+                'area': area, # TODO can be implicit by parent folder?
+            }
+            for entry in metatilesets_headers.symbols[symbol_name].entries:
+                if entry.name == 'metatiles_bottom':
+                    field = 'tiles_bottom'
+                elif entry.name == 'metatiles_top':
+                    field = 'tiles_top'
+                elif entry.name == 'metatile_types_bottom':
+                    field = 'types_bottom'
+                elif entry.name == 'metatile_types_top':
+                    field = 'types_top'
+                else:
+                    raise Exception(f'Unknown metatileset entry {entry.name}.')
+                entry_symbol = entry.attributes[0][7:] # Remove offset_
+
+                if entry_symbol == 'gAreaRoomMap_None':
+                    continue
+
+                if entry_symbol in used_metatilesets_entries.keys():
+                    # Reused
+                    config[field] = {
+                        'ref': used_metatilesets_entries[entry_symbol],
+                        'compressed': entry.attributes[2] == '1' # TODO if all of them are compressed, we only need to store the src
+                    }
+                    continue
+                used_metatilesets_entries[entry_symbol] = os.path.join(self.get_area_path(area), 'metatileset', entry_symbol)
+                config[field] = {
+                    'src': entry_symbol,
+                    'compressed': entry.attributes[2] == '1' # TODO if all of them are compressed, we only need to store the src
+                }
+            config_path = os.path.join(assets_folder, self.get_area_path(area), 'metatileset', 'config.json')
+            self.write_config(config_path, config)
+            area_configs[area]['metatileset'] = area
+
+        # Rooms
+        room_headers = AsmDataFile(os.path.join(get_repo_location(), 'data', 'map', 'room_headers.s'))
+        for area, entry in enumerate(room_headers.symbols['gAreaRoomHeaders'].entries):
+            symbol_name = entry.attributes[0]
+            if symbol_name == '0x0':
+                continue
+            room = 0
+            for entry in room_headers.symbols[symbol_name].entries:
+                if entry.name == 'room_header':
+                    if room >= len(room_configs[area]):
+                        raise Exception(f'No space for room {room} in area {self.area_ids[area]} ({area}).')
+                    room_configs[area][room]['x'] = int(entry.attributes[0], 0)
+                    room_configs[area][room]['y'] = int(entry.attributes[1], 0)
+                    room_configs[area][room]['width'] = int(entry.attributes[2], 0)
+                    room_configs[area][room]['height'] = int(entry.attributes[3], 0)
+                    room_configs[area][room]['tileset'] = int(entry.attributes[4], 0)
+                    room += 1
+                elif entry.name == '.2byte':
+                    pass # end of this area
+                else:
+                    raise Exception(f'Unknown room headers entry: {entry.name}.')
+
+        used_maps = {}
+        map_headers = AsmDataFile(os.path.join(get_repo_location(), 'data', 'map', 'map_headers.s'))
+        for area, entry in enumerate(map_headers.symbols['gAreaRoomMaps'].entries):
+            symbol_name = entry.attributes[0]
+            if symbol_name == 'gAreaRoomMaps_Unused':
+                continue
+            for room, entry in enumerate(map_headers.symbols[symbol_name].entries):
+                # TODO handle reused rooms using references?
+
+                room_symbol = entry.attributes[0]
+                if room_symbol == '0x0' or room_symbol == 'gAreaRoomMap_Unused':
+                    continue
+                if room >= len(room_configs[area]):
+                    print(len(map_headers.symbols[symbol_name].entries))
+                    raise Exception(f'No space for room {room} in area {self.area_ids[area]} ({area}).')
+                for entry in map_headers.symbols[room_symbol].entries:
+                    if entry.name == 'map_bottom':
+                        field = 'map_bottom'
+                    elif entry.name == 'map_top':
+                        field = 'map_top'
+                    elif entry.name == 'tileset_tiles':
+                        field = 'tiles' # TODO need to add dest
+                    elif entry.name == 'map_bottom_special':
+                        field = 'map_bottom_special'
+                    elif entry.name == 'map_top_special':
+                        field = 'map_top_special'
+                    elif entry.name == 'collision_bottom':
+                        field = 'collision_bottom'           
+                    elif entry.name == '.4byte':
+                        print(f'Unknown .4byte: {entry}.')
+                        continue
+                    else:
+                        print(entry)
+                        raise Exception(f'Unknown map headers entry: {entry.name}')
+
+                    # TODO room map reuse (happens in beanstalks)
+
+                    map_symbol = entry.attributes[0][7:] # Remove offset_
+
+                    if map_symbol == 'gAreaRoomMap_None':
+                        continue
+
+                    if map_symbol in used_maps.keys():
+                        # Reused map.
+                        room_configs[area][room]['maps'].append({
+                            'type': field,
+                            'ref': used_maps[map_symbol],
+                            'compressed': entry.attributes[2] == '1'
+                        })
+                        continue
+
+                    used_maps[map_symbol] = os.path.join(self.get_room_path(area, room), map_symbol)
+
+                    bin_path = os.path.join(get_repo_location(), 'build', 'tmc', 'assets', self.get_room_path(area, room), map_symbol + '.bin')
+                    if not os.path.exists(bin_path):
+                        print(f'Missing: {bin_path}')
+
+                    room_configs[area][room]['maps'].append({
+                        'type': field,
+                        'src': map_symbol,
+                        'compressed': entry.attributes[2] == '1'
+                    })
+
+
+        # Write the configs to files.
+        for area, config in enumerate(area_configs):
+            config_path = os.path.join(assets_folder, self.get_area_path(area), 'config.json')
+            self.write_config(config_path, config)
+            for room, config in enumerate(room_configs[area]):
+                config_path = os.path.join(assets_folder, self.get_room_path(area, room), 'config.json')
+                self.write_config(config_path, config)
+
+        # area config.json
+        # Tilesets
+        # Meta-Tilesets
+        # 
+
+        # room config.json
+
+
+        # TODO flag whether an area / a room is used
+        # TODO Rename metatilesets folder to metatileset
+        # TODO need to adapt the area/room enums in the decomp repo
+        # TODO Fix icon on windows
+
+        # TODO possibly controversial decisions:
+        # - Use decimal for area and room numbers because we can only store decimal numbers.
+        # - Split tilesets and metatilesets into areas even though they are reused by other areas.
+        # - Use a ref field in the json for references.
+        print('done')
+        self.api.show_message('Export configs', 'Configs successfully exported.')
+
+    def write_config(self, path: str, config: dict) -> None:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        json.dump(config, open(path, 'w'))

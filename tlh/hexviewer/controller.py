@@ -91,9 +91,9 @@ class HexViewerController(QObject):
         # Keyboard shortcuts
         QShortcut(QKeySequence(Qt.Key_G), self.dock,
                   self.slot_show_goto_dialog, context=Qt.WidgetWithChildrenShortcut)
-        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_C), self.dock,
+        QShortcut(QKeySequence(Qt.CTRL | Qt.Key_C), self.dock,
                   self.copy_selected_bytes, context=Qt.WidgetWithChildrenShortcut)
-        QShortcut(QKeySequence(Qt.CTRL + Qt.Key_A), self.dock,
+        QShortcut(QKeySequence(Qt.CTRL | Qt.Key_A), self.dock,
                   self.mark_as_all_pointer, context=Qt.WidgetWithChildrenShortcut)
         QShortcut(QKeySequence(Qt.Key_4), self.dock, lambda:self.update_selected_bytes(4),
                   context=Qt.WidgetWithChildrenShortcut)

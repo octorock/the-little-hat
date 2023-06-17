@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List
 from plugins.tilemap_viewer.asm_data_file import AsmDataFile
 from tlh import settings
@@ -12,6 +13,8 @@ from PIL.Image import Image
 from PIL.ImageQt import ImageQt
 import PIL
 import array
+from plugins.tilemap_viewer.ids import area_ids, room_ids
+import json
 
 class TilemapViewerPlugin:
     name = 'Tilemap Viewer'
@@ -23,7 +26,7 @@ Descriptions can have multiple lines'''
 
     def load(self) -> None:
         self.menu_entry = self.api.register_menu_entry('Tilemap Viewer', self.show_tilemap_viewer)
-        self.menu_entry.setShortcut(QKeySequence(Qt.CTRL + Qt.Key_F4))
+        self.menu_entry.setShortcut(QKeySequence(Qt.CTRL|Qt.Key_F4))
 
     def unload(self) -> None:
         self.api.remove_menu_entry(self.menu_entry)
@@ -43,7 +46,18 @@ class TilemapDock(QDockWidget):
 
         self.ui.spinBoxRoomWidth.valueChanged.connect(self.slot_change_room_width)
 
-        assets_folder = os.path.join(settings.get_repo_location(), 'build', 'tmc', 'assets') # TODO handle different variants?
+        # Set up combo boxes.
+        self.ui.comboBoxArea.addItems(area_ids)
+        self.ui.comboBoxArea.currentIndexChanged.connect(self.slot_area_change)
+        self.ui.comboBoxRoom.addItem('Please first select an area')
+        self.ui.comboBoxRoom.currentIndexChanged.connect(self.slot_room_change)
+        self.ui.comboBoxMap.addItem('Please first select a room')
+        self.ui.comboBoxMap.currentIndexChanged.connect(self.slot_map_change)
+
+
+        self.assets_folder = Path(settings.get_repo_location()) / 'build' / 'tmc' / 'assets' # TODO handle different variants?
+
+        return
 
         area = 0
         room = 0
@@ -55,20 +69,20 @@ class TilemapDock(QDockWidget):
         tileset_1_path = os.path.join(area_folder, 'tilesets', '0', 'gAreaTileset_MinishWoods_0_1.png')
         tileset_2_path = os.path.join(area_folder, 'tilesets', '0', 'gAreaTileset_MinishWoods_0_2.png')
 
-        metatileset_path = os.path.join(area_folder, 'metatilesets', 'gAreaMetaTileset_MinishWoods_bottom.bin')
+        metatileset_path = os.path.join(area_folder, 'metatileset', 'gAreaMetaTileset_MinishWoods_bottom.bin')
         metatilemap_path = os.path.join(area_folder, 'rooms', 'Main', 'gAreaRoomMap_MinishWoods_Main_bottom.bin')
         vram_offset = 0
 
         #tileset_0_path = os.path.join(area_folder, 'tilesets', '1', 'gAreaTileset_MinishWoods_1_0.png')
         #tileset_2_path = os.path.join(area_folder, 'tilesets', '1', 'gAreaTileset_MinishWoods_1_1.png')
-        metatileset_path = os.path.join(area_folder, 'metatilesets', 'gAreaMetaTileset_MinishWoods_top.bin')
+        metatileset_path = os.path.join(area_folder, 'metatileset', 'gAreaMetaTileset_MinishWoods_top.bin')
         metatilemap_path = os.path.join(area_folder, 'rooms', '00_Main', 'gAreaRoomMap_MinishWoods_Main_top.bin')
         #metatileset_path = '/tmp/decompressed_0.bin'
         #metatilemap_path = '/tmp/decompressed_1.bin'
 
 
         #area_folder = os.path.join(assets_folder, 'maps', 'areas', '136_DarkHyruleCastle')
-        #metatileset_path = os.path.join(area_folder, 'metatilesets', 'gAreaMetaTileset_DarkHyruleCastle_bottom.bin')
+        #metatileset_path = os.path.join(area_folder, 'metatileset', 'gAreaMetaTileset_DarkHyruleCastle_bottom.bin')
         #metatilemap_path = os.path.join(area_folder,'rooms','3b','gAreaRoomMap_DarkHyruleCastle_3b_top.bin')
 
         vram_offset = 0x4000 # top maps index tiles starting at 0x4000
@@ -81,7 +95,7 @@ class TilemapDock(QDockWidget):
 
         palette_set = tileset_palette_set
 
-        palette_set.render_palettes()
+        #palette_set.render_palettes()
 
         """
 gAreaTileset_MinishWoods_0:: @ 08100CF4
@@ -116,10 +130,16 @@ gAreaTileset_MinishWoods_0:: @ 08100CF4
 
     def slot_change_room_width(self, width: int) -> None:
         if width != 0:
-            height = (len(self.metatilemap.metatiles) + (width - 1)) // width
-            self.ui.spinBoxRoomHeight.setValue(height)
 
-            self.show_image(self.ui.graphicsView_3, self.metatilemap.render_meta_tile_map(width))
+            if self.use_256_colors_bg:
+                if self.map == 'collision_bottom':
+                    self.map_debug.render(self.ui.graphicsView_3, width)
+                else:
+                    self.show_image(self.ui.graphicsView_3, self.tilemap.render_tilemap(width * 2))
+            else:        
+                height = (len(self.metatilemap.metatiles) + (width - 1)) // width
+                self.ui.spinBoxRoomHeight.setValue(height)
+                self.show_image(self.ui.graphicsView_3, self.metatilemap.render_meta_tile_map(width))
 
 
     def show_image(self, graphicsView: QGraphicsView, image: Image) -> None:
@@ -138,15 +158,299 @@ gAreaTileset_MinishWoods_0:: @ 08100CF4
         pixmap = QPixmap.fromImage(qimage)
         return pixmap
 
+    def slot_area_change(self, new_area: int) -> None:
+        print('area', new_area)
+        self.area = new_area
+        self.ui.comboBoxRoom.clear()
+        self.ui.comboBoxRoom.addItems(room_ids[self.area])
 
+    def slot_room_change(self, new_room: int) -> None:
+        if new_room != -1:
+            self.room = new_room
+            room_path = self.assets_folder / self.get_room_path(self.area, self.room)
+            room_config = json.load(open(room_path / 'config.json', 'r'))
+            self.ui.comboBoxMap.clear()
+            self.maps = []
+            if len(room_config['maps']) == 0:
+                self.ui.comboBoxMap.addItem('No maps defined for this room.')
+
+            for map in room_config['maps']:
+                self.maps.append(map['type'])
+                self.ui.comboBoxMap.addItem(map['type'])
+
+    def slot_map_change(self, new_map: int) -> None:
+        if new_map != -1 and len(self.maps) > 0:
+            self.map = self.maps[new_map]
+            self.slot_render_map()
+
+
+    # TODO move to common file
+    def get_room_path(self, area: int, room: int) -> str:
+        return f'maps/areas/{area:03}_{self.get_area_name(area)}/rooms/{room:02}_{self.get_room_name(area, room)}'
+
+    def get_area_path(self, area: int) -> str:
+        return f'maps/areas/{area:03}_{self.get_area_name(area)}'
+
+    def get_area_name(self, area: int) -> str:
+        id = area_ids[area]
+        start_char = 5 # Remove AREA_ at the start.
+        # To camel case.
+        result = ''
+        for i in range(start_char, len(id)):
+            if id[i] == '_':
+                continue
+            if i != start_char and id[i-1] != '_':
+                result += id[i].lower()
+            else:
+                result += id[i].upper()
+        return result
+
+    def get_room_name(self, area: int, room: int) -> str:
+        area_id = area_ids[area]
+        id = room_ids[area][room]
+        start_char = len(area_id) # Remove ROOM_ and area name at the start
+        # To camel case.
+        result = ''
+        for i in range(start_char, len(id)):
+            if id[i] == '_':
+                continue
+            if i != start_char and id[i-1] != '_':
+                result += id[i].lower()
+            else:
+                result += id[i].upper()
+        return result
+
+
+    def slot_render_map(self) -> None:
+        self.use_256_colors_bg = self.area in [0x20, 0x2d] # TODO detect this by map type?
+
+        if 'special' in self.map:
+            self.use_256_colors_bg = True
+        self.errors: List[str] = []
+        try:
+
+            # TODO modify depending on map type
+            if self.map == 'map_top' or self.map == 'map_top_special':
+                self.vram_offset = 0x4000 # top maps index tiles starting at 0x4000
+            else:
+                self.vram_offset = 0
+            
+            # Find out tileset.
+            print(f'--- {self.area} / {self.room}')
+            area_config = json.load(open(self.assets_folder / self.get_area_path(self.area) / 'config.json', 'r'))
+            room_config = json.load(open(self.assets_folder / self.get_room_path(self.area, self.room) / 'config.json', 'r'))
+            if not 'tileset' in room_config:
+                self.errors.append(f'No tileset in room config for {room_ids[self.area][self.room]}. Assuming tileset 0.')
+                room_config['tileset'] = 0
+            tileset_area = self.area
+            tileset_area_config = area_config
+            if 'tileset_ref' in area_config: # Handle tileset reference.
+                tileset_area = area_config['tileset_ref']
+                tileset_area_config = json.load(open(self.assets_folder / self.get_area_path(tileset_area) / 'config.json', 'r'))
+                
+            tileset_id = room_config['tileset']
+
+            # Check that the tileset exists in this area.
+            if tileset_id not in tileset_area_config['tilesets']:
+                if len(tileset_area_config['tilesets']) == 0:
+                    raise Exception(f'No tilesets defined for area {area_ids[tileset_area]}.')
+                replacement_tileset = tileset_area_config['tilesets'][0]
+                self.errors.append(f'No tileset with id {tileset_id} in area {area_ids[tileset_area]} (requested by room {room_ids[self.area][self.room]}). Using tileset {replacement_tileset} instead.')
+                tileset_id = replacement_tileset
+
+            self.load_tileset(tileset_area, tileset_id)
+
+            if self.use_256_colors_bg:
+                if self.map == 'map_bottom_special' or self.map == 'map_top_special':
+                    self.load_tilemap()
+                elif self.map == 'collision_bottom':
+                     self.load_map_debug()
+            else:
+                self.load_metatileset(area_config['metatileset'])        
+                self.load_metatilemap()
+
+            if len(self.errors) > 0:
+                self.api.show_error('Tilemap Viewer', '\n'.join(self.errors))
+
+        except Exception as e:
+            print(e)
+            self.api.show_error('Tilemap Viewer', str(e))
+            raise e
+
+
+    def load_tileset(self, tileset_area: int, tileset_id: int) -> None:
+        tileset_path = self.assets_folder / self.get_area_path(tileset_area) / 'tilesets' / str(tileset_id)
+        tileset_config = json.load(open(tileset_path / 'config.json', 'r'))
+        self.vram = VRAM()
+        for entry in tileset_config['tiles']:
+            if 'src' in entry:
+                entry_path = tileset_path / (entry['src'] + '.png')
+            elif 'ref' in entry:
+                entry_path = self.assets_folder / (entry['ref'] + '.png')
+            else:
+                raise Exception(f'Neither src nor ref in tiles definition.')
+
+            offset = int(entry['dest'], 0) - 0x6000000
+            self.vram.add_tileset(PIL.Image.open(entry_path), offset)
+
+    
+        if not 'palette_set' in tileset_config:
+            raise Exception(f'No palette set in tileset config for {room_ids[tileset_area][self.room]}.')
+        palette_set_id = tileset_config['palette_set']
+        self.load_palette_set(palette_set_id)
+
+
+        if self.use_256_colors_bg:
+            self.vram.apply_256_colors(self.palette_set)
+        vram_image = self.vram.render_vram()
+
+        self.show_image(self.ui.graphicsView, vram_image)
+
+
+    def load_palette_set(self, palette_set_id: int) -> None:
+        palette_groups_file = AsmDataFile(os.path.join(settings.get_repo_location(), 'data', 'gfx', 'palette_groups.s'))
+        common_palette_set = read_palette_set(palette_groups_file, 0xb)
+        tileset_palette_set = read_palette_set(palette_groups_file, palette_set_id)
+        tileset_palette_set.fill_undefined(common_palette_set)
+        self.palette_set = tileset_palette_set
+
+    def load_metatileset(self, metatileset_area: int) -> None:
+        # TODO fix metatileset for 256 color bgs
+        metatileset_path = self.assets_folder / self.get_area_path(metatileset_area) / 'metatileset'
+        metatileset_config = json.load(open(metatileset_path / 'config.json', 'r'))
+
+        metatile_type = 'tiles_bottom'
+        if self.map == 'map_top':
+            metatile_type = 'tiles_top'
+
+        if not metatile_type in metatileset_config:
+            raise Exception(f'{metatile_type} not found in metatileset for area {area_ids[metatileset_area]}.')
+        
+        config = metatileset_config[metatile_type]
+
+        if 'src' in config:
+            metatileset_path = metatileset_path / (config['src'] + '.bin')
+        elif 'ref' in config:
+            metatileset_path = self.assets_folder / (config['ref'] + '.bin')
+        else:
+            raise Exception(f'Neither src nor ref in metatileset definition.')
+
+
+        # if not 'tiles_top' in metatileset_config:
+        #     raise Exception(f'tiles_top not found in metatileset for area {area_ids[self.area]}.')
+        
+        # metatileset_path = metatileset_path / (metatileset_config['tiles_top']['src'] + '.bin')
+        metatileset = MetaTileset(metatileset_path, self.vram, self.vram_offset, self.palette_set)
+        metatileset_image = metatileset.render_meta_tileset()
+        self.show_image(self.ui.graphicsView_2, metatileset_image)
+        self.metatileset = metatileset
+
+#        self.metatilemap = MetaTilemap(metatilemap_path, metatileset)
+ #       self.ui.spinBoxRoomWidth.setValue(63)
+        #self.slot_change_room_width(42)
+
+    def load_metatilemap(self) -> None:
+        room_path = self.assets_folder / self.get_room_path(self.area, self.room)
+        room_config = json.load(open(room_path / 'config.json', 'r'))
+        for map in room_config['maps']:
+
+            if map['type'] == self.map:
+#            if map['type'] == 'map_top':
+                if 'src' in map:
+                    metatilemap_path = room_path / (map['src'] + '.bin')
+                elif 'ref' in map:
+                    metatilemap_path = self.assets_folder / (map['ref'] + '.bin')
+                else:
+                    raise Exception(f'Neither src nor ref in map definition.')
+
+                self.metatilemap = MetaTilemap(metatilemap_path, self.metatileset)
+                if 'width' in room_config:
+                    width = room_config['width'] // 16
+                    if self.ui.spinBoxRoomWidth.value() != width:
+                        self.ui.spinBoxRoomWidth.setValue(width)
+                    else:
+                        self.slot_change_room_width(width)
+                else:
+                    self.errors.append(f'No width defined for room {room_ids[self.area][self.room]}. Assuming 42.')
+                    if self.ui.spinBoxRoomWidth.value() != 42:
+                        self.ui.spinBoxRoomWidth.setValue(42)
+                    else:
+                        self.slot_change_room_width(42)  
+                return
+
+        raise Exception(f'No {self.map} map found for room {room_ids[self.area][self.room]}.')
+
+    def load_tilemap(self) -> None:
+        room_path = self.assets_folder / self.get_room_path(self.area, self.room)
+        room_config = json.load(open(room_path / 'config.json', 'r'))
+        for map in room_config['maps']:
+
+            if map['type'] == self.map:
+                if 'src' in map:
+                    tilemap = room_path / (map['src'] + '.bin')
+                elif 'ref' in map:
+                    tilemap = self.assets_folder / (map['ref'] + '.bin')
+                else:
+                    raise Exception(f'Neither src nor ref in map definition.')
+
+                print('LOADED TILEMAP')
+                self.tilemap = Tilemap(tilemap, self.vram, self.vram_offset)
+                if 'width' in room_config:
+                    width = room_config['width'] // 16
+                    if self.ui.spinBoxRoomWidth.value() != width:
+                        self.ui.spinBoxRoomWidth.setValue(width)
+                    else:
+                        self.slot_change_room_width(width)
+                else:
+                    self.errors.append(f'No width defined for room {room_ids[self.area][self.room]}. Assuming 42.')
+                    if self.ui.spinBoxRoomWidth.value() != 42:
+                        self.ui.spinBoxRoomWidth.setValue(42)
+                    else:
+                        self.slot_change_room_width(42)  
+                return
+
+        raise Exception(f'No {self.map} map found for room {room_ids[self.area][self.room]}.')
+
+    def load_map_debug(self) -> None:
+        room_path = self.assets_folder / self.get_room_path(self.area, self.room)
+        room_config = json.load(open(room_path / 'config.json', 'r'))
+        for map in room_config['maps']:
+
+            if map['type'] == self.map:
+                if 'src' in map:
+                    map_path = room_path / (map['src'] + '.bin')
+                elif 'ref' in map:
+                    map_path = self.assets_folder / (map['ref'] + '.bin')
+                else:
+                    raise Exception(f'Neither src nor ref in map definition.')
+
+                print('LOADED TILEMAP')
+                self.map_debug = DebugMap(map_path)
+                if 'width' in room_config:
+                    width = room_config['width'] // 16
+                    if self.ui.spinBoxRoomWidth.value() != width:
+                        self.ui.spinBoxRoomWidth.setValue(width)
+                    else:
+                        self.slot_change_room_width(width)
+                else:
+                    self.errors.append(f'No width defined for room {room_ids[self.area][self.room]}. Assuming 42.')
+                    if self.ui.spinBoxRoomWidth.value() != 42:
+                        self.ui.spinBoxRoomWidth.setValue(42)
+                    else:
+                        self.slot_change_room_width(42)  
+                return
+
+        raise Exception(f'No {self.map} map found for room {room_ids[self.area][self.room]}.')
 
 TILE_SIZE = 8
 META_TILE_SIZE = 16
 
 class Palette:
     palette: List[int] = []
-
-    def __init__(self, path: str) -> None:
+    def __init__(self) -> None:
+        self.palette = [255, 0, 255] * 32
+    
+    def read_from_file(self, path: str) -> None:
         self.palette = []
         with open(path, 'r') as f:
             if f.readline().strip() != 'JASC-PAL':
@@ -160,6 +464,8 @@ class Palette:
                 self.palette.append(int(b))
         #print(self.palette)
 
+UNDEFINED_PALETTE = Palette()
+
 class PaletteSet:
     palettes: List[Palette] = [None]*32 # 16 bg, 16 obj
 
@@ -168,7 +474,8 @@ class PaletteSet:
         if index < len(self.palettes):
             palette = self.palettes[index]
         if palette is None:
-            raise Exception(f'Palette {index} not found.')
+            print(f'Palette {index} not found.')
+            return UNDEFINED_PALETTE
         return palette
 
     def render_palettes(self) -> None:
@@ -197,6 +504,7 @@ def read_palette_set(file: AsmDataFile, index: int) -> PaletteSet:
 
     symbol_name = file.symbols['gPaletteGroups'].entries[index].attributes[0]
     symbol = file.symbols[symbol_name]
+    print(f'Read palette set from symbol {symbol_name}.')
     palette_set = PaletteSet()
     for entry in symbol.entries:
         print(entry)
@@ -207,13 +515,18 @@ def read_palette_set(file: AsmDataFile, index: int) -> PaletteSet:
         count = int(entry.attributes_dict['count'], 0)
         for i in range(0, count):
             print(f'Read palette {palette_id + i} to {offset+i}.')
-            palette_set.palettes[offset+i] = Palette(os.path.join(assets_folder, 'palettes', f'gPalette_{palette_id+i}.pal'))
+            palette = Palette()
+            palette.read_from_file(os.path.join(assets_folder, 'palettes', f'gPalette_{palette_id+i}.pal'))
+            palette_set.palettes[offset+i] = palette
     return palette_set
 
 
 class VRAM:
     # The VRAM in tiles form but just storing the 8x8 tiles as PIL images.
-    tiles: List[Image] = []
+    tiles: List[Image]
+
+    def __init__(self) -> None:
+        self.tiles = []
 
     def add_tileset(self, image: Image, addr: int) -> None:
         #print(len(list(image.getdata())))
@@ -247,6 +560,36 @@ class VRAM:
 
         return image
 
+    def apply_256_colors(self, palette_set: PaletteSet) -> None:
+        for j, tile in enumerate(self.tiles):
+            if tile is None:
+                continue
+            output_image = PIL.Image.new('RGBA', (TILE_SIZE, TILE_SIZE))
+            data = tile.getdata()
+            #print(len(data))
+            output_data = []
+            for i in range(0, len(data)):
+                #print(data[i])
+                try:
+                    val = 255 - data[i]
+                except Exception as e:
+                    print(data[i])
+                    print(e)
+                    return
+                palette_id = val // 16
+                index = (val % 16)
+                palette = palette_set.get_palette(palette_id)
+                #index = 15- data[i] // 16
+                [r,g,b] = palette.palette[index*3:(index+1)*3]
+                output_data.append((r,g,b))
+                #print(len(palette.palette[index*3:(index+1)*3]))
+                #output_data.append(255)
+                #data[i:i+3] = palette.palette[index*3:(index+1)*3]
+
+            #print(len(output_data))
+            output_image.putdata(output_data)
+            self.tiles[j] = output_image
+
 @dataclass
 class TileAttr:
     palette_index: int
@@ -260,9 +603,10 @@ class MetaTile:
     image: Image = None
 
 class MetaTileset:
-    metatiles: List[MetaTile] = []
+    metatiles: List[MetaTile]
 
     def __init__(self, path: str, vram: VRAM, vram_offset: int, palette_set: PaletteSet) -> None:
+        self.metatiles = []
         self.vram = vram
         self.palette_set = palette_set
         tile_number_offset = vram_offset // (TILE_SIZE * TILE_SIZE // 2)
@@ -303,21 +647,17 @@ class MetaTileset:
         metatile.image = PIL.Image.new('RGBA', (META_TILE_SIZE, META_TILE_SIZE))
         for i in range(0, 4):
             tile_attr = metatile.tiles[i]
-            tile_image = self.vram.tiles[tile_attr.tile_number]
+            tile_image = None
+            if tile_attr.tile_number < len(self.vram.tiles):
+                tile_image = self.vram.tiles[tile_attr.tile_number]
             if tile_image is None:
                 print(f'Could not find tile with number {hex(tile_attr.tile_number)}')
                 tile_image = PIL.Image.new('RGBA', (TILE_SIZE, TILE_SIZE), (255, 0, 255, 255))
 
             palette = self.palette_set.get_palette(tile_attr.palette_index)
-            # if metatile.id == 0x10:
-            #     print('---', tile_attr.palette_index)
-            #     print(palette.palette[0:3])
-            # if metatile.id == 0x10:
-            #     tile_image.save(f'/tmp/mc/{i}_before.png')
+
             tile_image = self.swap_palette(tile_image, palette)
-            # if metatile.id == 0x10:
-            #     tile_image.save(f'/tmp/mc/{i}_after.png')
-            #tile_image = tile_image.convert('P', palette=palette.palette)
+            
             if tile_attr.horizontal_flip:
                 tile_image = tile_image.transpose(PIL.Image.FLIP_LEFT_RIGHT)
             if tile_attr.vertical_flip:
@@ -373,6 +713,8 @@ class MetaTileset:
             y = (i // metatileset_width) * META_TILE_SIZE
             return (x, y)
 
+        print(f'Render {len(self.metatiles)} metatiles.')
+
         for i, metatile in enumerate(self.metatiles):
             if metatile.image is not None:
                 image.paste(metatile.image, get_xy(i))
@@ -401,3 +743,102 @@ class MetaTilemap:
             image.paste(self.metaTileset.metatiles[metatile].image, get_xy(i))
         return image
 
+
+
+class Tilemap:
+    tiles: List[Image]
+
+    def __init__(self, path: str, vram: VRAM, vram_offset: int) -> None:
+        self.tiles = []
+        self.vram = vram
+        tile_number_offset = vram_offset // (TILE_SIZE * TILE_SIZE // 2)
+        arr = array.array('H')
+        with open(path, 'rb') as f:
+            arr.frombytes(f.read())
+
+        for tile_attrs in arr:
+            palette_index   = (tile_attrs & 0xF000) >> 0xC
+            horizontal_flip = (tile_attrs & 0x0400) > 0
+            vertical_flip   = (tile_attrs & 0x0800) > 0
+            tile_number     = (tile_attrs & 0x03FF)
+
+            tile_number += tile_number_offset
+
+            tile_image = None
+            if tile_number < len(self.vram.tiles):
+                tile_image = self.vram.tiles[tile_number]
+            if tile_image is None:
+                print(f'Could not find tile with number {hex(tile_number)}')
+                tile_image = PIL.Image.new('RGBA', (TILE_SIZE, TILE_SIZE), (255, 0, 255, 255))
+            if horizontal_flip:
+                tile_image = tile_image.transpose(PIL.Image.FLIP_LEFT_RIGHT)
+            if vertical_flip:
+                tile_image = tile_image.transpose(PIL.Image.FLIP_TOP_BOTTOM)
+            self.tiles.append(tile_image)
+
+
+    def render_tilemap(self, width_in_tiles: int) -> Image:
+        CHUNK_SIZE = 32
+        if width_in_tiles % CHUNK_SIZE != 0:
+            width_in_tiles = ((width_in_tiles + CHUNK_SIZE - 1) // CHUNK_SIZE) * CHUNK_SIZE
+            print(f'Increase width to {width_in_tiles} to fit 256x256 chunks')
+#            raise Exception(f'Tilemap is not consisting of 256x256 chunks, because it has a width of {width_in_tiles} tiles.')
+
+        width_in_chunks = width_in_tiles // CHUNK_SIZE
+
+        # TODO render 256x256 chunks into final image
+        tilemap_width = width_in_tiles  
+        tilemap_height = (len(self.tiles) + (tilemap_width-1)) // tilemap_width
+        image = PIL.Image.new('RGBA', (tilemap_width * TILE_SIZE, tilemap_height * TILE_SIZE))
+        def get_xy(i):
+            in_chunk = i % (CHUNK_SIZE * CHUNK_SIZE)
+            chunk = i // (CHUNK_SIZE * CHUNK_SIZE)
+            chunk_x = chunk % width_in_chunks
+            chunk_y = chunk // width_in_chunks
+
+
+            x = ((in_chunk % CHUNK_SIZE) + (chunk_x * CHUNK_SIZE)) * TILE_SIZE
+            y = ((in_chunk // CHUNK_SIZE) + (chunk_y * CHUNK_SIZE)) * TILE_SIZE
+            return (x, y)
+
+        print(f'Render {len(self.tiles)} tiles.')
+
+        for i, tile in enumerate(self.tiles):
+            if tile is not None:
+                image.paste(tile, get_xy(i))
+        return image
+
+
+# Show the map as numbers
+class DebugMap:
+    tiles: List[int]
+
+    def __init__(self, path: str) -> None:
+        self.tiles = []
+        arr = array.array('b')
+        with open(path, 'rb') as f:
+            arr.frombytes(f.read())
+
+        for elm in arr:
+            self.tiles.append(elm)
+    
+    def render(self, graphicsView: QGraphicsView, width_in_tiles: int) -> None:
+        scene = QGraphicsScene(graphicsView)
+
+        RENDER_SCALE = 3
+
+        def get_xy(i):
+            x = (i % width_in_tiles) * TILE_SIZE * RENDER_SCALE
+            y = (i // width_in_tiles) * TILE_SIZE * RENDER_SCALE
+            return (x, y)
+    
+        for i, tile in enumerate(self.tiles):
+            text = scene.addText(hex(tile)[2:])
+            (x,y) = get_xy(i)
+            text.setPos(x, y)
+#            scene.addItem(item)
+        graphicsView.setScene(scene)
+# TODO Cache tileset and metatileset if it is the same for the new selected map
+# TODO Cache modified tiles for metatiles.
+# TODO Make first color in palette transparent.
+# TODO Fix tileset for map_top_special of beanstalk climbs by using 16 colors and respecting the palette choice of the tiles
