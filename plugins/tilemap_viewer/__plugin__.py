@@ -20,6 +20,7 @@ class TilemapViewerPlugin:
     name = 'Tilemap Viewer'
     description = '''Description of the test plugin
 Descriptions can have multiple lines'''
+    hidden = True
 
     def __init__(self, api: PluginApi) -> None:
         self.api = api

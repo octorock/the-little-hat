@@ -9,6 +9,7 @@ from PIL import Image
 class MetaspriteViewerPlugin:
     name = 'Metasprite Viewer'
     description = '''Shows some metasprites'''
+    hidden = True
 
     def __init__(self, api: PluginApi) -> None:
         self.api = api
