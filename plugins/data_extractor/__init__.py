@@ -123,6 +123,7 @@ class DataExtractorPlugin:
             menu.addAction('Fix Tilesets', self.slot_fix_tilesets)
 #            menu.addAction('Fix paths', self.fix_paths)
             menu.addAction('Export configs', self.slot_export_configs)
+            menu.addAction('Extract Map Data Definition', self.slot_extract_map_data_definition)
 
 
     def slot_copy_as_incbin(self) -> None:

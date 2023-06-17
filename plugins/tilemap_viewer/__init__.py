@@ -64,7 +64,7 @@ class TilemapDock(QDockWidget):
         tileset = 0
 
 
-        area_folder = os.path.join(assets_folder, 'maps', 'areas', '000_MinishWoods')
+        area_folder = os.path.join(self.assets_folder, 'maps', 'areas', '000_MinishWoods')
         tileset_0_path = os.path.join(area_folder, 'tilesets', '0', 'gAreaTileset_MinishWoods_0_0.png')
         tileset_1_path = os.path.join(area_folder, 'tilesets', '0', 'gAreaTileset_MinishWoods_0_1.png')
         tileset_2_path = os.path.join(area_folder, 'tilesets', '0', 'gAreaTileset_MinishWoods_0_2.png')
@@ -83,7 +83,7 @@ class TilemapDock(QDockWidget):
         metatilemap_path = '/tmp/decompressed_0.bin'
 
 
-        #area_folder = os.path.join(assets_folder, 'maps', 'areas', '136_DarkHyruleCastle')
+        #area_folder = os.path.join(self.assets_folder, 'maps', 'areas', '136_DarkHyruleCastle')
         #metatileset_path = os.path.join(area_folder, 'metatileset', 'gAreaMetaTileset_DarkHyruleCastle_bottom.bin')
         #metatilemap_path = os.path.join(area_folder,'rooms','3b','gAreaRoomMap_DarkHyruleCastle_3b_top.bin')
 

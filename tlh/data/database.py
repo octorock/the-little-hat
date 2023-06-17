@@ -27,13 +27,9 @@ def initialize_databases(parent) -> None:
     '''
     global pointer_database_instance, constraint_database_instance, annotation_database_instance, symbol_database_instance
     if settings.is_using_constraints():
-        print('pointers')
         pointer_database_instance = PointerDatabase(parent)
-        print('constraints')
         constraint_database_instance = ConstraintDatabase(parent)
-    print('annotations')
     annotation_database_instance = AnnotationDatabase(parent)
-    print('symbols')
     symbol_database_instance = SymbolDatabase(parent)
 
 

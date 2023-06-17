@@ -1,7 +1,4 @@
 from PySide6.QtCore import QThread, Qt
-from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import QDockWidget
-from werkzeug.datastructures import is_immutable
 from plugins.mgba_bridge.script_disassembler.script_disassembler import disassemble_script
 from plugins.mgba_bridge.server import ServerWorker
 from tlh import settings

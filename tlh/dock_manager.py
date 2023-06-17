@@ -98,7 +98,6 @@ class DockManager:
 
         linked_controllers: List[HexViewerController] = []
 
-        print(to_spawn)
         # Close docks that are no longer open
         for name in self.docks:
             if name not in to_spawn:
