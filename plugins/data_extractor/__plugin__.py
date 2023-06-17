@@ -4255,3 +4255,42 @@ class DataExtractorPlugin:
     def write_config(self, path: str, config: dict) -> None:
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         json.dump(config, open(path, 'w'))
+
+
+    def slot_extract_map_data_definition(self) -> None:
+        self.map_data_symbol = self.current_controller.symbols.find_symbol_by_name('gMapData')
+
+        symbol_name = QApplication.clipboard().text()
+        symbol = self.current_controller.symbols.find_symbol_by_name(symbol_name)
+        try:
+            def handle_data(data_array):
+                for data in data_array:
+                    print(data)
+                    multiple = False
+                    if data['src'] & 0x80000000 != 0:
+                        multiple = True
+                        data['src'] &= 0xfffffff
+                    addr = self.map_data_symbol.address + data['src']
+                    map_data_symbol = self.current_controller.symbols.get_symbol_at(addr)
+                    data['src'] = 'offset_' + map_data_symbol.name
+                    if multiple:
+                        data['src'] = 'MAP_MULTIPLE | ' + data['src']
+
+                    dest = int(data['dest'], 0)
+                    if dest == 0x200b654:
+                        data['dest'] = 'gMapTop.mapData'
+                    elif dest == 0x2025eb4:
+                        data['dest'] = 'gMapBottom.mapData'
+
+                    data['size'] = data['size']
+                    if data['size'] & 0x80000000 != 0:
+                        data['size'] = f'MAP_COMPRESSED | {data["size"] & 0xffffff}'
+
+                    print(data)
+                return data_array
+            result = self.extract_data(f'const MapDataDefinition {symbol.name}[];', self.current_controller.symbols, self.current_controller.rom, handle_data)
+            print(result)
+            QApplication.clipboard().setText(result)
+        except Exception:
+            traceback.print_exc()
+            self.api.show_error(self.name, 'Error in extracting map data definition')

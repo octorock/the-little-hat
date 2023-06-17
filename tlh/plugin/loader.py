@@ -9,7 +9,7 @@ import traceback
 import sys
 
 plugin_folder = './plugins'
-main_module = '__init__'
+main_module = '__plugin__'
 
 
 @dataclass
@@ -48,7 +48,7 @@ def load_plugins(main_window):
             print(f'{main_module}.py not found in plugin {i}')
             continue
         try:
-            mod = import_module('plugins.' + i)
+            mod = import_module('plugins.' + i + '.' + main_module)
         except Exception as e:
             print(f'Exception occurred during loading plugin {i}:')
             traceback.print_exc()
